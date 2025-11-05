@@ -15,7 +15,9 @@ class AssetsManager{
   Map<String, dynamic>? characterData;
   Map<String, dynamic>? characterTypeData;
   Map<String, dynamic>? regenerateTypeData;
+  Map<String, dynamic>? skillData;
   List<String>? cardTypes;
+  // List<String>? skillTypes;
 
   // 初始化所有数据
   Future<void> loadData() async {
@@ -44,6 +46,14 @@ class AssetsManager{
       jsonString = await rootBundle.loadString('assets/cards.json');
       Map<String, dynamic> cardsJson = json.decode(jsonString);
       cardTypes = List<String>.from(cardsJson['道具卡']);
+
+      // 加载技能数据
+      jsonString = await rootBundle.loadString('assets/skills.json');
+      skillData = json.decode(jsonString);
+
+      // 加载技能效果数据
+      //jsonString = await rootBundle.loadString('assets/skill_effects.json');
+
     } catch (e) {
       _logger.e('加载JSON文件失败: $e');
     }
