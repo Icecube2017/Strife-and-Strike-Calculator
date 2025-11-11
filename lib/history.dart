@@ -75,3 +75,7 @@ class HistoryProvider with ChangeNotifier {
     notifyListeners();
   }
 }
+
+class RecordProvider with ChangeNotifier {
+  
+}

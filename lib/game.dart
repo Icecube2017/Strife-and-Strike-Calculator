@@ -46,8 +46,14 @@ enum DefenceEffect{
 
 // 全局状态效果
 class GlobalCountdown{
+  // 达摩克利斯之剑
   int damocles = 0;
+  int reinforcedDamocles = 0;
+  // 伊甸园
   int eden = 0;
+  int reinforcedEden = 0;
+  // 额外回合
+  int extraTurn = 0;
 }
 
 class Character{
@@ -313,7 +319,7 @@ class Game extends ChangeNotifier{
     bool isImmune = false;
     if(!isImmune){
       try{
-        if(status == 'damageplus'){
+        if(['damageplus', 'hero_legend', 'dream_shelter'].contains(status)){
           chara.hiddenStatus[status]![0] += intensity;
         }
         else{
@@ -357,17 +363,23 @@ class Game extends ChangeNotifier{
       }
     // 终焉长戟
     if(targetChara.hasHiddenStatus('end')){
-      damageMulti *= 1.5; 
+      for (int i = 0; i < targetChara.getHiddenStatusIntensity('end'); i++) { 
+        damageMulti *= 1.5;
+      }      
       removeHiddenStatus(target, 'end');
       }
     // 猎魔灵刃
     if(targetChara.hasHiddenStatus('track')){
-      damageMulti *= 1.5;
+      for (int i = 0; i < targetChara.getHiddenStatusIntensity('track'); i++) {
+        damageMulti *= 1.5;
+      }      
       removeHiddenStatus(target, 'track');
     }
     // 融甲宝珠
     if(targetChara.hasHiddenStatus('penetrate')){
-      damageMulti *= 1.5;
+      for (int i = 0; i < targetChara.getHiddenStatusIntensity('penetrate'); i++) {
+        damageMulti *= 1.5;
+      }      
       removeHiddenStatus(target, 'penetrate');
     }
     // 氤氲
@@ -406,7 +418,12 @@ class Game extends ChangeNotifier{
       else{
         targetChara.armor -= damage;
         if(targetChara.armor < 0){
-          targetChara.health += targetChara.armor;
+          if (!targetChara.hasHiddenStatus('barrier')){
+            targetChara.health += targetChara.armor;
+          }
+          else {
+            removeHiddenStatus(target, 'barrier');
+          }
           targetChara.armor = 0;
         }
       }
@@ -418,7 +435,12 @@ class Game extends ChangeNotifier{
       else{
         targetChara.armor -= damage;
         if(targetChara.armor < 0){
-          targetChara.health += targetChara.armor;
+          if (!targetChara.hasHiddenStatus('barrier')){
+            targetChara.health += targetChara.armor;
+          }
+          else {
+            removeHiddenStatus(target, 'barrier');
+          }    
           targetChara.armor = 0;
         }
       }
@@ -451,18 +473,22 @@ class Game extends ChangeNotifier{
     else{
       currentCharaId = gameSequence[turn - 1];
     }
-    Character currentChara = players[currentCharaId]!;
-    
-    // 轮次变更
-    turn++;
-    if(turn > playerCount){
-      turn = 1;
-      round++;
-    }
+    Character currentChara = players[currentCharaId]!;        
 
     // 全局状态结算
-    if(turn == 1){
+    if(turn == playerCount && !currentChara.hasHiddenStatus('extra')){
       // 达摩克利斯之剑
+      for(; countdown.reinforcedDamocles > 0; countdown.reinforcedDamocles--){
+        Character maxHpChara = players[currentCharaId]!;
+        int maxHp = maxHpChara.health;
+        for(Character target in players.values){ 
+          if(target.health > maxHp){
+            maxHp = target.health;
+            maxHpChara = target;
+          }          
+        }
+        damagePlayer(emptyCharacter.id, maxHpChara.id, 300, DamageType.magical);        
+      }
       for(; countdown.damocles > 0; countdown.damocles--){
         Character maxHpChara = players[currentCharaId]!;
         int maxHp = maxHpChara.health;
@@ -492,6 +518,7 @@ class Game extends ChangeNotifier{
     }
 
     // 状态层数削减
+    if (countdown.extraTurn == 0) {
     for(Character chara in players.values){
       List<String> statusKeys = chara.status.keys.toList();
       for(String status in statusKeys){
@@ -508,7 +535,9 @@ class Game extends ChangeNotifier{
       }
       List<String> hiddenStatusKeys = chara.hiddenStatus.keys.toList();
       for(String status in hiddenStatusKeys){
-        chara.hiddenStatus[status]![2]--;
+        if (!['barrier'].contains(status)){
+          chara.hiddenStatus[status]![2]--;
+        }      
         if(chara.hiddenStatus[status]![2] <= 0){
           chara.hiddenStatus[status]![1]--;
           chara.hiddenStatus[status]![2] = playerCount;
@@ -518,20 +547,41 @@ class Game extends ChangeNotifier{
         }
       }
     }
+    }
 
     // 技能CD减少
-
-    for (String skill in currentChara.skill.keys){
-      if(currentChara.skill[skill]! > 0){
-        currentChara.skill[skill] = currentChara.skill[skill]! - 1;
+    if (countdown.extraTurn == 0) {
+      for (String skill in currentChara.skill.keys){
+        if(currentChara.skill[skill]! > 0){
+          currentChara.skill[skill] = currentChara.skill[skill]! - 1;
+        }
       }
+    }    
+
+    // 额外回合
+    if (countdown.extraTurn > 0) {
+      countdown.extraTurn--;
+    }
+    if (!currentChara.hasHiddenStatus('extra')) {
+      turn++;
+    }
+    else {
+      removeHiddenStatus(currentCharaId, 'extra');
+      countdown.extraTurn = 1;
+    }
+    // 轮次变更
+    if(turn > playerCount){
+      turn = 1;
+      round++;
     }
 
     // 伤害统计重置
-    for (var chara in players.values) {
-      chara.damageDealtRound = 0;
-      chara.damageReceivedRound = 0;
-    }
+    if (turn == 1 && countdown.extraTurn == 0) {
+      for (var chara in players.values) {
+        chara.damageDealtRound = 0;
+        chara.damageReceivedRound = 0;
+      }
+    }    
 
     // 抽牌
     currentCharaId = gameSequence[turn - 1];

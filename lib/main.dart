@@ -153,7 +153,7 @@ class _InfoPageState extends State<InfoPage> {
   final int columnCount = 7;
   // 日志
   
-  static final Logger _logger = Logger();
+  // static final Logger _logger = Logger();
   //final columnWidth = MediaQuery.of(context).size.width / columnCount * 0.8;
 
   @override
@@ -212,7 +212,10 @@ String _serializeGameState() {
     'teamCount': game.teamCount,
     'countdown': {
       'damocles': game.countdown.damocles,
+      'reinforcedDamocles': game.countdown.reinforcedDamocles,
       'eden': game.countdown.eden,
+      'reinforcedEden': game.countdown.reinforcedEden,
+      'extraturn':game.countdown.extraTurn
     }
   };
   
@@ -260,7 +263,10 @@ void _restoreGameState(String stateJson) {
   game.round = gameState['round'];
   game.teamCount = gameState['teamCount'];
   game.countdown.damocles = gameState['countdown']['damocles'];
+  game.countdown.reinforcedDamocles = gameState['countdown']['reinforcedDamocles'];
   game.countdown.eden = gameState['countdown']['eden'];
+  game.countdown.reinforcedEden = gameState['countdown']['reinforcedEden'];
+  game.countdown.extraTurn = gameState['countdown']['extraturn'];
   
   // 恢复玩家状态
   game.players.clear();
@@ -776,6 +782,10 @@ class _AddActionDialogState extends State<AddActionDialog> {
   String? _target;
   String? _selectedSkill;
 
+  // 玩家数据
+  Character? _sourcePlayer;
+  Character? _targetPlayer;
+
   // 技能额外目标列表
   final List<String> _skillTargetList = [];
   
@@ -801,7 +811,9 @@ class _AddActionDialogState extends State<AddActionDialog> {
   // 仁慈
   String? _benevolenceChoice;
   // 恐吓
-  int? _intimidationPoint;
+  int _intimidationPoint = 1;
+  // 奉献
+  int _devotionPoint = 1;
 
   // 日志系统
   static final Logger _logger = Logger();
@@ -1385,17 +1397,30 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     DropdownButtonFormField(
                       value: _intimidationPoint,
                       hint: Text('请选择恐吓点数'),
-                      items: [
-                        DropdownMenuItem(value: 1, child: Text('1')),
-                        DropdownMenuItem(value: 2, child: Text('2')),
-                        DropdownMenuItem(value: 3, child: Text('3')),
-                        DropdownMenuItem(value: 4, child: Text('4')),
-                        DropdownMenuItem(value: 5, child: Text('5')),
-                        DropdownMenuItem(value: 6, child: Text('6'))
-                      ],          
+                      items: List.generate(6, (index) => DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                        )).toList(),                              
                       onChanged: (int? newValue) {
                         setState(() {
-                          _intimidationPoint = newValue;
+                          _intimidationPoint = newValue ?? 1;
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16)
+                  ] else if (_selectedSkill == langMap!['devotion']) ...[
+                    Text('奉献点数', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      value: _devotionPoint,
+                      hint: Text('请选择奉献点数'),
+                      items: List.generate(6, (index) => DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                        )).toList(),                              
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _devotionPoint = newValue ?? 1;
                         });
                       },
                       isExpanded: true,
@@ -1458,6 +1483,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
       );
       return; // 阻止继续执行
             }
+            _sourcePlayer = game.players[_source];
+            _targetPlayer = game.players[_target];
             if (_actionType == '行动') {
               String pointText = _pointController.text;
               if (pointText.isNotEmpty) {
@@ -1474,18 +1501,23 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 int attackPlus = 0;
                 double attackMulti = 1;
                 // 遍历道具
-                int cost = 0;
+                int cost = 0;                
                 for (var rowData in _cardTableData) {
                   cost += 1;
                   String cardName = rowData['cardName'];
                   Map<String, dynamic> settings = rowData['settings'];
+                  // 强化系数
+                  int reinforcementMulti = _sourcePlayer!.hasHiddenStatus('reinforcement') ? 2 : 1;
+                  // 卡牌可用性                 
+                  bool cardAble = true;
+                  if (cardAble) {
                   // 破片水晶
                   if(cardName == langMap!['end_crystal']){                    
                     int crystalSelf = settings['crystalSelf'] as int? ?? 1;
                     int crystalMagic = settings['crystalMagic'] as int? ?? 1;                 
-                    game.damagePlayer(_source!, _source!, (30 + 15 * crystalSelf), DamageType.magical);
+                    game.damagePlayer(_source!, _source!, (30 + 15 * crystalSelf) * reinforcementMulti, DamageType.magical);
                     for(Character chara in game.players.values){
-                      if(chara.id != _source) game.damagePlayer(_source!, chara.id, (40 + 15 * crystalMagic), DamageType.magical);
+                      if(chara.id != _source) game.damagePlayer(_source!, chara.id, (40 + 15 * crystalMagic) * reinforcementMulti, DamageType.magical);
                     }
                   }
                   // 阿波罗之箭
@@ -1497,37 +1529,39 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       }                      
                     }
                     if(minDefence == game.players[_target]!.defence){
-                      game.addHiddenStatus(_target!, 'damageplus', 100, 1);
+                      game.addHiddenStatus(_target!, 'damageplus', 100 * reinforcementMulti, 1);
                     }
                   }
                   // 巴别塔
                   else if(cardName == langMap!['babel_tower']){
                     for(Character chara in game.players.values){
-                      game.addHiddenStatus(chara.id, 'babel', 0, 1);
+                      game.addHiddenStatus(chara.id, 'babel', 0, 1 * reinforcementMulti);
                     }
                   }
                   // 达摩克利斯之剑
                   else if(cardName == langMap!['damocles_sword']){
-                    game.countdown.damocles += 1;                    
+                    if (reinforcementMulti == 2) {
+                      game.countdown.reinforcedDamocles += 1;
+                    }
+                    else {
+                      game.countdown.damocles += 1;
+                    }                    
                   }
                   // 短刀
                   else if(cardName == langMap!['wood_sword']){
-                    game.addAttribute(_source!, AttributeType.attack, 10);
-                    if (game.players[_source]!.hasHiddenStatus('reinforcement')){
-                      game.addAttribute(_source!, AttributeType.attack, 10);
-                    }
+                    game.addAttribute(_source!, AttributeType.attack, 10 * reinforcementMulti);
                     // attackPlus += 10;
                   }
                   // 钝化术
                   else if(cardName == langMap!['slowness_spell']){
-                    game.addStatus(_target!, langMap!['slowness'], 1, 2);
+                    game.addStatus(_target!, langMap!['slowness'], 1 * reinforcementMulti, 2);
                   }
                   // 堕灵吊坠
                   else if(cardName == langMap!['corrupt_pendant']){
-                    game.addAttribute(_source!, AttributeType.attack, 5);
-                    game.addAttribute(_target!, AttributeType.attack, -5);
-                    game.damagePlayer(_source!, _source!, 60, DamageType.heal);
-                    game.damagePlayer(_source!, _target!, 60, DamageType.magical);                    
+                    game.addAttribute(_source!, AttributeType.attack, 5 * reinforcementMulti);
+                    game.addAttribute(_target!, AttributeType.attack, -5 * reinforcementMulti);
+                    game.damagePlayer(_source!, _source!, 60 * reinforcementMulti, DamageType.heal);
+                    game.damagePlayer(_source!, _target!, 60 * reinforcementMulti, DamageType.magical);            
                   }
                   // 飞鸟·紫烈
                   else if(cardName == langMap!['violent_violet']){
@@ -1536,57 +1570,57 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     else {sequence--;}
                     Character previousChara = game.players[game.gameSequence[sequence]]!;
                     // _logger.d(previousChara.id);
-                    game.addHiddenStatus(_target!, 'damageplus', previousChara.defence * 2, 1);
+                    game.addHiddenStatus(_target!, 'damageplus', 2 * previousChara.defence  * reinforcementMulti, 1);
                   }
                   // 复合弓
                   else if(cardName == langMap!['bow']){                    
                     int ammoCount = settings['ammoCount'] as int? ?? 1;
-                    game.damagePlayer(_source!, _target!, 75 * ammoCount, DamageType.magical);
+                    game.damagePlayer(_source!, _target!, 75 * ammoCount * reinforcementMulti, DamageType.magical);
                     game.players[_source]!.cardCount = 0;
                   }
                   // 高帽子
                   else if(cardName == langMap!['high_cap']){
-                    game.addStatus(_target!, langMap!['tigris_dilemma'], 0, 1);
+                    game.addStatus(_target!, langMap!['tigris_dilemma'], 0, 1 * reinforcementMulti);
                   }
                   // 高能罐头
                   else if(cardName == langMap!['high_energy_can']){
-                    game.addAttribute(_source!, AttributeType.movepoint, 1);
-                    game.addAttribute(_source!, AttributeType.maxmove, 2);
+                    game.addAttribute(_source!, AttributeType.movepoint, 1 * reinforcementMulti);
+                    game.addAttribute(_source!, AttributeType.maxmove, 2 * reinforcementMulti);
                   }
                   // 鼓舞
                   else if(cardName == langMap!['hero_legend']){
-                    game.damagePlayer(_source!, _source!, 100, DamageType.heal);
-                    game.addHiddenStatus(_source!, 'hero_legend', 0, 1);
+                    game.damagePlayer(_source!, _source!, 100 * reinforcementMulti, DamageType.heal);
+                    game.addHiddenStatus(_source!, 'hero_legend', 1 * reinforcementMulti, 1);
                   }
                   // 过往凝视
                   else if(cardName == langMap!['passing_gaze']){
-                    game.addHiddenStatus(_target!, 'damageplus', 100, 1);
+                    game.addHiddenStatus(_target!, 'damageplus', 100 * reinforcementMulti, 1);
                     game.addStatus(_target!, langMap!['dissociated'], 0, 2);
                   }
                   // 寒绝凝冰
                   else if(cardName == langMap!['cryotheum']){
-                    game.addStatus(_target!, langMap!['frost'], 5, 2);
+                    game.addStatus(_target!, langMap!['frost'], 5 * reinforcementMulti, 2);
                   }
                   // 后日谈
                   else if(cardName == langMap!['redstone']){
                     String statusProlonged = settings['statusProlonged'];
                     String playerProlonged = settings['playerProlonged'];         
                     if(statusProlonged != ''){
-                      game.addStatus(playerProlonged, statusProlonged, 0, 1);
+                      game.addStatus(playerProlonged, statusProlonged, 0, 1 * reinforcementMulti);
                     }                               
                   }
                   // 护身符
                   else if(cardName == langMap!['heart_locket']){
-                    game.addAttribute(_source!, AttributeType.defence, 10);
+                    game.addAttribute(_source!, AttributeType.defence, 10 * reinforcementMulti);
                   }
                   // 缓生
                   else if(cardName == langMap!['regenerating']){
-                    game.addStatus(_source!, langMap!['regeneration'], 4, 2);
+                    game.addStatus(_source!, langMap!['regeneration'], 4 * reinforcementMulti, 2);
                     game.addHiddenStatus(_source!, 'void', 0, 1);
                   }
                   // 混沌电钻
                   else if(cardName == langMap!['chaotic_drill']){
-                    game.addStatus(_target!, langMap!['confusion'], 0, 1);
+                    game.addStatus(_target!, langMap!['confusion'], 0, 1 * reinforcementMulti);
                   }
                   // 混乱力场
                   else if(cardName == langMap!['ascension_stair']){
@@ -1609,7 +1643,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     }
                     _logger.d(ascensionChara);
                     for(String chara in ascensionChara){
-                      game.damagePlayer(_source!, chara, 50 * maxPoint, DamageType.physical);
+                      game.damagePlayer(_source!, chara, 50 * maxPoint * reinforcementMulti, DamageType.physical);
                     }
                   }
                   // 极北之心
@@ -1620,30 +1654,30 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     Map<String, int> auroraPoints = settings['auroraPoints'];
                     for(String chara in auroraPoints.keys){ 
                       if(auroraPoints[chara] == 1){
-                        game.addStatus(chara, langMap!['exhausted'], 0, 1);
+                        game.addStatus(chara, langMap!['exhausted'], 0, 1 * reinforcementMulti);
                       }
                     }
                     game.addHiddenStatus(_source!, 'void', 0, 1);
                   }
                   // 加护
                   else if(cardName == langMap!['dream_shelter']){
-                    game.damagePlayer(_source!, _source!, 100, DamageType.heal);
-                    game.addHiddenStatus(_source!, 'dream_shelter', 0, 1);
+                    game.damagePlayer(_source!, _source!, 100 * reinforcementMulti, DamageType.heal);
+                    game.addHiddenStatus(_source!, 'dream_shelter', 1 * reinforcementMulti, 1);
                   }
                   // 箭
                   else if(cardName == langMap!['arrow']){
-                    game.addHiddenStatus(_target!, 'damageplus', 50, 1);
+                    game.addHiddenStatus(_target!, 'damageplus', 50 * reinforcementMulti, 1);
                   }
                   // 狼牙棒
                   else if(cardName == langMap!['mace']){
-                    game.addHiddenStatus(_target!, 'damageplus', 90, 1);
+                    game.addHiddenStatus(_target!, 'damageplus', 90 * reinforcementMulti, 1);
                     game.addStatus(_target!, langMap!['fractured'], 0, 2);
                   }
                   // 猎魔灵刃
                   else if(cardName == langMap!['track']){                    
                     if(game.players[_target]!.hasStatus(langMap!['dodge'])){
                       game.removeStatus(_target!, langMap!['dodge']);
-                      game.addHiddenStatus(_target!, 'track', 0, 1);
+                      game.addHiddenStatus(_target!, 'track', 1 * reinforcementMulti, 1);
                     }               
                   }
                   // 林鸟·赤掠
@@ -1652,19 +1686,19 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     if(sequence == 0) {sequence = game.gameSequence.length - 1;}
                     else {sequence--;}
                     Character previousChara = game.players[game.gameSequence[sequence]]!;                    
-                    game.addHiddenStatus(_target!, 'damageplus', previousChara.attack, 1);
+                    game.addHiddenStatus(_target!, 'damageplus', previousChara.attack * reinforcementMulti, 1);
                   }
                   // 聆音掠影
                   else if(cardName == langMap!['echo_glimpse']){
-                    game.addStatus(_target!, langMap!['distant'], 0, 1);
+                    game.addStatus(_target!, langMap!['distant'], 0, 1 * reinforcementMulti);
                   }
                   // 蛮力术
                   else if(cardName == langMap!['strength_spell']){
-                    game.addStatus(_source!, langMap!['strength'], 3, 2);
+                    game.addStatus(_source!, langMap!['strength'], 3 * reinforcementMulti, 2);
                   }
                   // 蛮力术II
                   else if(cardName == langMap!['strength_spell_ii']){
-                    game.addStatus(_source!, langMap!['strength'], 6, 2);
+                    game.addStatus(_source!, langMap!['strength'], 6 * reinforcementMulti, 2);
                   }
                   // 纳米渗透
                   else if(cardName == langMap!['nano_permeation']){
@@ -1675,12 +1709,12 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     int pandoraPoint = settings['pandoraPoint'] as int? ?? 1;
                     if([3, 6].contains(pandoraPoint)){
                       for(Character chara in game.players.values){
-                        game.damagePlayer(emptyCharacter.id, chara.id, 100, DamageType.heal);
+                        game.damagePlayer(emptyCharacter.id, chara.id, 100 * reinforcementMulti, DamageType.heal);
                       }
                     }
                     else{
                       for(Character chara in game.players.values){
-                        game.damagePlayer(emptyCharacter.id, chara.id, 300, DamageType.magical);
+                        game.damagePlayer(emptyCharacter.id, chara.id, 300 * reinforcementMulti, DamageType.magical);
                       }
                     }
                     game.addHiddenStatus(_source!, 'void', 0, 1);   
@@ -1697,24 +1731,27 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   else if(cardName == langMap!['penetrate']){
                     if(game.players[_target]!.armor > 0){
                       game.players[_target]!.armor = 0;
-                      game.addHiddenStatus(_target!, 'penetrate', 0, 1);
+                      game.addHiddenStatus(_target!, 'penetrate', 1 * reinforcementMulti, 1);
                     }
                   }
                   // 刷新
                   else if(cardName == langMap!['refreshment']){
+                    for (var skill in game.players[_source]!.skill.keys) {
+                      game.players[_source]!.skill[skill] = 0;
+                    }
                   }
                   // 水波荡漾
                   else if(cardName == langMap!['rippling_water']){
-                    game.addStatus(_target!, langMap!['nebula'], 1, 1);
+                    game.addStatus(_target!, langMap!['nebula'], 1 * reinforcementMulti, 1);
                   }
                   // 瞬疗
                   else if(cardName == langMap!['curing']){
-                    game.damagePlayer(_source!, _source!, 120, DamageType.heal);
+                    game.damagePlayer(_source!, _source!, 120 * reinforcementMulti, DamageType.heal);
                     game.addHiddenStatus(_source!, 'void', 0, 1);
                   }
                   // 天穹尘埃之障
                   else if(cardName == langMap!['aether_shroud']){
-                    game.addStatus(_target!, langMap!['oculus_veil'], 0, 1);
+                    game.addStatus(_target!, langMap!['oculus_veil'], 0, 1 * reinforcementMulti);
                   }
                   // 同调
                   else if(cardName == langMap!['homology']){
@@ -1722,7 +1759,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       if(chara.id != _source){
                         for(String status in chara.status.keys){
                           game.addStatus(_source!, status, chara.getStatusIntensity(status), 
-                          chara.getStatusLayer(status));
+                          chara.getStatusLayer(status) * reinforcementMulti);
                         }
                       }
                     }
@@ -1733,19 +1770,19 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   }
                   // 西西弗斯之石头
                   else if(cardName == langMap!['sisyphus_stone']){
-                    game.addStatus(_target!, langMap!['grind'], 0, 1);
+                    game.addStatus(_target!, langMap!['grind'], 0, 1 * reinforcementMulti);
                   }
                   // 休憩
                   else if(cardName == langMap!['rest']){
-                    cost -= 2;
+                    cost -= 2 * reinforcementMulti;
                   }
                   // 迅捷术
                   else if(cardName == langMap!['swift_spell']){
-                    game.addStatus(_source!, langMap!['swift'], 1, 2);
+                    game.addStatus(_source!, langMap!['swift'], 1 * reinforcementMulti, 2);
                   }
                   // 炎极烈火
                   else if(cardName == langMap!['pyrotheum']){
-                    game.addStatus(_target!, langMap!['flaming'], 5, 3);
+                    game.addStatus(_target!, langMap!['flaming'], 5 * reinforcementMulti, 3);
                   }
                   // 伊甸园
                   else if(cardName == "伊甸园"){
@@ -1753,8 +1790,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   }
                   // 遗失碎片
                   else if(cardName == langMap!['fragment']){
-                    game.addAttribute(_source!,AttributeType.card, 2);
-                    game.addHiddenStatus(_target!, 'damageplus', 45, 1);
+                    game.addAttribute(_source!,AttributeType.card, 2 * reinforcementMulti);
+                    game.addHiddenStatus(_target!, 'damageplus', 45 * reinforcementMulti, 1);
                   }
                   // 隐身术
                   else if(cardName == langMap!['invisibility_spell']){
@@ -1771,29 +1808,34 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   }
                   // 圆盾
                   else if(cardName == langMap!['shield']){
-                    game.addAttribute(_source!, AttributeType.armor, 100);
-                    game.addAttribute(_source!, AttributeType.defence, 5);
+                    game.addAttribute(_source!, AttributeType.armor, 100 * reinforcementMulti);
+                    game.addAttribute(_source!, AttributeType.defence, 5 * reinforcementMulti);
                   }
                   // 长剑
                   else if(cardName == langMap!['rapier']){
-                    game.addAttribute(_source!, AttributeType.attack, 15);
+                    game.addAttribute(_source!, AttributeType.attack, 15 * reinforcementMulti);
                     // attackPlus += 15;
                   }
                   // 折射水晶
                   else if(cardName == langMap!['amethyst']){
                     int amethystPoint = settings['amethystPoint'] as int? ?? 1;
                     if (amethystPoint == 1){
-                      game.addHiddenStatus(_target!, 'damageplus', 80, 1);
+                      game.addHiddenStatus(_target!, 'damageplus', 80 * reinforcementMulti, 1);
                     }
                     else{
-                      game.addHiddenStatus(_target!, 'damageplus', -40, 1);
+                      game.addHiddenStatus(_target!, 'damageplus', -40 * reinforcementMulti, 1);
                     }
                   }
                   // 终焉长戟
                   else if(cardName == langMap!['end_halberd']){
-
-                    game.addHiddenStatus(_target!, 'end', 0, 1);
+                    game.addHiddenStatus(_target!, 'end', 1 * reinforcementMulti, 1);
                   }
+
+                  // 强化效果移除
+                  if(game.players[_source]!.hasHiddenStatus('reinforcement')){
+                    game.removeHiddenStatus(_source!, 'reinforcement');
+                  }
+                }
                 }
 
                 // 行动点扣除
@@ -1854,11 +1896,11 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 
                 // 计算伤害
                 if(game.players[_source]!.hasHiddenStatus('hero_legend')){
-                  attackPlus += 10;
+                  attackPlus += 10 * _sourcePlayer!.getHiddenStatusIntensity('hero_legend');
                   game.removeHiddenStatus(_source!, 'hero_legend');
                 }
                 if(game.players[_target]!.hasHiddenStatus('dream_shelter')){
-                  attackPlus -= 10;
+                  attackPlus -= 10 * _targetPlayer!.getHiddenStatusIntensity('dream_shelter');
                   game.removeHiddenStatus(_target!, 'dream_shelter');
                 }
                 if(game.players[_source]!.hasHiddenStatus('nano')){
@@ -1881,6 +1923,20 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 if (game.players[_source]!.skill[_selectedSkill]! > 0){
                   skillAble = false;
                 }
+              }
+              if (_selectedSkill == langMap!['benevolence']) {
+                String history = historyProvider.getStateAt(historyProvider.currentIndex - 1);
+                Map<String, dynamic> gameState = jsonDecode(history);
+                int previousDamage = gameState['players'][_target]!['damageDealtTotal'];
+                if (_sourcePlayer!.damageDealtTotal - previousDamage < 100){
+                  skillAble = false;
+                }
+              }
+              if (_selectedSkill == langMap!['chase']) {
+                
+              }
+              if (_sourcePlayer!.hasHiddenStatus('reticence')){
+                skillAble = false;
               }
 
               if (skillAble) {            
@@ -1952,11 +2008,37 @@ class _AddActionDialogState extends State<AddActionDialog> {
               else if (_selectedSkill == langMap!['reinforcement']){
                 game.addHiddenStatus(_source!, 'reinforcement', 0, 1);
               }
+              // 追击
+              else if (_selectedSkill == langMap!['chase']){
+                game.addHiddenStatus(_source!, 'extra', 0, 1);
+                game.addHiddenStatus(_source!, 'chase', 0, 1);
+              }
+              // 沉默
+              else if (_selectedSkill == langMap!['reticence']){
+                game.addHiddenStatus(_target!, 'reticence', 0, 1);
+              }
+              // 奉献
+              else if (_selectedSkill == langMap!['devotion']){
+                game.damagePlayer(_source!, _source!, 100 * _devotionPoint, DamageType.magical);
+                game.damagePlayer(_source!, _target!, 100 * _devotionPoint, DamageType.heal);
+                if (_devotionPoint >= 2) {
+                  game.addAttribute(_source!, AttributeType.card, _devotionPoint - 1);
+                }
+              }
+              // 屏障
+              else if (_selectedSkill == langMap!['barrier']){
+                game.addAttribute(_source!, AttributeType.armor, 150);
+                game.addHiddenStatus(_source!, 'barrier', 0, 1);
+              }
               // 技能进入CD
               if(_selectedSkill != null){
                 game.players[_source]!.skill[_selectedSkill!] = skillData![_selectedSkill!][0];
               } 
-              }             
+              }
+              // 沉默后仍然进入CD
+              if (!skillAble && _sourcePlayer!.hasHiddenStatus('reticence')) {
+                game.players[_source]!.skill[_selectedSkill!] = skillData![_selectedSkill!][0];
+              }   
             }
             // 调用回调函数通知 InfoPageState 保存历史记录
             if (widget.onActionCompleted != null) {
@@ -2123,7 +2205,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
                 }).toList(),
                 onChanged: (int? newValue) {
                   setState(() {
-                    _crystalSelf = newValue ?? 0;
+                    _crystalSelf = newValue ?? 1;
                   });
                 },
                 isExpanded: true,
@@ -2142,7 +2224,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
                 }).toList(),
                 onChanged: (int? newValue) {
                   setState(() {
-                    _crystalMagic = newValue ?? 0;
+                    _crystalMagic = newValue ?? 1;
                   });
                 },
                 isExpanded: true,
@@ -2163,7 +2245,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
                 }).toList(),
                 onChanged: (int? newValue) {
                   setState(() {
-                    _ammoCount = newValue ?? 0;
+                    _ammoCount = newValue ?? 1;
                   });
                 },
                 isExpanded: true,
@@ -2287,7 +2369,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
                 }).toList(),
                 onChanged: (int? newValue) {
                   setState(() {
-                    _pandoraPoint = newValue ?? 0;
+                    _pandoraPoint = newValue ?? 1;
                   });
                 },
                 isExpanded: true,
@@ -2307,7 +2389,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
                 }).toList(),
                 onChanged: (int? newValue) {
                   setState(() {
-                    _amethystPoint = newValue ?? 0;
+                    _amethystPoint = newValue ?? 1;
                   });
                 },
                 isExpanded: true,
@@ -2406,7 +2488,7 @@ class _AttackEffectSettingsDialogState extends State<AttackEffectSettingsDialog>
                 }).toList(),
                 onChanged: (int? newValue) {
                   setState(() {
-                    _lumenFlarePoint = newValue ?? 0;
+                    _lumenFlarePoint = newValue ?? 1;
                   });
                 },
                 isExpanded: true,
@@ -2426,7 +2508,7 @@ class _AttackEffectSettingsDialogState extends State<AttackEffectSettingsDialog>
                 }).toList(),
                 onChanged: (int? newValue) {
                   setState(() {
-                    _oculusVeilPoint = newValue ?? 0;
+                    _oculusVeilPoint = newValue ?? 1;
                   });
                 },
                 isExpanded: true,
@@ -2521,7 +2603,7 @@ class _DefenceEffectSettingsDialogState extends State<DefenceEffectSettingsDialo
                 }).toList(),
                 onChanged: (int? newValue) {
                   setState(() {
-                    _erodeGelidPoint = newValue ?? 0;
+                    _erodeGelidPoint = newValue ?? 1;
                   });
                 },
                 isExpanded: true,
