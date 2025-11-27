@@ -4,9 +4,11 @@ import 'package:provider/provider.dart';
 import 'package:logger/logger.dart';
 import 'package:sns_calculator/history.dart';
 import 'package:sns_calculator/settings.dart';
+import 'package:sns_calculator/record.dart';
 import 'dart:convert';
 import 'game.dart';
 import 'assets.dart';
+import 'core.dart';
 
 void main() {
   runApp(MyApp());
@@ -22,6 +24,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => MyAppState()),
         ChangeNotifierProvider(create: (context) => HistoryProvider()),
         ChangeNotifierProvider(create: (context) => SettingsProvider()),
+        ChangeNotifierProvider(create: (context) => RecordProvider()),
       ],
       child: MaterialApp(
         title: 'Namer App',
@@ -151,9 +154,10 @@ class _InfoPageState extends State<InfoPage> {
   List<String> dropdownItems = [];
   // 固定列数
   final int columnCount = 7;
-  // 日志
+
   
-  // static final Logger _logger = Logger();
+  // 日志
+  static final Logger _logger = Logger();
   //final columnWidth = MediaQuery.of(context).size.width / columnCount * 0.8;
 
   @override
@@ -161,6 +165,8 @@ class _InfoPageState extends State<InfoPage> {
     super.initState();
     _loadAssetsData();
     game = GameManager().game;
+    final recordProvider = Provider.of<RecordProvider>(context, listen: false);
+    GameManager().game.setRecordProvider(recordProvider);
 
     // 添加监听器来响应游戏状态变化
     game.addListener(_handleGameChange);
@@ -199,17 +205,21 @@ void _saveCurrentStateToHistory() {
 
 // 将游戏状态序列化为JSON字符串
 String _serializeGameState() {
+  final recordProvider = Provider.of<RecordProvider>(context, listen: false);
+
   Map<String, dynamic> gameState = {
     'gameId': game.id,
     'gameSequence': game.gameSequence,
     'players': {},
     'playerDied': game.playerDied,
     'teams': game.teams,
-    'gameType': game.gameType,
+    'gameType': game.gameType.name,
     'playerCount': game.playerCount,
     'turn': game.turn,
     'round': game.round,
     'teamCount': game.teamCount,
+    'extra': game.extra,
+    'records': recordProvider.serializeRecords(),
     'countdown': {
       'damocles': game.countdown.damocles,
       'reinforcedDamocles': game.countdown.reinforcedDamocles,
@@ -251,22 +261,29 @@ String _serializeGameState() {
 
 // 从JSON字符串恢复游戏状态
 void _restoreGameState(String stateJson) {
+  final recordProvider = Provider.of<RecordProvider>(context, listen: false);
+
   Map<String, dynamic> gameState = jsonDecode(stateJson);
   
   // 恢复游戏基本属性
   game.gameSequence = List<String>.from(gameState['gameSequence']);
   game.playerDied = gameState['playerDied'];
   game.teams = gameState['teams'];
-  game.gameType = gameState['gameType'];
+  game.gameType = GameType.values.firstWhere((e) => e.name == gameState['gameType'], orElse: () => GameType.single);
   game.playerCount = gameState['playerCount'];
   game.turn = gameState['turn'];
   game.round = gameState['round'];
   game.teamCount = gameState['teamCount'];
+  game.extra = gameState['extra'];
   game.countdown.damocles = gameState['countdown']['damocles'];
   game.countdown.reinforcedDamocles = gameState['countdown']['reinforcedDamocles'];
   game.countdown.eden = gameState['countdown']['eden'];
   game.countdown.reinforcedEden = gameState['countdown']['reinforcedEden'];
   game.countdown.extraTurn = gameState['countdown']['extraturn'];
+
+  if (gameState.containsKey('records')) {
+    recordProvider.deserializeRecords(gameState['records']);
+  }
   
   // 恢复玩家状态
   game.players.clear();
@@ -313,21 +330,26 @@ void _restoreGameState(String stateJson) {
   // 回到上一个游戏状态
   void _undo() {
     final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
+    final recordProvider = Provider.of<RecordProvider>(context, listen: false);
+
     if (historyProvider.currentHistoryIndex > 0) {
-      historyProvider.undo();
+      historyProvider.undo();  
       String state = historyProvider.getCurrentState()!;
       _restoreGameState(state);
     }
+    _logger.d(recordProvider.records);
   }
 
   // 重做到下一个游戏状态
   void _redo() {
     final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
+    final recordProvider = Provider.of<RecordProvider>(context, listen: false);
     if (historyProvider.currentHistoryIndex < historyProvider.history.length - 1) {
-      historyProvider.redo();
+      historyProvider.redo();    
       String state = historyProvider.getCurrentState()!;
       _restoreGameState(state);
     }
+    _logger.d(recordProvider.records);
   }
 
   // 保存游戏状态到本地文件
@@ -739,13 +761,17 @@ Future<void> _saveGameToFile() async {
 }
   void _changeGameTurn(){
     game.endTurn();
+    final recordProvider = Provider.of<RecordProvider>(context, listen: false);
+    _logger.d(recordProvider.records);
     _saveCurrentStateToHistory();
   }
 
   void _resetGameTurn(){
+    final recordProvider = Provider.of<RecordProvider>(context, listen: false);
     game.clearGame();
     tableData.clear();
     game.refresh();
+    recordProvider.clearRecords();
     _saveCurrentStateToHistory();
   }
 
@@ -1038,7 +1064,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(0, 0, 0, 0),
-      items: widget.characterList.map((String item) {
+      items: widget.characterList.where((item) => (item != _target)).map((String item) {
         return PopupMenuItem(
           value: item,
           child: Text(item),
@@ -1341,7 +1367,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
                                       IconButton(
                                         icon: Icon(Icons.delete, size: 18),
                                         onPressed: () => _removeSkillTarget(index),
-                                    )                                    ]
+                                    )                                    
+                                  ]
                                 )
                               )
                             ]
@@ -1906,24 +1933,31 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 if(game.players[_source]!.hasHiddenStatus('nano')){
                   attackPlus += game.players[_target]!.defence;
                   game.removeHiddenStatus(_source!, 'nano');
-                }
+                }                
                 attack = game.players[_source]!.attack;
                 defence = game.players[_target]!.defence;
                 double baseDamage = ((attack + attackPlus) * attackMulti - defence) * points;
-                game.damagePlayer(_source!, _target!, baseDamage.toInt(), DamageType.action);                     
-              }
+                game.damagePlayer(_source!, _target!, baseDamage.toInt(), DamageType.action);
+
+                // 记录行动
+                final recordProvider = Provider.of<RecordProvider>(context, listen: false);
+                recordProvider.addActionRecord(GameTurn(round: game.round, turn: game.turn, extra: game.extra), 
+                 _source!, _target!, points, [for (var rowData in _cardTableData) rowData['cardName'] as String]);
+              }              
             }
             else if (_actionType == '技能') {
               final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
-
+              final recordProvider = Provider.of<RecordProvider>(context, listen: false);
               // 技能是否可用
               bool skillAble = true;
 
+              // 冷却未转好
               if (game.players[_source]!.skill.keys.contains(_selectedSkill)){
                 if (game.players[_source]!.skill[_selectedSkill]! > 0){
                   skillAble = false;
                 }
               }
+              // 仁慈
               if (_selectedSkill == langMap!['benevolence']) {
                 String history = historyProvider.getStateAt(historyProvider.currentIndex - 1);
                 Map<String, dynamic> gameState = jsonDecode(history);
@@ -1932,13 +1966,52 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   skillAble = false;
                 }
               }
-              if (_selectedSkill == langMap!['chase']) {
-                
+              // 阈限
+              else if (_selectedSkill == langMap!['threshold']) {
+                List<GameRecord>? damageRecords = recordProvider.getFilteredRecords(type: RecordType.damage, target: _source, 
+                startTurn: game.getGameTurn(), endTurn: game.getGameTurn());
+                if (damageRecords.isEmpty){
+                  skillAble = false;
+                }
+                else {
+                  skillAble = false;
+                  for (var record in damageRecords) {
+                    DamageRecord damageRecord = record as DamageRecord;
+                    if (damageRecord.damage > 250) {
+                      skillAble = true;
+                    }
+                  }
+                }                                
               }
+              // 追击
+              else if (_selectedSkill == langMap!['chase']) {
+                GameRecord? record = recordProvider.getLatestRecordByType(RecordType.action);
+                ActionRecord? actionRecord = record as ActionRecord?;
+                if (actionRecord!.target != _target || actionRecord.source != _source) {
+                  skillAble = false;
+                }
+                if (_targetPlayer!.health > 300){
+                  skillAble = false;
+                }
+              }
+              // 不死
+              else if (_selectedSkill == langMap!['undying']) {
+                if (_sourcePlayer!.health > 0){
+                  skillAble = false;
+                }
+              }
+              // 止杀
+              else if (_selectedSkill == langMap!['kill_ceasing']){
+                if (_targetPlayer!.damageDealtTurn < 200) {
+                  skillAble = false;
+                }
+              }
+              // 沉默
               if (_sourcePlayer!.hasHiddenStatus('reticence')){
                 skillAble = false;
               }
 
+              // 技能可用
               if (skillAble) {            
               // 仁慈
               if (_selectedSkill == langMap!['benevolence']) {
@@ -1996,13 +2069,16 @@ class _AddActionDialogState extends State<AddActionDialog> {
               }
               // 阈限
               else if (_selectedSkill == langMap!['threshold']){
-                String history = historyProvider.getStateAt(historyProvider.currentIndex - 1);
-                Map<String, dynamic> gameState = jsonDecode(history);
-                int previousHp = gameState['players'][_source]!['health'];
-                int thresholdDamage = previousHp - game.players[_source]!.health;
-                if (thresholdDamage >= 250){
-                  game.addAttribute(_source!, AttributeType.health, thresholdDamage - 100);
-                }                
+                List<GameRecord>? damageRecords = recordProvider.getFilteredRecords(type: RecordType.damage, target: _source, 
+                startTurn: game.getGameTurn(), endTurn: game.getGameTurn());
+                int maxDamage = 0;
+                for (var record in damageRecords) {
+                  DamageRecord damageRecord = record as DamageRecord;
+                  if (damageRecord.damage > maxDamage) {
+                    maxDamage = damageRecord.damage;
+                  }
+                }
+                game.addAttribute(_source!, AttributeType.health, maxDamage - 100);                        
               }
               // 强化
               else if (_selectedSkill == langMap!['reinforcement']){
@@ -2030,15 +2106,44 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 game.addAttribute(_source!, AttributeType.armor, 150);
                 game.addHiddenStatus(_source!, 'barrier', 0, 1);
               }
+              // 镭射
+              else if (_selectedSkill == langMap!['laser']){
+                game.damagePlayer(_source!, _target!, 60, DamageType.physical);
+                game.addStatus(_target!, langMap!['fragility'], 5, 1);
+              }
+              // 不死
+              else if (_selectedSkill == langMap!['undying']) {
+                _sourcePlayer!.isDead = false;
+                _sourcePlayer!.health = 0;
+                game.damagePlayer(_source!, _source!, 200, DamageType.revive);
+                game.addAttribute(_source!, AttributeType.armor, 400);
+                game.addHiddenStatus(_source!, 'undying', 0, 1);
+              }
+              // 止杀
+              else if (_selectedSkill == langMap!['kill_ceasing']) {
+                if (_targetPlayer!.cardCount < 2) {
+                  game.addAttribute(_source!, AttributeType.card, _targetPlayer!.cardCount);
+                  game.addAttribute(_target!, AttributeType.card, -_targetPlayer!.cardCount);
+                }
+                else {
+                  game.addAttribute(_source!, AttributeType.card, 2);
+                  game.addAttribute(_target!, AttributeType.card, -2);
+                }
+                game.addStatus(_target!, langMap!['exhausted'], 0, 1);
+              }
               // 技能进入CD
               if(_selectedSkill != null){
                 game.players[_source]!.skill[_selectedSkill!] = skillData![_selectedSkill!][0];
               } 
+              // 记录技能
+              final targets = [if (_target != null) _target!, ..._skillTargetList];
+              recordProvider.addSkillRecord(GameTurn(round: game.round, turn: game.turn, extra: game.extra), 
+              _source!, targets, _selectedSkill!, {});
               }
               // 沉默后仍然进入CD
               if (!skillAble && _sourcePlayer!.hasHiddenStatus('reticence')) {
                 game.players[_source]!.skill[_selectedSkill!] = skillData![_selectedSkill!][0];
-              }   
+              }              
             }
             // 调用回调函数通知 InfoPageState 保存历史记录
             if (widget.onActionCompleted != null) {

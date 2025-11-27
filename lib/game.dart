@@ -2,28 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
 import 'assets.dart';
-
-// 属性类型
-enum AttributeType{
-  health, 
-  maxhp, 
-  attack, 
-  defence, 
-  armor, 
-  movepoint, 
-  maxmove, 
-  card,
-  dmgdealt,
-  dmgreceived,
-}
-
-// 伤害类型
-enum DamageType{
-  action,
-  physical,
-  magical,
-  heal,
-}
+import 'core.dart';
+import 'record.dart';
 
 // 攻击特效
 enum AttackEffect{ 
@@ -60,7 +40,8 @@ class Character{
   String id;
   int maxHealth, attack, defence, maxMove, moveRegen, regenType, regenTurn;
   int health = 0, armor = 0, movePoint = 0, cardCount = 2;
-  int damageReceivedTotal = 0, damageDealtTotal = 0, damageDealtRound = 0, damageReceivedRound = 0;
+  int damageReceivedTotal = 0, damageDealtTotal = 0, damageDealtRound = 0, damageReceivedRound = 0,
+  damageReceivedTurn = 0, damageDealtTurn = 0;
   bool isDead = false;
   Map<String, List<dynamic>> status = {}, hiddenStatus = {};
   Map<String, int> skill = {}, skillStatus = {};
@@ -135,17 +116,21 @@ final Character emptyCharacter = Character('empty', 0, 0, 0, 0, 0, 0, 0, 0);
 
 class Game extends ChangeNotifier{
   String id;
+  GameType gameType;
   List<String> gameSequence = [];
   Map<String, Character> players = {};
   var playerDied = {}, teams = {};
-  int gameType = 0, playerCount = 0, turn = 0, round = 1, teamCount = 0;
+  int playerCount = 0, playerDiedCount = 0, turn = 0, round = 1, teamCount = 0, extra = 0;
   GlobalCountdown countdown = GlobalCountdown();
+  bool isGameOver = false;
   final Logger _logger = Logger();
 
   final AssetsManager assets = AssetsManager();
   Map<String, dynamic>? langMap;
 
-  Game(this.id){
+  RecordProvider? _recordProvider;
+
+  Game(this.id, this.gameType){
     players['empty'] = emptyCharacter;
     _initializeAssets();
   }
@@ -155,12 +140,20 @@ class Game extends ChangeNotifier{
     langMap = assets.langMap;
   }
 
+  // 设置RecordProvider
+  void setRecordProvider(RecordProvider recordProvider){
+    _recordProvider = recordProvider;
+  }
+
+  GameTurn getGameTurn() {
+    return GameTurn(round: round, turn: turn, extra: extra);
+  }
+
   void clearGame(){
     players.clear();
     gameSequence.clear();
     playerDied.clear();
     teams.clear();
-    gameType = 0;
     playerCount = 0;
     turn = 0;
     round = 1;
@@ -194,14 +187,15 @@ class Game extends ChangeNotifier{
     else if(type == AttributeType.movepoint){chara.movePoint += value;}
     else if(type == AttributeType.maxmove){chara.maxMove += value;}
     else if(type == AttributeType.card){chara.cardCount += value;}
-    else if(type == AttributeType.dmgdealt) {chara.damageDealtTotal += value; chara.damageDealtRound += value;}
-    else if(type == AttributeType.dmgreceived) {chara.damageReceivedTotal += value; chara.damageReceivedRound += value;}
+    else if(type == AttributeType.dmgdealt) {chara.damageDealtTotal += value; chara.damageDealtRound += value; chara.damageDealtTurn += value;}
+    else if(type == AttributeType.dmgreceived) {chara.damageReceivedTotal += value; chara.damageReceivedRound += value; chara.damageReceivedTurn += value;}
     refresh();
   }
 
   void addStatus(String charaId, String status, int intensity, int layer){
     Character chara = players[charaId]!;
     bool isImmune = false;
+    List<int> statusDataOld = [chara.getStatusIntensity(status), chara.getStatusLayer(status)];
     if(chara.hasHiddenStatus('babel')){
       isImmune = true;
     }
@@ -236,15 +230,18 @@ class Game extends ChangeNotifier{
         else if(status == langMap!['teroxis']){
           addAttribute(chara.id, AttributeType.attack, 5 * intensity);
         }
-        else if(status == langMap!['lumen_flare']){
+        else if (status == langMap!['lumen_flare']) {
           addAttribute(chara.id, AttributeType.attack, 5);
         }
-        else if(status == langMap!['erode_gelid']){
+        else if (status == langMap!['erode_gelid']) {
           addAttribute(chara.id, AttributeType.defence, 5);
         }
-        else if(status == langMap!['grind']){
+        else if (status == langMap!['grind']) {
           chara.status[langMap!['grind']]![3] = 2;
           addAttribute(chara.id, AttributeType.maxmove, -chara.getStatusIntData(langMap!['grind']));
+        }
+        else if (status == langMap!['fragility']) {
+          addAttribute(chara.id, AttributeType.defence, -2 * chara.getStatusIntensity(langMap!['fragility']));
         }
 
         // 冰火相融
@@ -265,6 +262,8 @@ class Game extends ChangeNotifier{
           }
         }
       }
+      _recordProvider!.addStatusRecord(GameTurn(round: round, turn: turn, extra: extra), 
+      emptyCharacter.id, charaId, status, statusDataOld, [chara.getStatusIntensity(status), chara.getStatusLayer(status)], '');
     }
     refresh();
   }
@@ -295,6 +294,11 @@ class Game extends ChangeNotifier{
     else if(status == langMap!['grind']){
       addAttribute(chara.id, AttributeType.maxmove, chara.getStatusIntData(langMap!['grind']));
     }
+    else if(status == langMap!['fragility']){
+      addAttribute(chara.id, AttributeType.defence, 2 * chara.getStatusIntensity(langMap!['fragility']));
+    }
+    _recordProvider!.addStatusRecord(GameTurn(round: round, turn: turn, extra: extra), 
+    emptyCharacter.id, charaId, status, [chara.getStatusIntensity(status), chara.getStatusLayer(status)], [0, 0], '');
     chara.status.remove(status);
     refresh();
   }
@@ -311,6 +315,8 @@ class Game extends ChangeNotifier{
       addAttribute(chara.id, AttributeType.attack, -5 * chara.getStatusIntensity(langMap!['strength']) + 5 * intensity);
     }
 
+    _recordProvider!.addStatusRecord(GameTurn(round: round, turn: turn, extra: extra), 
+    emptyCharacter.id, charaId, status, [chara.getStatusIntensity(status), chara.getStatusLayer(status)], [intensity, chara.getStatusLayer(status)], '');
     chara.status[status]![0] = intensity;
   }
 
@@ -346,12 +352,16 @@ class Game extends ChangeNotifier{
       }
       addAttribute(maxHpChara.id, 'health', -150);
     }*/
+    if (status == 'undying') {
+      addAttribute(charaId, AttributeType.armor, -400);
+      if (chara.armor < 0) chara.armor = 0;
+    }
     chara.hiddenStatus.remove(status);
     refresh();
   }
 
   void damagePlayer(String source, String target, int damage, DamageType type, 
-  {bool isAOE = false}){ 
+  {bool isAOE = false, String tag = ''}){ 
     Character sourceChara = players[source]!;
     Character targetChara = players[target]!;
     int damagePlus = 0;
@@ -456,10 +466,18 @@ class Game extends ChangeNotifier{
         }
       }
     }
+    else if (type == DamageType.revive) {
+      targetChara.health += damage;
+    }
 
     // 伤害统计
     addAttribute(source, AttributeType.dmgdealt, damage);
     addAttribute(target, AttributeType.dmgreceived, damage);
+    _recordProvider!.addDamageRecord(GameTurn(round: round, turn: turn, extra: extra), 
+    source, target, damage, type, tag);
+    //_logger.d(_recordProvider!.getRecordsInRounds(
+     // GameTurn(round: round, turn: turn, isExtraTurn: countdown.extraTurn == 1), 
+    //  GameTurn(round: round, turn: turn, isExtraTurn: countdown.extraTurn == 1)));
     refresh();
   }
 
@@ -556,7 +574,18 @@ class Game extends ChangeNotifier{
           currentChara.skill[skill] = currentChara.skill[skill]! - 1;
         }
       }
-    }    
+    }
+
+    // 玩家死亡
+    for (var chara in players.values) {
+      if (chara.health <= 0) {
+        chara.isDead = true;
+        playerDiedCount++;
+      }
+    }
+    if (gameType == GameType.single && playerDiedCount == playerCount - 1) {
+      isGameOver = true;
+    }
 
     // 额外回合
     if (countdown.extraTurn > 0) {
@@ -564,9 +593,11 @@ class Game extends ChangeNotifier{
     }
     if (!currentChara.hasHiddenStatus('extra')) {
       turn++;
+      extra = 0;
     }
     else {
       removeHiddenStatus(currentCharaId, 'extra');
+      extra++;
       countdown.extraTurn = 1;
     }
     // 轮次变更
@@ -576,12 +607,14 @@ class Game extends ChangeNotifier{
     }
 
     // 伤害统计重置
-    if (turn == 1 && countdown.extraTurn == 0) {
-      for (var chara in players.values) {
+    for (var chara in players.values) {
+      chara.damageDealtTurn = 0;
+      chara.damageReceivedTurn = 0;
+      if (turn == 1 && countdown.extraTurn == 0) {
         chara.damageDealtRound = 0;
-        chara.damageReceivedRound = 0;
+        chara.damageReceivedRound = 0;      
       }
-    }    
+    }
 
     // 抽牌
     currentCharaId = gameSequence[turn - 1];
@@ -638,5 +671,5 @@ class GameManager{
   factory GameManager() => _instance;
   GameManager._internal();
   
-  Game game = Game('game1');
+  Game game = Game('game1', GameType.single);
 }

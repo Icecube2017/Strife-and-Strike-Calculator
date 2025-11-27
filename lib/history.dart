@@ -61,6 +61,11 @@ class HistoryProvider with ChangeNotifier {
     return null;
   }
 
+  // 获取当前状态索引
+  int getCurrentStateIndex() {
+    return currentIndex;
+  }
+
   // 重置历史记录
   void resetHistory() {
     _history.clear();
@@ -74,8 +79,4 @@ class HistoryProvider with ChangeNotifier {
     this.currentIndex = currentIndex;
     notifyListeners();
   }
-}
-
-class RecordProvider with ChangeNotifier {
-  
 }
