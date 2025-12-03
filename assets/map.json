@@ -446,7 +446,7 @@
     "fission":[
         "分裂"
     ],
-    "overdraft":[
+    "overdraw":[
         "透支"
     ],
     "instigation":[
@@ -478,6 +478,18 @@
     ],
     "corrosion":[
         "侵蚀"
+    ],
+    "karma_reversal":[
+        "逆转乾坤"
+    ],
+    "velocity":[
+        "极速"
+    ],
+    "last_stand":[
+        "背水一战"
+    ],
+    "airstrike":[
+        "空袭"
     ],
     "massacre":[
         "屠杀"
@@ -526,6 +538,12 @@
     ],
     "nebula":[
         "氤氲"
+    ],
+    "mirror":[
+        "镜映"
+    ],
+    "burn_out":[
+        "透支"
     ],
     "dreaming":[
         "梦境"
@@ -584,7 +602,7 @@
     "moisturize":[
         "润化"
     ],
-    "erosion":[
+    "corroded":[
         "侵蚀"
     ],
     "cold":[

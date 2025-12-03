@@ -24,6 +24,10 @@ class SettingsProvider extends ChangeNotifier {
   // 极光震荡
   final List<String> auroraOptions = ['1', '2'];
   Map<String, int> _auroraPoints = {};
+
+  // 极北之心
+  List<String> arcticHeartOptions = [];
+  String _arcticHeartChoice = '';
   
   // 潘多拉魔盒
   final List<String> pandoraBoxOptions = ['1', '2', '3', '4', '5', '6'];
@@ -56,6 +60,7 @@ class SettingsProvider extends ChangeNotifier {
   String get statusProlonged => _statusProlonged;
   String get playerProlonged => _playerProlonged;
   Map<String, int> get ascensionPoints => _ascensionPoints;
+  String get arcticHeartChoice => _arcticHeartChoice;
   Map<String, int> get auroraPoints => _auroraPoints;
   int get pandoraPoint => _pandoraPoint;
   int get amethystPoint => _amethystPoint;
@@ -89,6 +94,16 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
     // 当玩家改变时，更新可选的状态列表
     updateRedstoneOptions();
+  }
+
+  void setArcticHeartChoice(String value) {
+    _arcticHeartChoice = value;
+    notifyListeners();
+  }
+
+  void setArcticHeartOptions(List<String> options) {
+    arcticHeartOptions = List<String>.from(options);
+    notifyListeners();
   }
   
   void setAscensionPoints(Map<String, int> value) {

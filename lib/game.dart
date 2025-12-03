@@ -34,6 +34,8 @@ class GlobalCountdown{
   int reinforcedEden = 0;
   // 额外回合
   int extraTurn = 0;
+  // 反重力
+  int antiGravity = 0;
 }
 
 class Character{
@@ -59,7 +61,6 @@ class Character{
     try{
       var statusData = status[stat];
       if (statusData != null && statusData.isNotEmpty) {
-        // 确保转换为 int 类型
         return (statusData[0] as num).toInt();
       }
       return -1;
@@ -72,7 +73,6 @@ class Character{
     try{
       var statusData = status[stat];
       if (statusData != null && statusData.length > 1) {
-        // 确保转换为 int 类型
         return (statusData[1] as num).toInt();
       }
       return -1;
@@ -85,7 +85,6 @@ class Character{
     try{
       var statusData = status[stat];
       if (statusData != null && statusData.length > 3) {
-        // 确保转换为 int 类型
         return (statusData[3] as num).toInt();
       }
       return -1;
@@ -97,9 +96,32 @@ class Character{
   int getHiddenStatusIntensity(String stat){ 
     try{
       var statusData = hiddenStatus[stat];
-      if (statusData != null && statusData.length > 3) {
-        // 确保转换为 int 类型
+      if (statusData != null && statusData.isNotEmpty) {
         return (statusData[0] as num).toInt();
+      }
+      return -1;
+    } catch (e) {
+      return -1;
+    }
+  }
+
+  int getHiddenStatusLayer(String stat){ 
+    try{
+      var statusData = hiddenStatus[stat];
+      if (statusData != null && statusData.length > 1) {
+        return (statusData[1] as num).toInt();
+      }
+      return -1;
+    } catch (e) {
+      return -1;
+    }
+  }
+
+  int getHiddenStatusIntData(String stat){ 
+    try{
+      var statusData = hiddenStatus[stat];
+      if (statusData != null && statusData.length > 3) {
+        return (statusData[3] as num).toInt();
       }
       return -1;
     } catch (e) {
@@ -243,6 +265,18 @@ class Game extends ChangeNotifier{
         else if (status == langMap!['fragility']) {
           addAttribute(chara.id, AttributeType.defence, -2 * chara.getStatusIntensity(langMap!['fragility']));
         }
+        else if (status == langMap!['mirror']) {
+          chara.status[langMap!['mirror']]![3] = chara.attack * 1024 + chara.defence;
+          addAttribute(chara.id, AttributeType.attack, chara.getStatusIntData(langMap!['mirror']) % 1024 - chara.attack);
+          addAttribute(chara.id, AttributeType.defence, (chara.getStatusIntData(langMap!['mirror']) / 1024).toInt() - chara.defence);
+        }
+        else if (status == langMap!['burn_out']) {
+          addAttribute(chara.id, AttributeType.attack, 5 * chara.getStatusIntensity(langMap!['burn_out']));
+          addAttribute(chara.id, AttributeType.defence, -5 * chara.getStatusIntensity(langMap!['burn_out']));
+        }
+        else if (status == langMap!['corroded']) {
+          addAttribute(chara.id, AttributeType.attack, -30);
+        }
 
         // 冰火相融
         if (chara.hasStatus(langMap!['frost']) && chara.hasStatus(langMap!['flaming'])) {
@@ -273,29 +307,40 @@ class Game extends ChangeNotifier{
 
     if (!chara.hasStatus(status)) {return;}
 
-    if(status == langMap!['frost']){
+    if (status == langMap!['frost']) {
       addAttribute(chara.id, AttributeType.attack, 4 * chara.getStatusIntensity(langMap!['frost']));
     }
-    else if(status == langMap!['exhausted']){
+    else if (status == langMap!['exhausted']) {
       addAttribute(chara.id, AttributeType.attack, chara.getStatusIntData(langMap!['exhausted']));
     }
-    else if(status == langMap!['strength']){
+    else if (status == langMap!['strength']) {
       addAttribute(chara.id, AttributeType.attack, -5 * chara.getStatusIntensity(langMap!['strength']));
     }
-    else if(status == langMap!['teroxis']){
+    else if (status == langMap!['teroxis']) {
       addAttribute(chara.id, AttributeType.attack, -5 * chara.getStatusIntensity(langMap!['teroxis']));
     }
-    else if(status == langMap!['lumen_flare']){
+    else if (status == langMap!['lumen_flare']) {
       addAttribute(chara.id, AttributeType.attack, -5);
     }
-    else if(status == langMap!['erode_gelid']){
+    else if (status == langMap!['erode_gelid']) {
       addAttribute(chara.id, AttributeType.defence, -5);
     }
-    else if(status == langMap!['grind']){
+    else if (status == langMap!['grind']) {
       addAttribute(chara.id, AttributeType.maxmove, chara.getStatusIntData(langMap!['grind']));
     }
-    else if(status == langMap!['fragility']){
+    else if (status == langMap!['fragility']) {
       addAttribute(chara.id, AttributeType.defence, 2 * chara.getStatusIntensity(langMap!['fragility']));
+    }
+    else if (status == langMap!['mirror']) {
+      addAttribute(chara.id, AttributeType.attack, (chara.getStatusIntData(langMap!['mirror']) / 1024).toInt() - chara.attack);
+      addAttribute(chara.id, AttributeType.defence, chara.getStatusIntData(langMap!['mirror']) % 1024 - chara.defence);
+    }
+    else if (status == langMap!['burn_out']) {
+      addAttribute(chara.id, AttributeType.attack, -5 * chara.getStatusIntensity(langMap!['burn_out']));
+      addAttribute(chara.id, AttributeType.defence, 5 * chara.getStatusIntensity(langMap!['burn_out']));
+    }
+    else if (status == langMap!['corroded']) {
+      addAttribute(chara.id, AttributeType.attack, 30);
     }
     _recordProvider!.addStatusRecord(GameTurn(round: round, turn: turn, extra: extra), 
     emptyCharacter.id, charaId, status, [chara.getStatusIntensity(status), chara.getStatusLayer(status)], [0, 0], '');
@@ -356,6 +401,9 @@ class Game extends ChangeNotifier{
       addAttribute(charaId, AttributeType.armor, -400);
       if (chara.armor < 0) chara.armor = 0;
     }
+    if (status == 'velocity') {
+      addHiddenStatus(charaId, 'anti_velocity', 0, 1);
+    }
     chara.hiddenStatus.remove(status);
     refresh();
   }
@@ -404,6 +452,10 @@ class Game extends ChangeNotifier{
     if (targetChara.hasHiddenStatus('intimidation')) {
       damageMulti *= 0.5;
     }
+    // 分裂
+    if (sourceChara.hasHiddenStatus('fission')) {
+      damageMulti *= 0.8;
+    }
     // 伤害计算 
     damage = ((damage + damagePlus) * damageMulti).toInt();
     
@@ -421,13 +473,25 @@ class Game extends ChangeNotifier{
     }
     // 伤害结算
     if(type == DamageType.action){
-      if(targetChara.hasStatus(langMap!['fractured']) || sourceChara.hasHiddenStatus('critical')){
+      if (sourceChara.hasHiddenStatus('fission')) {
+        Character fissionChara = emptyCharacter;
+        for (var c in players.values) {
+          if (c.hasHiddenStatus('fission_target')) {
+            fissionChara = c;
+            break;
+          }
+        }        
+        removeHiddenStatus(source, 'fission');
+        removeHiddenStatus(fissionChara.id, 'fission_target');
+        damagePlayer(source, fissionChara.id, damage, DamageType.physical);
+      }
+      if (targetChara.hasStatus(langMap!['fractured']) || sourceChara.hasHiddenStatus('critical')) {
         targetChara.health -= damage;
         if (sourceChara.hasHiddenStatus('critical')) removeHiddenStatus(source, 'critical');
       }
-      else{
+      else {
         targetChara.armor -= damage;
-        if(targetChara.armor < 0){
+        if(targetChara.armor < 0) {
           if (!targetChara.hasHiddenStatus('barrier')){
             targetChara.health += targetChara.armor;
           }
@@ -438,7 +502,7 @@ class Game extends ChangeNotifier{
         }
       }
     }
-    else if(type == DamageType.physical){
+    else if (type == DamageType.physical) {
       if(targetChara.hasStatus(langMap!['fractured'])){
         targetChara.health -= damage;
       }
@@ -468,6 +532,13 @@ class Game extends ChangeNotifier{
     }
     else if (type == DamageType.revive) {
       targetChara.health += damage;
+    }
+    // 镜像
+    if (targetChara.hasHiddenStatus('mirror')) {
+      if (targetChara.damageReceivedTotal - targetChara.getHiddenStatusIntData('mirror')> 300) {
+        removeStatus(target, langMap!['mirror']);
+        removeHiddenStatus(target, 'mirror');
+      }
     }
 
     // 伤害统计
@@ -518,7 +589,7 @@ class Game extends ChangeNotifier{
           }          
         }
         damagePlayer(emptyCharacter.id, maxHpChara.id, 150, DamageType.magical);      
-      }      
+      }        
     }
 
     // 状态结算
@@ -604,6 +675,13 @@ class Game extends ChangeNotifier{
     if(turn > playerCount){
       turn = 1;
       round++;
+    }
+
+    // 全局状态结算
+    if (turn == 1) {
+      for (; countdown.antiGravity > 0; countdown.antiGravity--) {
+        gameSequence = gameSequence.reversed.toList();
+      }
     }
 
     // 伤害统计重置
