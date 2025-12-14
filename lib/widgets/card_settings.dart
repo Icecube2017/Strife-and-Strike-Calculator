@@ -1,21 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:logger/logger.dart';
 import 'package:sns_calculator/game.dart';
 import 'package:sns_calculator/assets.dart';
 import 'package:sns_calculator/settings.dart';
 
 // 道具卡设置对话框组件
 class CardSettingsDialog extends StatefulWidget {
+  final int cardIndex;
   final String cardName;
-  final Map<String, dynamic> initialSettings;
-  final Function(Map<String, dynamic>) onSettingsChanged;
   final String? source, target;
 
   const CardSettingsDialog({
     Key? key,
+    required this.cardIndex,
     required this.cardName,
-    required this.initialSettings,
-    required this.onSettingsChanged,
     this.source,
     this.target,
 
@@ -26,13 +25,13 @@ class CardSettingsDialog extends StatefulWidget {
 }
 
 class _CardSettingsDialogState extends State<CardSettingsDialog> {
-  late Map<String, dynamic> _settings;
+  late CardSetting? _settings;
 
   Game game = GameManager().game;
 
   Map<String, dynamic> ?langMap;
 
-  //Logger _logger = Logger();
+  final Logger _logger = Logger();
   
   // 破片水晶
   final List<String> _endCrystalOptions = ['1', '2', '3', '4', '5', '6', '7', '8'];
@@ -62,77 +61,113 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
   final List<String> _amethystOptions = ['1', '2'];
   int _amethystPoint = 1;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadAssetsData();
-    _settings = Map<String, dynamic>.from(widget.initialSettings);
-
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
-
-    _crystalMagic = _settings['crystalMagic'] ?? settingsProvider.crystalMagic;
-    _crystalSelf = _settings['crystalSelf'] ?? settingsProvider.crystalSelf;
-    _ammoCount = _settings['ammoCount'] ?? settingsProvider.ammoCount;
-    _redstonePlayerOptions = [widget.source!, widget.target!];
-    _updateRedstoneOptions();
-    _statusProlonged = _settings['statusProlonged'] ?? settingsProvider.statusProlonged;
-    _playerProlonged = _settings['playerProlonged'] ?? settingsProvider.playerProlonged;
-    if (_settings['ascensionPoints'] != null) {
-      _ascensionPoints = Map<String, int>.from(_settings['ascensionPoints']);
-    } else {
-      _ascensionPoints = Map<String, int>.from(settingsProvider.ascensionPoints);
+  Future<void> _loadAssetsData() async {
+    // 首选从全局 Provider 获取已加载的 AssetsManager（在 main 已预加载）
+    final assets = Provider.of<AssetsManager>(context, listen: false);
+    if (assets.langMap == null) {
+      // 兼容：如果 provider 中尚未加载，再进行加载
+      await assets.loadData();
     }
-    _arcticHeartOptions = game.players[widget.source!]!.skill.keys.toList();
-    _arcticHeartChoice = _settings['arcticHeartChoice'] ?? settingsProvider.arcticHeartChoice;
-    if (_settings['auroraPoints'] != null) {
-      _auroraPoints = Map<String, int>.from(_settings['auroraPoints']);
-    } else {
-      _auroraPoints = Map<String, int>.from(settingsProvider.auroraPoints);
-    }
-    _pandoraPoint = _settings['pandoraPoint'] ?? settingsProvider.pandoraPoint;
-    _amethystPoint = _settings['amethystPoint'] ?? settingsProvider.amethystPoint;
+    setState(() {
+      langMap = assets.langMap;
+    });
   }
 
-  Future<void> _loadAssetsData() async {
-    AssetsManager assets = AssetsManager();
-    await assets.loadData();
+  @override
+  void initState() {
+    super.initState();    
+    final cardSettingsManager = Provider.of<CardSettingsManager>(context, listen: false);
+    _settings = cardSettingsManager.getCardSettings(widget.cardIndex);
+    // 从 Provider 获取已加载的语言映射（避免重复异步加载）
+    final assets = Provider.of<AssetsManager>(context, listen: false);
     langMap = assets.langMap;
+
+    // 根据不同卡牌类型初始化设置
+    if (_settings is EndCrystalSetting) {
+      final setting = _settings as EndCrystalSetting;
+      _crystalMagic = setting.crystalMagic;
+      _crystalSelf = setting.crystalSelf;
+    } else if (_settings is BowSetting) {
+      final setting = _settings as BowSetting;
+      _ammoCount = setting.ammoCount;
+    } else if (_settings is RedstoneSetting) {
+      final setting = _settings as RedstoneSetting;
+      _redstonePlayerOptions = [widget.source!, widget.target!];      
+      _playerProlonged = setting.playerProlonged;
+      _redstoneOptions = game.players[_playerProlonged]!.status.keys.toList();       
+      _statusProlonged = setting.statusProlonged;
+    } else if (_settings is AscensionStairSetting) {
+      final setting = _settings as AscensionStairSetting;
+      _ascensionPoints = Map<String, int>.from(setting.ascensionPoints);
+    } else if (_settings is ArcticHeartSetting) {
+      final setting = _settings as ArcticHeartSetting;
+      _arcticHeartOptions = game.players[widget.source!]!.skill.keys.toList();
+      _arcticHeartChoice = setting.arcticHeartChoice;
+    } else if (_settings is AuroraConcussionSetting) {
+      final setting = _settings as AuroraConcussionSetting;
+      _auroraPoints = Map<String, int>.from(setting.auroraPoints);
+    } else if (_settings is PandoraBoxSetting) {
+      final setting = _settings as PandoraBoxSetting;
+      _pandoraPoint = setting.pandoraPoint;
+    } else if (_settings is AmethystSetting) {
+      final setting = _settings as AmethystSetting;
+      _amethystPoint = setting.amethystPoint;
+    }
   }
 
   void _saveSettings() {
-    final settingsProvider = Provider.of<SettingsProvider>(context, listen: false);
+    final cardSettingsManager = Provider.of<CardSettingsManager>(context, listen: false);
 
-    settingsProvider.setCrystalMagic(_crystalMagic);
-    settingsProvider.setCrystalSelf(_crystalSelf);
-    settingsProvider.setAmmoCount(_ammoCount);
-    settingsProvider.setStatusProlonged(_statusProlonged);
-    settingsProvider.setPlayerProlonged(_playerProlonged);
-    settingsProvider.setAscensionPoints(_ascensionPoints);
-    settingsProvider.setArcticHeartChoice(_arcticHeartChoice);
-    settingsProvider.setAuroraPoints(_auroraPoints);
-    settingsProvider.setPandoraPoint(_pandoraPoint);
-    settingsProvider.setAmethystPoint(_amethystPoint);
-
-    Map<String, dynamic> _newSettings = {
-      'crystalMagic': _crystalMagic,
-      'crystalSelf': _crystalSelf,
-      'ammoCount': _ammoCount,
-      'statusProlonged': _statusProlonged,
-      'playerProlonged': _playerProlonged,
-      'ascensionPoints': _ascensionPoints,
-      'arcticHeartChoice': _arcticHeartChoice,
-      'auroraPoints': _auroraPoints,
-      'pandoraPoint': _pandoraPoint,
-      'amethystPoint': _amethystPoint,
-    };
-    widget.onSettingsChanged(_newSettings);
+    // 创建并保存特定卡牌设置
+    CardSetting newSetting;
+    switch (widget.cardName) {
+      case "破片水晶":
+        newSetting = EndCrystalSetting()
+          ..crystalMagic = _crystalMagic
+          ..crystalSelf = _crystalSelf;
+        break;
+      case "复合弓":
+        newSetting = BowSetting()
+          ..ammoCount = _ammoCount;
+        break;
+      case "后日谈":
+        newSetting = RedstoneSetting()
+          ..statusProlonged = _statusProlonged
+          ..playerProlonged = _playerProlonged;
+        break;
+      case "混乱力场":
+        newSetting = AscensionStairSetting()
+          ..ascensionPoints = Map<String, int>.from(_ascensionPoints);
+        break;
+      case "极北之心":
+        newSetting = ArcticHeartSetting()
+          ..arcticHeartChoice = _arcticHeartChoice;
+        break;
+      case "极光震荡":
+        newSetting = AuroraConcussionSetting()
+          ..auroraPoints = Map<String, int>.from(_auroraPoints);
+        break;
+      case "潘多拉魔盒":
+        newSetting = PandoraBoxSetting()
+          ..pandoraPoint = _pandoraPoint;
+        break;
+      case "折射水晶":
+        newSetting = AmethystSetting()
+          ..amethystPoint = _amethystPoint;
+        break;
+      default:
+        newSetting = EndCrystalSetting(); // 默认情况
+    }
+    
+    cardSettingsManager.updateCardSettings(widget.cardIndex, newSetting);
     Navigator.of(context).pop();
   }
 
   void _updateRedstoneOptions() {
     setState(() {
-      if (_playerProlonged.isNotEmpty && game.players.containsKey(_playerProlonged)) {
-        _redstoneOptions = game.players[_playerProlonged]!.skill.keys.toList();
+      //_logger.d('${_playerProlonged}');
+      if (_playerProlonged != '') {
+        _redstoneOptions = game.players[_playerProlonged]!.status.keys.toList();
       } else {
         _redstoneOptions = [];
       }
@@ -147,8 +182,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [                    
-            // 仅当 cardName 为 "破片水晶" 时显示
+          children: [
             if (widget.cardName == "破片水晶") ...[
               Text('水晶2d4损血', style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<int>(
@@ -224,7 +258,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
                 onChanged: (String? newValue) {
                   setState(() {
                     _playerProlonged = newValue ?? '';
-                    _statusProlonged = '';
+                    _statusProlonged = game.players[newValue]!.status.isEmpty ? '' : game.players[newValue]!.status.keys.first;
                     _updateRedstoneOptions();
                   });
                 },

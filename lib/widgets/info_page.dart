@@ -45,10 +45,18 @@ class _InfoPageState extends State<InfoPage> {
   @override
   void initState() {
     super.initState();
-    _loadAssetsData();
+    // 使用全局注入的 AssetsManager（在 app 启动时已加载）
+    final assets = Provider.of<AssetsManager>(context, listen: false);
+    langMap = assets.langMap;
+    characterData = assets.characterData;
+    characterTypeData = assets.characterTypeData;
+    regenerateTypeData = assets.regenerateTypeData;
+    dropdownItems = characterData?.keys.toList() ?? [];
     game = GameManager().game;
     final recordProvider = Provider.of<RecordProvider>(context, listen: false);
+    final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
     GameManager().game.setRecordProvider(recordProvider);
+    GameManager().game.setHistoryProvider(historyProvider);
 
     // 添加监听器来响应游戏状态变化
     game.addListener(_handleGameChange);
@@ -65,25 +73,14 @@ class _InfoPageState extends State<InfoPage> {
     });
   }
 
-  // 读取并解析JSON文件
-  Future<void> _loadAssetsData() async {
-    AssetsManager assets = AssetsManager();
-    await assets.loadData();
-
-    langMap = assets.langMap;
-    characterData = assets.characterData;
-    characterTypeData = assets.characterTypeData;
-    regenerateTypeData = assets.regenerateTypeData;
-
-    dropdownItems = characterData!.keys.toList();
-  }
+  // 读取并解析JSON文件（已迁移到 app 启动时预加载）
 
   // 保存当前游戏状态到历史记录
-void _saveCurrentStateToHistory() {
-  final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
-  String currentState = _serializeGameState();
-  historyProvider.saveCurrentStateToHistory(currentState);  
-}
+  void _saveCurrentStateToHistory() {
+    final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
+    String currentState = _serializeGameState();
+    historyProvider.saveCurrentStateToHistory(currentState);  
+  }
 
 // 将游戏状态序列化为JSON字符串
 String _serializeGameState() {
@@ -126,10 +123,13 @@ String _serializeGameState() {
       'armor': character.armor,
       'movePoint': character.movePoint,
       'cardCount': character.cardCount,
+      'actionTime': character.actionTime,
       'damageReceivedTotal': character.damageReceivedTotal,
       'damageDealtTotal': character.damageDealtTotal,
       'damageReceivedRound' : character.damageReceivedRound,
       'damageDealtRound': character.damageDealtRound,
+      'damageReceivedTurn' : character.damageReceivedTurn,
+      'damageDealtTurn': character.damageDealtTurn,
       'isDead': character.isDead,
       'status': character.status,
       'hiddenStatus': character.hiddenStatus,
@@ -187,10 +187,13 @@ void _restoreGameState(String stateJson) {
     character.armor = playerData['armor'];
     character.movePoint = playerData['movePoint'];
     character.cardCount = playerData['cardCount'];
+    character.actionTime = playerData['actionTime'];
     character.damageReceivedTotal = playerData['damageReceivedTotal'];
     character.damageDealtTotal = playerData['damageDealtTotal'];
     character.damageReceivedRound = playerData['damageReceivedRound'];
     character.damageDealtRound = playerData['damageDealtRound'];
+    character.damageReceivedTurn = playerData['damageReceivedTurn'];
+    character.damageDealtTurn = playerData['damageDealtTurn'];
     character.isDead = playerData['isDead'];
     character.status = Map<String, List<dynamic>>.from(playerData['status']);
     character.hiddenStatus = Map<String, List<dynamic>>.from(playerData['hiddenStatus']);
@@ -475,7 +478,7 @@ Future<void> _saveGameToFile() async {
                   ),
                 ),
               ]
-            )                                 
+            )
           ],
         );
       }
@@ -491,6 +494,12 @@ Future<void> _saveGameToFile() async {
             const SizedBox(height: 4),
             Text('当前轮次：${game.turn}',
               style: TextStyle( 
+                fontSize: 18,
+                fontWeight: FontWeight.bold)
+                ),
+            const SizedBox(height: 4),
+            Text('额外回合：${game.extra}',
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold)
                 ),
@@ -556,7 +565,7 @@ Future<void> _saveGameToFile() async {
                           },
                           // 行单元格（第一列显示下拉选中值，其他列留空）
                           cells: [
-                            DataCell(Text(roleName)),
+                            DataCell(Text(roleName, style: TextStyle(color: game.players[roleName]!.isDead ? Colors.grey : null))),
                             DataCell(Text('${health.toString()}(${armor.toString()})')),
                             DataCell(Text(attack.toString())),
                             DataCell(Text(defence.toString())),

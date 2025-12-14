@@ -365,8 +365,23 @@
     "rondo":[
         "回旋曲"
     ],
+    "grand_prophecy":[
+        "大预言"
+    ],
     "mapping":[
         "映射"
+    ],
+    "spectralization":[
+        "幽魂化"
+    ],
+    "little_spook":[
+        "小惊吓"
+    ],
+    "yearning":[
+        "希冀"
+    ],
+    "blessing":[
+        "祝愿"
     ],
     "arctic_seal":[
         "天霜封印"
@@ -374,14 +389,56 @@
     "icy_blood":[
         "寒冰血脉"
     ],
+    "transit":[
+        "凌日"
+    ],
+    "eclipse":[
+        "蚀月"
+    ],
     "ghost_ferry":[
         "引渡"
+    ],
+    "upon_the_clouds":[
+        "在云端"
+    ],
+    "gamblers_mentality":[
+        "赌徒心理"
+    ],
+    "deft_touch":[
+        "轻捷妙手"
+    ],
+    "annihilative_cycle":[
+        "湮灭性轮回"
     ],
     "im_drunk":[
         "我还能喝"
     ],
     "decree":[
         "律令"
+    ],
+    "celestial_joy":[
+        "云系祝乐"
+    ],
+    "discerning":[
+        "挑拣"
+    ],
+    "lingering_light":[
+        "延光"
+    ],
+    "cardio_blaze":[
+        "心炎"
+    ],
+    "ranger":[
+        "游侠"
+    ],
+    "crafting_of_dreams":[
+        "梦的塑造"
+    ],
+    "conflagration_avatar":[
+        "烈焰之体"
+    ],
+    "guardian_of_dreams":[
+        "梦的守护"
     ],
     "aurelysium":[
         "彼岸之金"
@@ -494,7 +551,7 @@
     "massacre":[
         "屠杀"
     ],
-    "crepuscular":[
+    "nebula_field":[
         "氤氲"
     ],
     "deconstruction":[
@@ -505,6 +562,21 @@
     ],
     "data_transmit":[
         "数据传输"
+    ],
+    "crimson_inferno":[
+        "赤焱炼狱"
+    ],
+    "dreamweaver":[
+        "造梦者"
+    ],
+    "sealed_flame_135_seconds":[
+        "封焰的135秒"
+    ],
+    "dreamkeeper":[
+        "护梦者"
+    ],
+    "icy_oblivion_135_bars":[
+        "冰灭的135小节"
     ],
     "strength":[
         "力量"
@@ -608,8 +680,8 @@
     "cold":[
         "寒意"
     ],
-    "cold_ii":[
-        "寒意II"
+    "uneasiness":[
+        "不安"
     ],
     "silence":[
         "静默"

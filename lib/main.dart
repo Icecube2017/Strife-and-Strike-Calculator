@@ -4,23 +4,29 @@ import 'package:provider/provider.dart';
 import 'package:sns_calculator/history.dart';
 import 'package:sns_calculator/settings.dart';
 import 'package:sns_calculator/record.dart';
+import 'package:sns_calculator/assets.dart';
 import 'widgets/info_page.dart';
 
-void main() {
-  runApp(MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final AssetsManager assets = AssetsManager();
+  await assets.loadData();
+  runApp(MyApp(assets: assets));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final AssetsManager assets;
+  const MyApp({super.key, required this.assets});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
+        Provider<AssetsManager>.value(value: assets),
         ChangeNotifierProvider(create: (context) => MyAppState()),
-        ChangeNotifierProvider(create: (context) => HistoryProvider()),
-        ChangeNotifierProvider(create: (context) => SettingsProvider()),
+        ChangeNotifierProvider(create: (context) => HistoryProvider()),        
         ChangeNotifierProvider(create: (context) => RecordProvider()),
+        ChangeNotifierProvider(create: (context) => CardSettingsManager()),
       ],
       child: MaterialApp(
         title: 'Namer App',

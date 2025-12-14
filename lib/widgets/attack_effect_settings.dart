@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:sns_calculator/game.dart';
+import 'package:sns_calculator/assets.dart';
 
 // 攻击特效设置对话框组件
 class AttackEffectSettingsDialog extends StatefulWidget {
@@ -41,6 +43,9 @@ class _AttackEffectSettingsDialogState extends State<AttackEffectSettingsDialog>
     _settings = Map<String, dynamic>.from(widget.initialSettings);
     _lumenFlarePoint = _settings['lumenFlarePoint'] ?? 1;
     _oculusVeilPoint = _settings['oculusVeilPoint'] ?? 1;
+    // 从全局 Provider 获取已加载的语言/资源映射
+    final assets = Provider.of<AssetsManager>(context, listen: false);
+    langMap = assets.langMap;
   }
 
   void _saveSettings() {

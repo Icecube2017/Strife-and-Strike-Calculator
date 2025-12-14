@@ -1,185 +1,474 @@
 import 'package:flutter/foundation.dart';
 
-class SettingsProvider extends ChangeNotifier {
-  // 道具设置
-  // 破片水晶
-  final List<String> endCrystalOptions = ['1', '2', '3', '4', '5', '6', '7', '8'];
-  int _crystalMagic = 1;
-  int _crystalSelf = 1;
-  
-  // 复合弓
-  final List<String> bowOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
-  int _ammoCount = 1;
-  
-  // 后日谈
-  List<String> _redstoneOptions = [];
-  List<String> _redstonePlayerOptions = [];
-  String _statusProlonged = '';
-  String _playerProlonged = '';
-  
-  // 混乱力场
-  final List<String> ascensionStairOptions = ['1', '2', '3', '4', '5', '6'];
-  Map<String, int> _ascensionPoints = {};
-  
-  // 极光震荡
-  final List<String> auroraOptions = ['1', '2'];
-  Map<String, int> _auroraPoints = {};
+/// 抽象卡牌设置基类
+abstract class CardSetting {
+  /// 卡牌名称
+  String get cardName;
 
-  // 极北之心
-  List<String> arcticHeartOptions = [];
-  String _arcticHeartChoice = '';
-  
-  // 潘多拉魔盒
-  final List<String> pandoraBoxOptions = ['1', '2', '3', '4', '5', '6'];
-  int _pandoraPoint = 1;
-  
-  // 折射水晶
-  final List<String> amethystOptions = ['1', '2'];
-  int _amethystPoint = 1;
-  
-  // 攻击特效设置
-  // 烛焱
-  final List<String> lumenFlareOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
-  int _lumenFlarePoint = 1;
-  
-  // 障目
-  final List<String> oculusVeilOptions = ['1', '2'];
-  int _oculusVeilPoint = 1;
-  
-  // 防守特效设置
-  // 蚀凛
-  final List<String> erodeGelidOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
-  int _erodeGelidPoint = 1;
+  /// 从 JSON 数据初始化设置
+  void fromJson(Map<String, dynamic> json);
 
-  // Getters
-  int get crystalMagic => _crystalMagic;
-  int get crystalSelf => _crystalSelf;
-  int get ammoCount => _ammoCount;
-  List<String> get redstoneOptions => _redstoneOptions;
-  List<String> get redstonePlayerOptions => _redstonePlayerOptions;
-  String get statusProlonged => _statusProlonged;
-  String get playerProlonged => _playerProlonged;
-  Map<String, int> get ascensionPoints => _ascensionPoints;
-  String get arcticHeartChoice => _arcticHeartChoice;
-  Map<String, int> get auroraPoints => _auroraPoints;
-  int get pandoraPoint => _pandoraPoint;
-  int get amethystPoint => _amethystPoint;
-  int get lumenFlarePoint => _lumenFlarePoint;
-  int get oculusVeilPoint => _oculusVeilPoint;
-  int get erodeGelidPoint => _erodeGelidPoint;
+  /// 将设置转换为 JSON 数据
+  Map<String, dynamic> toJson();
 
-  // Setters with notifyListeners
-  void setCrystalMagic(int value) {
-    _crystalMagic = value;
-    notifyListeners();
-  }
+  /// 重置为默认值
+  void reset();
+
+  /// 复制设置
+  CardSetting copyWith();
+}
+
+/// 默认卡牌设置类
+class DefaultCardSetting extends CardSetting {
+  static const String name = "默认";
   
-  void setCrystalSelf(int value) {
-    _crystalSelf = value;
-    notifyListeners();
-  }
-  
-  void setAmmoCount(int value) {
-    _ammoCount = value;
-    notifyListeners();
-  }
-  
-  void setStatusProlonged(String value) {
-    _statusProlonged = value;
-    notifyListeners();
-  }
-  
-  void setPlayerProlonged(String value) {
-    _playerProlonged = value;
-    notifyListeners();
-    // 当玩家改变时，更新可选的状态列表
-    updateRedstoneOptions();
+  final Map<String, dynamic> _settings = {};
+
+  @override
+  String get cardName => name;
+
+  @override
+  void fromJson(Map<String, dynamic> json) {
+    _settings.clear();
+    _settings.addAll(json);    
   }
 
-  void setArcticHeartChoice(String value) {
-    _arcticHeartChoice = value;
-    notifyListeners();
+  @override
+  Map<String, dynamic> toJson() {
+    return Map<String, dynamic>.from(_settings);
   }
 
-  void setArcticHeartOptions(List<String> options) {
-    arcticHeartOptions = List<String>.from(options);
-    notifyListeners();
+  @override
+  void reset() {
+    _settings.clear();
   }
-  
-  void setAscensionPoints(Map<String, int> value) {
-    _ascensionPoints = Map<String, int>.from(value);
-    notifyListeners();
+
+  @override
+  CardSetting copyWith() {
+    final copy = DefaultCardSetting();
+    copy._settings.addAll(_settings);
+    return copy;
   }
-  
-  void setAuroraPoints(Map<String, int> value) {
-    _auroraPoints = Map<String, int>.from(value);
-    notifyListeners();
+
+  /// 获取设置值
+  dynamic getSetting(String key) {
+    return _settings[key];
   }
-  
-  void setPandoraPoint(int value) {
-    _pandoraPoint = value;
-    notifyListeners();
+
+  /// 设置值
+  void setSetting(String key, dynamic value) {
+    _settings[key] = value;
   }
+}
+
+/// 破片水晶卡设置
+class EndCrystalSetting extends CardSetting {
+  static const String name = "破片水晶";
   
-  void setAmethystPoint(int value) {
-    _amethystPoint = value;
-    notifyListeners();
+  int crystalMagic = 1;
+  int crystalSelf = 1;
+
+  @override
+  String get cardName => name;
+
+  @override
+  void fromJson(Map<String, dynamic> json) {
+    crystalMagic = json['crystalMagic'] ?? 1;
+    crystalSelf = json['crystalSelf'] ?? 1;
   }
-  
-  void setLumenFlarePoint(int value) {
-    _lumenFlarePoint = value;
-    notifyListeners();
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'crystalMagic': crystalMagic,
+      'crystalSelf': crystalSelf,
+    };
   }
-  
-  void setOculusVeilPoint(int value) {
-    _oculusVeilPoint = value;
-    notifyListeners();
+
+  @override
+  void reset() {
+    crystalMagic = 1;
+    crystalSelf = 1;
   }
-  
-  void setErodeGelidPoint(int value) {
-    _erodeGelidPoint = value;
-    notifyListeners();
+
+  @override
+  CardSetting copyWith() {
+    return EndCrystalSetting()
+      ..crystalMagic = crystalMagic
+      ..crystalSelf = crystalSelf;
   }
+}
+
+/// 复合弓卡设置
+class BowSetting extends CardSetting {
+  static const String name = "复合弓";
   
-  void setRedstonePlayerOptions(List<String> options) {
-    _redstonePlayerOptions = List<String>.from(options);
-    notifyListeners();
+  int ammoCount = 1;
+
+  @override
+  String get cardName => name;
+
+  @override
+  void fromJson(Map<String, dynamic> json) {
+    ammoCount = json['ammoCount'] ?? 1;
   }
-  
-  void updateRedstoneOptions() {
-    // 这个方法应该在 CardSettingsDialogState 中调用时传入正确的选项
-    notifyListeners();
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'ammoCount': ammoCount,
+    };
   }
-  
-  void setRedstoneOptions(List<String> options) {
-    _redstoneOptions = List<String>.from(options);
-    notifyListeners();
+
+  @override
+  void reset() {
+    ammoCount = 1;
   }
+
+  @override
+  CardSetting copyWith() {
+    return BowSetting()
+      ..ammoCount = ammoCount;
+  }
+}
+
+/// 后日谈卡设置
+class RedstoneSetting extends CardSetting {
+  static const String name = "后日谈";
   
-  // 初始化方法
+  String statusProlonged = '';
+  String playerProlonged = '';
+
+  @override
+  String get cardName => name;
+
+  @override
+  void fromJson(Map<String, dynamic> json) {
+    statusProlonged = json['statusProlonged'] ?? '';
+    playerProlonged = json['playerProlonged'] ?? '';
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'statusProlonged': statusProlonged,
+      'playerProlonged': playerProlonged,
+    };
+  }
+
+  @override
+  void reset() {
+    statusProlonged = '';
+    playerProlonged = '';
+  }
+
+  @override
+  CardSetting copyWith() {
+    return RedstoneSetting()
+      ..statusProlonged = statusProlonged
+      ..playerProlonged = playerProlonged;
+  }
+}
+
+/// 混乱力场卡设置
+class AscensionStairSetting extends CardSetting {
+  static const String name = "混乱力场";
+  
+  Map<String, int> ascensionPoints = {};
+
+  @override
+  String get cardName => name;
+
+  @override
+  void fromJson(Map<String, dynamic> json) {
+    if (json['ascensionPoints'] != null) {
+      ascensionPoints = Map<String, int>.from(json['ascensionPoints']);
+    } else {
+      ascensionPoints = {};
+    }
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'ascensionPoints': ascensionPoints,
+    };
+  }
+
+  @override
+  void reset() {
+    ascensionPoints = {};
+  }
+
+  @override
+  CardSetting copyWith() {
+    return AscensionStairSetting()
+      ..ascensionPoints = Map<String, int>.from(ascensionPoints);
+  }
+
   void initializePoints(List<String> playerIds) {
-    _ascensionPoints = {};
-    _auroraPoints = {};
-    
+    ascensionPoints = {};
     for (var playerId in playerIds) {
-      _ascensionPoints[playerId] = 1;
-      _auroraPoints[playerId] = 1;
+      ascensionPoints[playerId] = 1;
+    }
+  }
+}
+
+/// 极北之心卡设置
+class ArcticHeartSetting extends CardSetting {
+  static const String name = "极北之心";
+  
+  String arcticHeartChoice = '';
+
+  @override
+  String get cardName => name;
+
+  @override
+  void fromJson(Map<String, dynamic> json) {
+    arcticHeartChoice = json['arcticHeartChoice'] ?? '';
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'arcticHeartChoice': arcticHeartChoice,
+    };
+  }
+
+  @override
+  void reset() {
+    arcticHeartChoice = '';
+  }
+
+  @override
+  CardSetting copyWith() {
+    return ArcticHeartSetting()
+      ..arcticHeartChoice = arcticHeartChoice;
+  }
+}
+
+/// 极光震荡卡设置
+class AuroraConcussionSetting extends CardSetting {
+  static const String name = "极光震荡";
+  
+  Map<String, int> auroraPoints = {};
+
+  @override
+  String get cardName => name;
+
+  @override
+  void fromJson(Map<String, dynamic> json) {
+    if (json['auroraPoints'] != null) {
+      auroraPoints = Map<String, int>.from(json['auroraPoints']);
+    } else {
+      auroraPoints = {};
+    }
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'auroraPoints': auroraPoints,
+    };
+  }
+
+  @override
+  void reset() {
+    auroraPoints = {};
+  }
+
+  @override
+  CardSetting copyWith() {
+    return AuroraConcussionSetting()
+      ..auroraPoints = Map<String, int>.from(auroraPoints);
+  }
+
+  void initializePoints(List<String> playerIds) {
+    auroraPoints = {};
+    for (var playerId in playerIds) {
+      auroraPoints[playerId] = 1;
+    }
+  }
+}
+
+/// 潘多拉魔盒卡设置
+class PandoraBoxSetting extends CardSetting {
+  static const String name = "潘多拉魔盒";
+  
+  int pandoraPoint = 1;
+
+  @override
+  String get cardName => name;
+
+  @override
+  void fromJson(Map<String, dynamic> json) {
+    pandoraPoint = json['pandoraPoint'] ?? 1;
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'pandoraPoint': pandoraPoint,
+    };
+  }
+
+  @override
+  void reset() {
+    pandoraPoint = 1;
+  }
+
+  @override
+  CardSetting copyWith() {
+    return PandoraBoxSetting()
+      ..pandoraPoint = pandoraPoint;
+  }
+}
+
+/// 折射水晶卡设置
+class AmethystSetting extends CardSetting {
+  static const String name = "折射水晶";
+  
+  int amethystPoint = 1;
+
+  @override
+  String get cardName => name;
+
+  @override
+  void fromJson(Map<String, dynamic> json) {
+    amethystPoint = json['amethystPoint'] ?? 1;
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'amethystPoint': amethystPoint,
+    };
+  }
+
+  @override
+  void reset() {
+    amethystPoint = 1;
+  }
+
+  @override
+  CardSetting copyWith() {
+    return AmethystSetting()
+      ..amethystPoint = amethystPoint;
+  }
+}
+
+/// 工厂类，用于创建卡牌设置实例
+class CardSettingFactory {
+  static CardSetting createSetting(String cardName) {
+    switch (cardName) {
+      case EndCrystalSetting.name:
+        return EndCrystalSetting();
+      case BowSetting.name:
+        return BowSetting();
+      case RedstoneSetting.name:
+        return RedstoneSetting();
+      case AscensionStairSetting.name:
+        return AscensionStairSetting();
+      case ArcticHeartSetting.name:
+        return ArcticHeartSetting();
+      case AuroraConcussionSetting.name:
+        return AuroraConcussionSetting();
+      case PandoraBoxSetting.name:
+        return PandoraBoxSetting();
+      case AmethystSetting.name:
+        return AmethystSetting();
+      default:
+        return DefaultCardSetting();
+    }
+  }
+
+  static CardSetting fromJson(String cardName, Map<String, dynamic> json) {
+    final setting = createSetting(cardName);
+    setting.fromJson(json);
+    return setting;
+  }
+}
+
+class CardSettingsManager extends ChangeNotifier {
+  List<CardSetting?> _cardSettings = [];
+
+  // 获取指定索引的卡牌设置
+  CardSetting? getCardSettings(int index) {
+    if (index >= 0 && index < _cardSettings.length) {
+      return _cardSettings[index];
+    }
+    return null;
+  }
+
+  // 获取指定索引的卡牌设置，并转换为指定类型
+  T? getCardSettingsAs<T extends CardSetting>(int index) {
+    final setting = getCardSettings(index);
+    if (setting is T) {
+      return setting;
+    }
+    return null;
+  }
+
+  // 更改指定索引的卡牌设置
+  void updateCardSettings(int index, CardSetting settings) {
+    if (index >= 0 && index < _cardSettings.length) {
+      _cardSettings[index] = settings;
+      notifyListeners();
+    }
+  }
+
+  // 添加新的卡牌设置
+  void addNewCard([String? cardName]) {
+    if (cardName != null) {
+      _cardSettings.add(CardSettingFactory.createSetting(cardName));
+    } else {
+      _cardSettings.add(CardSettingFactory.createSetting(''));
     }
     notifyListeners();
   }
   
+  // 移除指定索引的卡牌设置
+  void removeCard(int index) {
+    if (index >= 0 && index < _cardSettings.length) {
+      _cardSettings.removeAt(index);
+      notifyListeners();
+    }
+  }
+  
   // 重置所有设置
-  void resetSettings() {
-    _crystalMagic = 1;
-    _crystalSelf = 1;
-    _ammoCount = 1;
-    _statusProlonged = '';
-    _playerProlonged = '';
-    _pandoraPoint = 1;
-    _amethystPoint = 1;
-    _lumenFlarePoint = 1;
-    _oculusVeilPoint = 1;
-    _erodeGelidPoint = 1;
+  void resetAllSettings() {
+    _cardSettings = [];
     notifyListeners();
   }
+  
+  // 初始化设置管理器，根据当前卡片数量调整设置数组大小
+  void initializeWithCardCount(int count) {
+    _cardSettings = List.generate(count, (index) => null).toList();
+    notifyListeners();
+  }
+
+  // 从 JSON 数据恢复设置
+  void loadFromJson(List<Map<String, dynamic>?> jsonData, List<String> cardNames) {
+    _cardSettings = List.generate(
+      jsonData.length, 
+      (index) {
+        final data = jsonData[index];
+        final cardName = cardNames.length > index ? cardNames[index] : null;
+        
+        if (data != null && cardName != null) {
+          return CardSettingFactory.fromJson(cardName, data);
+        }
+        return null;
+      }
+    ).toList();
+    notifyListeners();
+  }
+
+  // 导出为 JSON 数据
+  List<Map<String, dynamic>?> exportToJson() {
+    return _cardSettings.map((setting) => setting?.toJson()).toList();
+  }
+
+  int get length => _cardSettings.length;
+  List get settings => _cardSettings;
 }

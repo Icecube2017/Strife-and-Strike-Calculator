@@ -363,50 +363,6 @@ class RecordProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // 将指定索引之后的记录移入待删除列表
-  /*void moveRecordsToDeleted(int index) {
-    List<GameRecord> recordsToMove = [];
-    List<GameRecord> remainingRecords = [];
-
-    for (var record in _records) {
-      if (record.index > index) {
-        recordsToMove.add(record);
-      }
-      else {
-        remainingRecords.add(record);
-      }
-    }
-
-    _deletedRecords.addAll(recordsToMove);
-    _records = remainingRecords;
-    notifyListeners();
-  }
-
-  // 从待删除列表中恢复记录
-  void restoreRecordsFromDeleted(int index) {
-    List<GameRecord> recordsToRestore = [];
-    List<GameRecord> remainingDeletedRecords = [];
-
-    for (var record in _deletedRecords) {
-      if (record.index < index) {
-        recordsToRestore.add(record);
-      }
-      else {
-        remainingDeletedRecords.add(record);
-      }
-    }
-
-    _records.addAll(recordsToRestore);
-    _deletedRecords = remainingDeletedRecords;
-    notifyListeners();
-  }
-
-  // 清除待删除的记录
-  void commitDeletions() {
-    _deletedRecords.clear();
-    notifyListeners();
-  }*/
-
   // 获取满足指定条件的记录
   List<GameRecord> getFilteredRecords({RecordType? type, String? source, String? target,
     GameTurn? startTurn,GameTurn? endTurn}) {
@@ -481,51 +437,6 @@ class RecordProvider with ChangeNotifier {
     }).toList();
   }
 
-  // 获取指定类型的记录
-  List<GameRecord> getRecordsByType(RecordType type) {
-    return _records.where((record) => record.type == type).toList();
-  }
-
-  // 获取指定角色为来源的记录
-  List<GameRecord> getRecordsBySource(String source) {
-    return _records.where((record) {
-      switch (record.type) {
-        case RecordType.action:
-          return (record as ActionRecord).source == source;
-        case RecordType.skill:
-          return (record as SkillRecord).source == source;
-        case RecordType.trait:
-          return (record as TraitRecord).source == source;
-        case RecordType.damage:
-          return (record as DamageRecord).source == source;
-        case RecordType.status:
-          return (record as StatusRecord).source == source;
-        case RecordType.attribute:
-          return (record as AttributeRecord).source == source;
-      }
-    }).toList();
-  }
-
-  // 获取指定角色为目标的记录
-  List<GameRecord> getRecordsByTarget(String target) {
-    return _records.where((record) {
-      switch (record.type) {
-        case RecordType.action:
-          return (record as ActionRecord).target == target;
-        case RecordType.skill:
-          return (record as SkillRecord).targets.contains(target);
-        case RecordType.trait:
-          return (record as TraitRecord).targets.contains(target);
-        case RecordType.damage:
-          return (record as DamageRecord).target == target;
-        case RecordType.status:
-          return (record as StatusRecord).target == target;
-        case RecordType.attribute:
-          return (record as AttributeRecord).target == target;
-      }
-    }).toList();
-  }
-
   // 序列化记录为JSON字符串
   String serializeRecords() {
     List<Map<String, dynamic>> jsonRecords = _records.map((record) => record.toJson()).toList();
@@ -547,16 +458,6 @@ class RecordProvider with ChangeNotifier {
   // 获取指定类型的最新记录
   GameRecord? getLatestRecordByType(RecordType type) {
     return _records.reversed.where((record) => record.type == type).cast<GameRecord?>().firstWhere((_) => true, orElse: () => null);
-  }
-
-  // 获取指定轮次范围内的记录
-  List<GameRecord> getRecordsInRounds(GameTurn start, GameTurn end){
-    return _records.where((record) => (record.turn >= start) && (record.turn <= end)).toList();
-  }
-
-  // 获取指定轮次内指定类型的记录
-  List<GameRecord> getRecordsInTurn(GameTurn turn, RecordType type) {
-    return _records.where((record) => record.turn == turn && record.type == type).toList();
   }
 
   // 移除指定轮次之后的记录
