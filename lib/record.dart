@@ -7,6 +7,7 @@ enum RecordType {
   skill,
   trait,
   damage,
+  heal,
   status,
   attribute
 }
@@ -31,6 +32,8 @@ abstract class GameRecord {
         return TraitRecord.fromJson(json);
       case RecordType.damage:
         return DamageRecord.fromJson(json);
+      case RecordType.heal:
+        return HealRecord.fromJson(json);
       case RecordType.status:
         return StatusRecord.fromJson(json);
       case RecordType.attribute:
@@ -44,12 +47,14 @@ class ActionRecord extends GameRecord {
   final String target;
   final int point;
   final List<String> cards;
+  final bool attacked;
 
   ActionRecord({
     required this.source,
     required this.target,
     required this.point,
     required this.cards,
+    required this.attacked,
     required super.turn
   }) : super(type: RecordType.action);
 
@@ -61,6 +66,7 @@ class ActionRecord extends GameRecord {
       'target': target,
       'point': point,
       'cards': cards,
+      'attacked': attacked,
       'round': turn.round,
       'turn': turn.turn,
       'extra': turn.extra
@@ -73,6 +79,7 @@ class ActionRecord extends GameRecord {
       target: json['target'],
       point: json['point'],
       cards: List<String>.from(json['cards']),
+      attacked: json['attacked'],
       turn: GameTurn(
         round: json['round'],
         turn: json['turn'],
@@ -215,6 +222,53 @@ class DamageRecord extends GameRecord {
   }
 }
 
+class HealRecord extends GameRecord { 
+  final String source;
+  final String target;  
+  final int heal;
+  final DamageType healType;
+  final String tag;
+
+  HealRecord({
+    required this.source,
+    required this.target,    
+    required this.heal,
+    required this.healType,
+    required this.tag,
+    required super.turn,
+  }) : super(type: RecordType.heal);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return {
+      'type': 'damage',
+      'source': source,
+      'target': target,
+      'damage': heal,
+      'healType': healType.name,
+      'tag': tag,
+      'round': turn.round,
+      'turn': turn.turn,
+      'extra': turn.extra,
+    };
+  }
+
+  factory HealRecord.fromJson(Map<String, dynamic> json) {
+    return HealRecord(
+      source: json['source'],
+      target: json['target'],
+      heal: json['heal'],
+      healType: DamageType.values.firstWhere((e) => e.name == json['healType']),
+      tag: json['tag'],
+      turn: GameTurn(
+        round: json['round'],
+        turn: json['turn'],
+        extra: json['extra']
+      ),
+    );
+  }
+}
+
 class StatusRecord extends GameRecord { 
   final String source;
   final String target;  
@@ -333,8 +387,8 @@ class RecordProvider with ChangeNotifier {
   }
 
   // 添加指定类型的记录
-  void addActionRecord(GameTurn turn, String source, String target, int point, List<String> cards) {
-    addRecord(ActionRecord(source: source, target: target, point: point, cards: cards, turn: turn));
+  void addActionRecord(GameTurn turn, String source, String target, int point, List<String> cards, bool attacked) {
+    addRecord(ActionRecord(source: source, target: target, point: point, cards: cards, attacked: attacked, turn: turn));
   }
 
   void addSkillRecord(GameTurn turn, String source, List<String> targets, String name, Map<String, dynamic> params) {
@@ -347,6 +401,10 @@ class RecordProvider with ChangeNotifier {
 
   void addDamageRecord(GameTurn turn, String source, String target, int damage, DamageType damageType, String tag) {
     addRecord(DamageRecord(source: source, target: target, damage: damage, damageType: damageType, tag: tag, turn: turn));
+  }
+
+  void addHealRecord(GameTurn turn, String source, String target, int heal, DamageType healType, String tag) {
+    addRecord(HealRecord(source: source, target: target, heal: heal, healType: healType, tag: tag, turn: turn));
   }
 
   void addStatusRecord(GameTurn turn, String source, String target, String name, List<int> paramsOld, List<int> paramsNew, String tag) {
@@ -388,6 +446,9 @@ class RecordProvider with ChangeNotifier {
           case RecordType.damage:
             matchSource = (record as DamageRecord).source == source;
             break;
+          case RecordType.heal:
+            matchSource = (record as HealRecord).source == source;
+            break;
           case RecordType.status:
             matchSource = (record as StatusRecord).source == source;
             break;
@@ -413,6 +474,9 @@ class RecordProvider with ChangeNotifier {
             break;
           case RecordType.damage:
             matchTarget = (record as DamageRecord).target == target;
+            break;
+          case RecordType.heal:
+            matchTarget = (record as HealRecord).target == target;
             break;
           case RecordType.status:
             matchTarget = (record as StatusRecord).target == target;

@@ -5,6 +5,13 @@ enum GameType{
   boss
 }
 
+// 游戏状态
+enum GameState{
+  waiting,
+  start,
+  over,
+}
+
 // 属性类型
 enum AttributeType{
   health, 
@@ -15,8 +22,11 @@ enum AttributeType{
   movepoint, 
   maxmove, 
   card,
+  maxcard,
   dmgdealt,
   dmgreceived,
+  curdealt,
+  curreceived
 }
 
 // 伤害类型
@@ -39,6 +49,22 @@ class GameTurn {
     required this.turn,
     required this.extra,
   });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'round': round,
+      'turn': turn,
+      'extra': extra,
+    };
+  }
+
+  factory GameTurn.fromJson(Map<String, dynamic> json) {
+    return GameTurn(
+      round: json['round'],
+      turn: json['turn'],
+      extra: json['extra'],
+    );
+  }
 
   bool operator <(GameTurn other) {
     if (round != other.round) return round < other.round;

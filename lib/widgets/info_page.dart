@@ -73,8 +73,6 @@ class _InfoPageState extends State<InfoPage> {
     });
   }
 
-  // 读取并解析JSON文件（已迁移到 app 启动时预加载）
-
   // 保存当前游戏状态到历史记录
   void _saveCurrentStateToHistory() {
     final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
@@ -88,23 +86,30 @@ String _serializeGameState() {
 
   Map<String, dynamic> gameState = {
     'gameId': game.id,
+    'gameType': game.gameType.name,
+    'gameState': game.gameState.name,
     'gameSequence': game.gameSequence,
     'players': {},
     'playerDied': game.playerDied,
-    'teams': game.teams,
-    'gameType': game.gameType.name,
+    // teams 需要转换为 Map<String, List<String>> 才能被 jsonEncode 正常处理
+    'teams': game.teams.map((k, v) => MapEntry(k.toString(), v.toList())),
     'playerCount': game.playerCount,
+    'playerDiedCount': game.playerDiedCount,
     'turn': game.turn,
     'round': game.round,
     'teamCount': game.teamCount,
     'extra': game.extra,
+    'gameTurnList': game.gameTurnList.map((turn) => turn.toJson()).toList(),
     'records': recordProvider.serializeRecords(),
     'countdown': {
       'damocles': game.countdown.damocles,
       'reinforcedDamocles': game.countdown.reinforcedDamocles,
       'eden': game.countdown.eden,
       'reinforcedEden': game.countdown.reinforcedEden,
-      'extraturn':game.countdown.extraTurn
+      'extraturn':game.countdown.extraTurn, 
+      'antiGravity': game.countdown.antiGravity,
+      'deftTouchSkill': game.countdown.deftTouchSkill,
+      'deftTouchTarget': game.countdown.deftTouchTarget
     }
   };
   
@@ -123,6 +128,7 @@ String _serializeGameState() {
       'armor': character.armor,
       'movePoint': character.movePoint,
       'cardCount': character.cardCount,
+      'maxCard': character.maxCard,
       'actionTime': character.actionTime,
       'damageReceivedTotal': character.damageReceivedTotal,
       'damageDealtTotal': character.damageDealtTotal,
@@ -130,6 +136,12 @@ String _serializeGameState() {
       'damageDealtRound': character.damageDealtRound,
       'damageReceivedTurn' : character.damageReceivedTurn,
       'damageDealtTurn': character.damageDealtTurn,
+      'cureReceivedTotal': character.cureReceivedTotal,
+      'cureDealtTotal': character.cureDealtTotal,
+      'cureReceivedRound' : character.cureReceivedRound,
+      'cureDealtRound': character.cureDealtRound,
+      'cureReceivedTurn' : character.cureReceivedTurn,
+      'cureDealtTurn': character.cureDealtTurn,
       'isDead': character.isDead,
       'status': character.status,
       'hiddenStatus': character.hiddenStatus,
@@ -150,9 +162,25 @@ void _restoreGameState(String stateJson) {
   // 恢复游戏基本属性
   game.gameSequence = List<String>.from(gameState['gameSequence']);
   game.playerDied = gameState['playerDied'];
-  game.teams = gameState['teams'];
+  // 恢复队伍（确保类型为 Map<int, Set<String>>）
+  game.teams.clear();
+  if (gameState['teams'] is Map) {
+    (gameState['teams'] as Map).forEach((k, v){
+      try{
+        int teamId = int.parse(k.toString());
+        Set<String> members = {};
+        if (v is List) members = v.map((e) => e.toString()).toSet();
+        else if (v is Set) members = v.map((e) => e.toString()).toSet();
+        game.teams[teamId] = members;
+      } catch (e) {
+        // 忽略解析错误
+      }
+    });
+  }
   game.gameType = GameType.values.firstWhere((e) => e.name == gameState['gameType'], orElse: () => GameType.single);
+  game.gameState = GameState.values.firstWhere((e) => e.name == gameState['gameState'], orElse: () => GameState.waiting);
   game.playerCount = gameState['playerCount'];
+  game.playerDiedCount = gameState['playerDiedCount'];
   game.turn = gameState['turn'];
   game.round = gameState['round'];
   game.teamCount = gameState['teamCount'];
@@ -162,6 +190,14 @@ void _restoreGameState(String stateJson) {
   game.countdown.eden = gameState['countdown']['eden'];
   game.countdown.reinforcedEden = gameState['countdown']['reinforcedEden'];
   game.countdown.extraTurn = gameState['countdown']['extraturn'];
+
+  if (gameState.containsKey('gameTurnList')) {
+    game.gameTurnList.clear();
+    List<dynamic> turnListData = gameState['gameTurnList'];
+    for (var turnData in turnListData) {
+      game.gameTurnList.add(GameTurn.fromJson(Map<String, dynamic>.from(turnData)));
+    }
+  }
 
   if (gameState.containsKey('records')) {
     recordProvider.deserializeRecords(gameState['records']);
@@ -187,6 +223,7 @@ void _restoreGameState(String stateJson) {
     character.armor = playerData['armor'];
     character.movePoint = playerData['movePoint'];
     character.cardCount = playerData['cardCount'];
+    character.maxCard = playerData['maxCard'];
     character.actionTime = playerData['actionTime'];
     character.damageReceivedTotal = playerData['damageReceivedTotal'];
     character.damageDealtTotal = playerData['damageDealtTotal'];
@@ -194,6 +231,12 @@ void _restoreGameState(String stateJson) {
     character.damageDealtRound = playerData['damageDealtRound'];
     character.damageReceivedTurn = playerData['damageReceivedTurn'];
     character.damageDealtTurn = playerData['damageDealtTurn'];
+    character.cureReceivedTotal = playerData['cureReceivedTotal'];
+    character.cureDealtTotal = playerData['cureDealtTotal'];
+    character.cureReceivedRound = playerData['cureReceivedRound'];
+    character.cureDealtRound = playerData['cureDealtRound'];
+    character.cureReceivedTurn = playerData['cureReceivedTurn'];
+    character.cureDealtTurn = playerData['cureDealtTurn'];
     character.isDead = playerData['isDead'];
     character.status = Map<String, List<dynamic>>.from(playerData['status']);
     character.hiddenStatus = Map<String, List<dynamic>>.from(playerData['hiddenStatus']);
@@ -269,6 +312,20 @@ Future<void> _saveGameToFile() async {
     );
   }
 }
+  Color _getTeamColor(int? teamId) { 
+    switch (teamId) {
+      case 1:
+        return Colors.red;
+      case 2:
+        return Colors.blue;
+      case 3:
+        return Colors.green;
+      case 4:
+        return Colors.yellow;
+      default:
+        return Colors.black;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -291,7 +348,7 @@ Future<void> _saveGameToFile() async {
           children: [
             Expanded(
               child: ElevatedButton(
-                onPressed: () => _showDropdownMenu(),
+                onPressed: game.gameState == GameState.waiting ? () => _showDropdownMenu() : null,
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 12),
                 ),
@@ -301,11 +358,32 @@ Future<void> _saveGameToFile() async {
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: selectedIndex != null ? _deleteSelectedRow : null,
+                onPressed: (selectedIndex != null && game.gameState == GameState.waiting) ? _deleteSelectedRow : null,
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.symmetric(vertical: 12),
                 ),
                 child: const Text('删除角色'),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: game.gameState == GameState.waiting ? () => game.toggleGameType() : null,
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Text('切换模式：${game.gameType.name}'),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: ElevatedButton(
+                onPressed: (game.gameState == GameState.waiting && game.gameType == GameType.team) 
+                  ? () => _showTeamManagerDialog() : null,
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: const Text('队伍管理'),
               ),
             ),
             const SizedBox(width: 16),
@@ -364,6 +442,7 @@ Future<void> _saveGameToFile() async {
                 child: const Text('重做'),
               ),
             ),
+       
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
@@ -384,7 +463,7 @@ Future<void> _saveGameToFile() async {
               children: [
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () => _showDropdownMenu(),
+                    onPressed: game.gameState == GameState.waiting ? () => _showDropdownMenu() : null,
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
@@ -394,11 +473,36 @@ Future<void> _saveGameToFile() async {
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: selectedIndex != null ? _deleteSelectedRow : null,
+                    onPressed: (selectedIndex != null && game.gameState == GameState.waiting) ? _deleteSelectedRow : null,
                     style: ElevatedButton.styleFrom(
                       padding: EdgeInsets.symmetric(vertical: 12),
                     ),
                     child: const Text('删除角色'),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: game.gameState == GameState.waiting ? () => game.toggleGameType() : null,
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: Text('切换模式：${game.gameType.name}'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: (game.gameState == GameState.waiting && game.gameType == GameType.team) 
+                      ? () => _showTeamManagerDialog() : null,
+                    style: ElevatedButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    child: const Text('队伍管理'),
                   ),
                 ),
               ],
@@ -427,6 +531,7 @@ Future<void> _saveGameToFile() async {
                 ),
               ],
             ),
+            const SizedBox(height: 8),            
             Row(
               children: [
                 Expanded(
@@ -453,6 +558,7 @@ Future<void> _saveGameToFile() async {
                 ),
               ],
             ),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(
@@ -565,7 +671,7 @@ Future<void> _saveGameToFile() async {
                           },
                           // 行单元格（第一列显示下拉选中值，其他列留空）
                           cells: [
-                            DataCell(Text(roleName, style: TextStyle(color: game.players[roleName]!.isDead ? Colors.grey : null))),
+                            DataCell(Text(roleName, style: TextStyle(color: game.players[roleName]!.isDead ? Colors.grey : _getTeamColor(game.getPlayerTeam(roleName))))),
                             DataCell(Text('${health.toString()}(${armor.toString()})')),
                             DataCell(Text(attack.toString())),
                             DataCell(Text(defence.toString())),
@@ -621,6 +727,106 @@ Future<void> _saveGameToFile() async {
     });
   }
 
+  // 队伍管理弹窗
+  void _showTeamManagerDialog(){
+    showDialog(
+      context: context,
+      builder: (BuildContext context){
+        return StatefulBuilder(
+          builder: (context, setStateDialog){
+            var teamKeys = game.teams.keys.toList()..sort();
+            return AlertDialog(
+              title: const Text('队伍管理'),
+              content: SizedBox(
+                width: 400,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ElevatedButton(
+                        onPressed: (){
+                          setStateDialog((){
+                            game.addTeam();
+                          });
+                          game.refresh();                          
+                        },
+                        child: const Text('添加队伍'),
+                      ),
+                      const SizedBox(height: 12),
+                      ...teamKeys.map((tid){
+                        var members = game.teams[tid] ?? <String>{};
+                        // 可选添加的玩家（所有已存在的玩家）
+                        var available = game.gameSequence.where((p) => !members.contains(p)).toList();
+                        return Card(
+                          elevation: 0,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text('队伍 $tid', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    const Spacer(),
+                                    IconButton(
+                                      onPressed: (){
+                                        setStateDialog((){
+                                          game.removeTeam(tid);
+                                        });
+                                        game.refresh();
+                                      },
+                                      icon: const Icon(Icons.delete_forever, color: Colors.red),
+                                      tooltip: '删除队伍',
+                                    )
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 8,
+                                  children: [
+                                    ...members.map((m){
+                                      return Chip(
+                                        label: Text(m),
+                                        onDeleted: (){
+                                          setStateDialog((){
+                                            game.removePlayerFromTeam(tid, m);
+                                          });
+                                          game.refresh();
+                                        },
+                                      );
+                                    }).toList(),
+                                    // 添加成员按钮
+                                    PopupMenuButton<String>(
+                                      itemBuilder: (context) => available.map((p) => PopupMenuItem(value: p, child: Text(p))).toList(),
+                                      onSelected: (String p){
+                                        setStateDialog((){
+                                          game.addPlayerToTeam(tid, p);
+                                        });
+                                        game.refresh();
+                                      },
+                                      child: Chip(label: Row(children: const [Icon(Icons.add), SizedBox(width:6), Text('添加成员')])),
+                                    )
+                                  ],
+                                )
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('关闭')),
+              ],
+            );
+          }
+        );
+      }
+    );
+  }
+
   // 4. 删除选中行（更新表格数据和选中状态）
   void _deleteSelectedRow() {
     setState(() {
@@ -658,7 +864,7 @@ Future<void> _saveGameToFile() async {
     tableData.clear();
     game.refresh();
     recordProvider.clearRecords();
-    _saveCurrentStateToHistory();
+    _saveCurrentStateToHistory(); // 此处仍然存在问题：清空后添加角色，删除角色再回退会导致报错
   }
 
   @override

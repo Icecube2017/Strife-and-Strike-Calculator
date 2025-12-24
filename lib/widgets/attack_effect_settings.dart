@@ -35,7 +35,10 @@ class _AttackEffectSettingsDialogState extends State<AttackEffectSettingsDialog>
   int _lumenFlarePoint = 1;
   // 障目
   final List<String> _oculusVeilOptions = ['1', '2'];
-  int _oculusVeilPoint = 1;
+  int _oculusVeilPoint = 2;
+  // 反胃
+  final List<String> _nauseaOptions = ['1', '2', '3', '4', '5', '6'];
+  int _nauseaPoint = 1;
 
   @override
   void initState() {
@@ -43,6 +46,7 @@ class _AttackEffectSettingsDialogState extends State<AttackEffectSettingsDialog>
     _settings = Map<String, dynamic>.from(widget.initialSettings);
     _lumenFlarePoint = _settings['lumenFlarePoint'] ?? 1;
     _oculusVeilPoint = _settings['oculusVeilPoint'] ?? 1;
+    _nauseaPoint = _settings['nauseaPoint'] ?? 1;
     // 从全局 Provider 获取已加载的语言/资源映射
     final assets = Provider.of<AssetsManager>(context, listen: false);
     langMap = assets.langMap;
@@ -51,6 +55,7 @@ class _AttackEffectSettingsDialogState extends State<AttackEffectSettingsDialog>
   void _saveSettings() {
     _settings['lumenFlarePoint'] = _lumenFlarePoint;
     _settings['oculusVeilPoint'] = _oculusVeilPoint;
+    _settings['nauseaPoint'] = _nauseaPoint;
     widget.onSettingsChanged(_settings);
     Navigator.of(context).pop();
   }
@@ -100,6 +105,25 @@ class _AttackEffectSettingsDialogState extends State<AttackEffectSettingsDialog>
                 onChanged: (int? newValue) {
                   setState(() {
                     _oculusVeilPoint = newValue ?? 1;
+                  });
+                },
+                isExpanded: true,
+              ),
+            ] else if (widget.effect == AttackEffect.nausea) ...[
+              Text('反胃', style: TextStyle(fontWeight: FontWeight.bold)), 
+              DropdownButtonFormField<int>(
+                value: _nauseaPoint,
+                hint: Text('请选择反胃点数'),
+                items: _nauseaOptions.map((String item) {
+                  int value = int.parse(item);
+                  return DropdownMenuItem(
+                    value: value,
+                    child: Text(item),
+                  );
+                }).toList(),
+                onChanged: (int? newValue) {
+                  setState(() {
+                    _nauseaPoint = newValue ?? 1;
                   });
                 },
                 isExpanded: true,

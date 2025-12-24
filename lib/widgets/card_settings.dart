@@ -338,7 +338,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
             else if(widget.cardName == '极光震荡')...[
               Text('极光点数', style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
-              ...game.gameSequence.map((playerId) {
+              ..._auroraPoints.keys.map((playerId) {
               final player = game.players[playerId]!;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

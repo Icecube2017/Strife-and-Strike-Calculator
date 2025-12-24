@@ -212,6 +212,9 @@
     "andrenin":[
         "安德宁"
     ],
+    "valedictus":[
+        "卿别"
+    ],
     "flowwind":[
         "扶风"
     ],
@@ -365,6 +368,9 @@
     "rondo":[
         "回旋曲"
     ],
+    "nightmare_refrain":[
+        "夜魇游吟"
+    ],
     "grand_prophecy":[
         "大预言"
     ],
@@ -440,6 +446,15 @@
     "guardian_of_dreams":[
         "梦的守护"
     ],
+    "introductory_gift":[
+        "见面礼"
+    ],
+    "imposing_favor":[
+        "深重情谊"
+    ],
+    "eternity":[
+        "永恒"
+    ],
     "aurelysium":[
         "彼岸之金"
     ],
@@ -455,7 +470,7 @@
     "purification":[
         "净化"
     ],
-    "blood_thirsty":[
+    "blood_thirst":[
         "嗜血"
     ],
     "stellar":[
@@ -560,20 +575,26 @@
     "ice_splinter":[
         "冰芒"
     ],
+    "requiem":[
+        "安魂乐章"
+    ],
     "data_transmit":[
         "数据传输"
     ],
     "crimson_inferno":[
         "赤焱炼狱"
     ],
-    "dreamweaver":[
+    "dream_weaver":[
         "造梦者"
     ],
     "sealed_flame_135_seconds":[
         "封焰的135秒"
     ],
-    "dreamkeeper":[
+    "dream_keeper":[
         "护梦者"
+    ],
+    "emphemeral":[
+        "须臾"
     ],
     "icy_oblivion_135_bars":[
         "冰灭的135小节"
@@ -685,6 +706,15 @@
     ],
     "silence":[
         "静默"
+    ],
+    "drowsy":[
+        "困倦"
+    ],
+    "dream_crafting":[
+        "造梦"
+    ],
+    "dream_guarding":[
+        "护梦"
     ],
     "sharp":[
         "锋锐"
