@@ -169,8 +169,8 @@ void _restoreGameState(String stateJson) {
       try{
         int teamId = int.parse(k.toString());
         Set<String> members = {};
-        if (v is List) members = v.map((e) => e.toString()).toSet();
-        else if (v is Set) members = v.map((e) => e.toString()).toSet();
+        if (v is List) {members = v.map((e) => e.toString()).toSet();}
+        else if (v is Set) {members = v.map((e) => e.toString()).toSet();}
         game.teams[teamId] = members;
       } catch (e) {
         // 忽略解析错误

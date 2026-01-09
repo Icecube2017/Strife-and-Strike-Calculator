@@ -241,10 +241,10 @@ class HealRecord extends GameRecord {
   @override
   Map<String, dynamic> toJson() {
     return {
-      'type': 'damage',
+      'type': 'heal',
       'source': source,
       'target': target,
-      'damage': heal,
+      'heal': heal,
       'healType': healType.name,
       'tag': tag,
       'round': turn.round,

@@ -53,6 +53,9 @@ class _AddActionDialogState extends State<AddActionDialog> {
   // 特质数据
   Map<String, dynamic>? traitData;
 
+  // 标签数据
+  Map<String, dynamic>? tagData;
+
   // 语言数据
   Map<String, dynamic>? langMap;
   // 资产是否已加载
@@ -77,8 +80,15 @@ class _AddActionDialogState extends State<AddActionDialog> {
   // 挑唆
   Map<String, int> _instigationPoints = {};
   Map<String, int> _isPlayerInstigated = {};
-  // 造梦者
+  // 斯威芬【造梦者】
   int _dreamWeaverChoice = 1;
+  // 叶姬【须臾】
+  String? _emphemeralStatus;
+  // 科亚特尔【天启之庭】
+  int _apocalypticPoint = 1;
+  // 祝烨明【八寒之七】
+  int _seventhFrostPoint = 1;
+  String? _seventhFrostStatus;
 
   // 特质设置
   // 幸运壁垒
@@ -90,7 +100,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
   // 咕了
   int _escapingPoint = 1;
   // 大预言
-  int _prophecyPoint = 0;
+  int _prophecyChoice = 0;
+  int _prophecyPoint = 1;
   // 希冀
   int _yearningPoint = 1;
   // 天霜封印
@@ -103,6 +114,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
   // 云系祝乐
   int _celestialChoice = 0;
   int _celestialPoint = 1;
+  // 挑拣
+  int _discerningPoint = 1;
   // 心炎
   int _cardioBlazePoint = 1;
   // 梦的塑造
@@ -111,6 +124,16 @@ class _AddActionDialogState extends State<AddActionDialog> {
   // 烈焰之体
   int _conflagrationChoice = 1;
   int _conflagrationPoint = 1;
+  // 永恒
+  int _eternityPoint = 0;
+  String? _eternityStatus;
+  // 黯灭
+  int _darkDissolutionChoice = 0;
+  String? _darkDissolutionCard;
+  // 禁忌知识
+  int _tabooLoreChoice = 1;
+  // 红莲业火
+  int _lotusFlameChoice = 1;
 
   // 日志系统
   static final Logger _logger = Logger();
@@ -129,6 +152,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
     cardTypes = assets.cardTypes;
     skillData = assets.skillData;
     traitData = assets.traitData;
+    tagData = assets.tagData;
     langMap = assets.langMap;
     _assetsLoaded = true;
     // 限制只能输入数字
@@ -164,6 +188,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
       cardTypes = assets.cardTypes;
       skillData = assets.skillData;
       traitData = assets.traitData;
+      tagData = assets.tagData;
       langMap = assets.langMap;
       _assetsLoaded = true;
     });
@@ -182,6 +207,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
           cardTypes = assets.cardTypes;
           skillData = assets.skillData;
           traitData = assets.traitData;
+          tagData = assets.tagData;
           langMap = assets.langMap;
           _assetsLoaded = true;
         });
@@ -413,6 +439,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
           cardTypes = assets.cardTypes;
           skillData = assets.skillData;
           traitData = assets.traitData;
+          tagData = assets.tagData;
           langMap = assets.langMap;
           _assetsLoaded = true;
         });
@@ -853,7 +880,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   Text('技能设置', style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
                   if(_selectedSkill == langMap!['benevolence']) ... [
-                    Text('仁慈选择', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('仁慈', style: TextStyle(fontWeight: FontWeight.bold)),
                     DropdownButtonFormField(
                       value: _benevolenceChoice,
                       hint: Text('请选择仁慈的效果'),
@@ -870,7 +897,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     ),
                     SizedBox(height: 16)
                   ] else if (_selectedSkill == langMap!['intimidation']) ...[
-                    Text('恐吓点数', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('恐吓', style: TextStyle(fontWeight: FontWeight.bold)),
                     DropdownButtonFormField(
                       value: _intimidationPoint,
                       hint: Text('请选择恐吓点数'),
@@ -887,7 +914,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     ),
                     SizedBox(height: 16)
                   ] else if (_selectedSkill == langMap!['devotion']) ...[
-                    Text('奉献点数', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('奉献', style: TextStyle(fontWeight: FontWeight.bold)),
                     DropdownButtonFormField(
                       value: _devotionPoint,
                       hint: Text('请选择奉献点数'),
@@ -939,12 +966,13 @@ class _AddActionDialogState extends State<AddActionDialog> {
                                 _instigationPoints[chara.id] = newValue ?? 1;
                               });
                             }
-                          )
+                          ),
+                          SizedBox(height: 16)
                         ]
                       );
                     })
                   ] else if (_selectedSkill == langMap!['dream_weaver']) ...[
-                    Text('造梦点数', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('造梦者', style: TextStyle(fontWeight: FontWeight.bold)),
                     DropdownButtonFormField(
                       value: _dreamWeaverChoice,
                       hint: Text('请选择造梦点数'),
@@ -960,6 +988,78 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       isExpanded: true,
                     ),
                     SizedBox(height: 16)
+                  ] else if (_selectedSkill == langMap!['emphemeral']) ...[                     
+                    Text('须臾', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField<String>(
+                      value:_emphemeralStatus,
+                      hint: Text('请选择须臾状态'),
+                      items: _target != null && game.players[_target] != null 
+                        ? game.players[_target]!.status.keys.map((String statusKey) {
+                          return DropdownMenuItem(
+                            value: statusKey,
+                            child: Text(statusKey),
+                          );
+                        }).toList()
+                        : [],
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _emphemeralStatus = newValue ?? '';
+                        });
+                      }
+                    ),
+                    SizedBox(height: 16)
+                  ] else if (_selectedSkill == langMap!['apocalyptic_court']) ...[
+                    Text('天启之庭', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      value: _apocalypticPoint,
+                      hint: Text('请选择天启点数'),
+                      items: List.generate(4, (index) => DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                        )).toList(),                              
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _apocalypticPoint = newValue ?? 1;
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16)
+                  ] else if (_selectedSkill == langMap!['seventh_frost']) ...[ 
+                    Text('八寒之七', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      value:_seventhFrostPoint,
+                      hint: Text('请选择八寒点数'),
+                      items: List.generate(10, (index) => DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                        )).toList(),
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _seventhFrostPoint = newValue ?? 1; 
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),
+                    Text('状态', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField<String>(
+                      value:_seventhFrostStatus,
+                      hint: Text('请选择八寒状态'),
+                      items: _target != null && game.players[_target] != null 
+                        ? game.players[_target]!.status.keys.map((String statusKey) {
+                          return DropdownMenuItem(
+                            value: statusKey,
+                            child: Text(statusKey),
+                          );
+                        }).toList()
+                        : [],
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _seventhFrostStatus = newValue ?? '';
+                        });
+                      }
+                    )
                   ] 
                 ]
               ] else if (_actionType == '特质') ...[
@@ -1133,12 +1233,28 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   ] else if (_selectedTrait == langMap!['grand_prophecy']) ...[ 
                     Text('大预言', style: TextStyle(fontWeight: FontWeight.bold)),
                     DropdownButtonFormField(
-                      value:_prophecyPoint,
+                      value:_prophecyChoice,
                       hint: Text('请选择大预言选项'),
                       items:  [
                         DropdownMenuItem(value: 0, child: Text('不替换')),
                         DropdownMenuItem(value: 1, child: Text('替换')),
                       ], 
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _prophecyChoice = newValue ?? 1; 
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),
+                    Text('大预言点数', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      value:_prophecyPoint,
+                      hint: Text('请选择大预言点数'),
+                      items: List.generate(10, (index) => DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                        )).toList(),
                       onChanged: (int? newValue) {
                         setState(() {
                           _prophecyPoint = newValue ?? 1; 
@@ -1270,6 +1386,23 @@ class _AddActionDialogState extends State<AddActionDialog> {
                         isExpanded: true,
                       ),
                     ] 
+                  ] else if (_selectedTrait == langMap!['discerning']) ...[ 
+                    Text('挑拣', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      value:_discerningPoint,
+                      hint: Text('请选择挑拣点数'),
+                      items: List.generate(10, (index) => DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                        )).toList(),
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _discerningPoint = newValue ?? 1; 
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),
                   ] else if (_selectedTrait == langMap!['cardio_blaze']) ...[ 
                     Text('心炎', style: TextStyle(fontWeight: FontWeight.bold)),
                     DropdownButtonFormField(
@@ -1355,6 +1488,120 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       isExpanded: true,
                     ),
                     SizedBox(height: 16),
+                  ] else if (_selectedTrait == langMap!['eternity']) ...[ 
+                    Text('永恒', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      value:_eternityPoint,
+                      hint: Text('请选择永恒点数'),
+                      items: List.generate(11, (index) => DropdownMenuItem(
+                        value: index,
+                        child: Text('${index}'),
+                        )).toList(),
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _eternityPoint = newValue ?? 1; 
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),
+                    Text('状态', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField<String>(
+                      value:_eternityStatus,
+                      hint: Text('请选择永恒状态'),
+                      items: _target != null && game.players[_target] != null 
+                        ? game.players[_target]!.status.keys.map((String statusKey) {
+                          return DropdownMenuItem(
+                            value: statusKey,
+                            child: Text(statusKey),
+                          );
+                        }).toList()
+                        : [],
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _eternityStatus = newValue ?? '';
+                        });
+                      }
+                    )
+                  ] else if (_selectedTrait == langMap!['dark_dissolution']) ...[ 
+                    Text('黯灭', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      value:_darkDissolutionChoice,
+                      hint: Text('请选择黯灭选项'),
+                      items:  [
+                        DropdownMenuItem(value: 0, child: Text('消耗行动点')),
+                        DropdownMenuItem(value: 1, child: Text('消耗卡牌')),
+                      ], 
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _darkDissolutionChoice = newValue ?? 1; 
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),
+                    if (_darkDissolutionChoice == 1) ...[
+                      Text('黯灭卡牌', style: TextStyle(fontWeight: FontWeight.bold)),
+                      DropdownButtonFormField<String>(
+                        value:_darkDissolutionCard,
+                        hint: Text('请选择黯灭卡牌'),
+                        items:  cardTypes!.map((String item) {
+                          return DropdownMenuItem<String>(
+                            value: item,
+                            child: Text(item),
+                          );
+                        }).toList(), 
+                        onChanged: (String? newValue) {
+                          setState(() {
+                            _darkDissolutionCard = newValue ?? '';
+                          });
+                        }
+                      )
+                    ] 
+                  ] else if (_selectedTrait == langMap!['taboo_lore']) ...[ 
+                    Text('禁忌知识', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      value:_tabooLoreChoice,
+                      hint: Text('请选择禁忌选项'),
+                      items:  [
+                        DropdownMenuItem(value: 1, child: Text('攻击')),
+                        DropdownMenuItem(value: 2, child: Text('受击')),
+                      ], 
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _tabooLoreChoice = newValue ?? 1; 
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),                    
+                  ] else if (_selectedTrait == langMap!['lotus_flame']) ...[ 
+                    Text('红莲业火', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      value:_lotusFlameChoice,
+                      hint: Text('请选择业火封印标签'),
+                      items:  [
+                        DropdownMenuItem(value: 0, child: Text('锋锐')),
+                        DropdownMenuItem(value: 1, child: Text('铁御')),
+                        DropdownMenuItem(value: 2, child: Text('生机')),
+                        DropdownMenuItem(value: 3, child: Text('命运')),
+                        DropdownMenuItem(value: 4, child: Text('秘法')),
+                        DropdownMenuItem(value: 5, child: Text('幻相')),
+                        DropdownMenuItem(value: 6, child: Text('魔能')),
+                        DropdownMenuItem(value: 7, child: Text('诡术')),
+                        DropdownMenuItem(value: 8, child: Text('失序')),
+                        DropdownMenuItem(value: 9, child: Text('感知')),
+                        DropdownMenuItem(value: 10, child: Text('灼热')),
+                        DropdownMenuItem(value: 11, child: Text('霜寒')),                                                
+                      ], 
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _lotusFlameChoice = newValue ?? 1; 
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),                    
                   ] 
                 ]
               ]
@@ -1390,6 +1637,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 int defence = 0;
                 int attackPlus = 0;
                 double attackMulti = 1;
+                int defencePlus = 0;
+                double defenceMulti = 1;
                 // 强化系数
                 int reinforcementMulti = _sourcePlayer!.hasHiddenStatus('reinforcement') ? 2 : 1;
                 // 行动可用
@@ -1438,6 +1687,14 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 if (_sourcePlayer!.hasHiddenStatus('requiem') && _target != langMap!['valedictus']) {
                   actionAble = false;
                 }
+                // 好好先生【深重情谊】
+                if (_sourcePlayer!.hasHiddenStatus('favor') && _target == langMap!['mr_nice']) {
+                  actionAble = false;
+                }
+                // 太夕【谜渊漩涡】
+                if (_sourcePlayer!.hasHiddenStatus('taunt') && !_targetPlayer!.hasHiddenStatus('abyss')) {
+                  actionAble = false;
+                }
                 // 行动点不足
                 if (cost > _sourcePlayer!.movePoint) {
                   actionAble = false;
@@ -1449,12 +1706,28 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 // 行动次数不足
                 if (_sourcePlayer!.actionTime < 1) {
                   actionAble = false;
-                }
+                }                
                 // 状态【冰封】【梦境】【星牢】【造梦】
                 if (_sourcePlayer!.hasStatus(langMap!['frozen']) || _sourcePlayer!.hasStatus(langMap!['dreaming']) 
                     || _sourcePlayer!.hasStatus(langMap!['stellar_cage']) || _sourcePlayer!.hasStatus(langMap!['dream_crafting'])) {
                   actionAble = false;
                 }
+                // 状态【障目】
+                if (actionAble) {
+                  for (var effectData in _attackEffectTableData) {
+                    AttackEffect effect = effectData['effect'];
+                    Map<String, dynamic> settings = effectData['settings'];
+                    if (effect == AttackEffect.oculusVeil && game.players[_source]!.hasStatus(langMap!['oculus_veil'])) {
+                      int oculusVeilPoint = settings['oculusVeilPoint'] as int? ?? 2;
+                      if (oculusVeilPoint == 1){
+                        actionAble = false;
+                        game.addAttribute(_source!, AttributeType.movepoint, -cost);
+                        game.addAttribute(_source!, AttributeType.card, -_cardTableData.length);
+                        _sourcePlayer!.actionTime--;
+                      }
+                    }
+                  }
+                }                
                 if (actionAble) {
                 // 行动点减少
                 game.addAttribute(_source!, AttributeType.movepoint, -cost);
@@ -1468,16 +1741,27 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   game.addAttribute(_source!, AttributeType.card, -1);
                   // 卡牌可用性
                   bool cardAble = true;
+                  // 红黎【红莲业火】
+                  if (_sourcePlayer!.hasHiddenStatus('lotus')) {
+                    int tagIndex = _sourcePlayer!.getHiddenStatusIntensity('lotus');
+                    Tag tag = Tag.values[tagIndex];
+                    List<String> tagList = tagData![cardName];
+                    //_logger.d(tag);
+                    //_logger.d(tagList);
+                    if (tagList.contains(tag.tagId)) {
+                      cardAble = false;
+                    }
+                  }
                   if (cardAble) {
                   // 破片水晶
                   if(cardName == langMap!['end_crystal']){                    
                     int crystalSelf = settings['crystalSelf'] as int? ?? 1;
                     int crystalMagic = settings['crystalMagic'] as int? ?? 1;                 
-                    game.damagePlayer(_source!, _source!, (30 + 15 * crystalSelf) * reinforcementMulti, DamageType.magical);
+                    game.damagePlayer('empty', _source!, (30 + 15 * crystalSelf) * reinforcementMulti, DamageType.magical);
                     for(Character chara in game.players.values){
                       if(game.isEnemy(_source!, chara.id)) {
                         game.damagePlayer(_source!, chara.id, (40 + 15 * crystalMagic) * reinforcementMulti, 
-                        DamageType.magical, isAOE: true);}
+                        DamageType.physical, isAOE: true);}
                     }
                   }
                   // 阿波罗之箭
@@ -1744,8 +2028,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   else if(cardName == langMap!['pyrotheum']){
                     game.addStatus(_target!, langMap!['flaming'], 5 * reinforcementMulti, 3);
                   }
-                  // 伊甸园
-                  else if(cardName == "伊甸园"){
+                  // 失乐园
+                  else if(cardName == langMap!['eden_garden']){
                     game.countdown.eden += 1;
                   }
                   // 遗失碎片
@@ -1798,6 +2082,9 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 }
                 }
 
+                // 投掷骰子
+                point = game.throwDice(_source!, point, DiceType.action);                
+
                 // 【烛焱】状态
                 if(game.players[_source]!.hasStatus(langMap!['lumen_flare']) && 
                 !game.players[_source]!.hasHiddenStatus('rest')){
@@ -1836,7 +2123,6 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     if ([2, 4, 6].contains(nauseaPoint)){
                       game.addHiddenStatus(_source!, 'void', 0, 1);
                     }
-
                   }
                 }
 
@@ -1860,35 +2146,68 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 
                 // 计算伤害
                 // 鼓舞
-                if(game.players[_source]!.hasHiddenStatus('hero_legend')){
+                if (game.players[_source]!.hasHiddenStatus('hero_legend')) {
                   attackPlus += 10 * _sourcePlayer!.getHiddenStatusIntensity('hero_legend');
                   game.removeHiddenStatus(_source!, 'hero_legend');
                 }
                 // 加护
-                if(game.players[_target]!.hasHiddenStatus('dream_shelter')){
-                  attackPlus -= 10 * _targetPlayer!.getHiddenStatusIntensity('dream_shelter');
+                if (game.players[_target]!.hasHiddenStatus('dream_shelter')) {
+                  defencePlus += 10 * _targetPlayer!.getHiddenStatusIntensity('dream_shelter');
                   game.removeHiddenStatus(_target!, 'dream_shelter');
                 }
                 // 纳米渗透
-                if(game.players[_source]!.hasHiddenStatus('nano')){
-                  attackPlus += game.players[_target]!.defence;
+                if (game.players[_source]!.hasHiddenStatus('nano')) {
+                  defencePlus -= game.players[_target]!.defence;
                   game.removeHiddenStatus(_source!, 'nano');
-                }                
-                attack = game.players[_source]!.attack;
-                defence = game.players[_target]!.defence;
-                double baseDamage;
+                }
+                // 特质结算
+                // 科亚特尔【拟造“伊甸园”】
+                if (_source == langMap!['quetzalcoatl'] && _sourcePlayer!.hasHiddenStatus('sanctify')) {
+                  attackMulti *= 1.5;
+                  game.removeHiddenStatus(_source!, 'sanctify');
+                }
+                // 阿波菲斯【毁灭暗影】
+                if (_source == langMap!['apophis']) {
+                  game.castTrait(_source!, [_target!], langMap!['ruinous_shade'], {'type': 0});
+                }
+                for (var chara in game.players.values) {
+                  if (chara.id == langMap!['apophis'] && _sourcePlayer!.hasStatus(langMap!['nightmare']) && !chara.isDead
+                    && _sourcePlayer!.getHiddenStatusIntensity('night') % 1024 < 3) {
+                    if (_sourcePlayer!.hasStatus(langMap!['eden'])) {
+                      game.damagePlayer(chara.id, _source!, 20 + 40 * _sourcePlayer!.getStatusIntensity(langMap!['nightmare']), DamageType.magical);
+                      game.healPlayer(chara.id, chara.id, 10 + 20 * _sourcePlayer!.getStatusIntensity(langMap!['nightmare']), DamageType.heal);
+                    }
+                    else {
+                      game.damagePlayer(chara.id, _source!, 10 + 20 * _sourcePlayer!.getStatusIntensity(langMap!['nightmare']), DamageType.magical);
+                      game.healPlayer(chara.id, chara.id, 5 + 10 * _sourcePlayer!.getStatusIntensity(langMap!['nightmare']), DamageType.heal);
+                    }
+                    game.addHiddenStatus(_source!, 'night', 1025, -1);
+                    game.castTrait(chara.id, [_source!], langMap!['ruinous_shade'], {'type': 1});
+                    break;
+                  }
+                }              
                 // 图西乌【蚀月】
                 if (_target == langMap!['tussiu']) {
                   List<int> pointRef = [point];
                   game.castTrait(_target!, [], langMap!['eclipse'], {'pointRef': pointRef});
                   point = pointRef[0];
                 }
-                if (attack > defence) {
-                  baseDamage = ((attack + attackPlus) * attackMulti - defence) * point;
+                // 红黎【红莲业火】
+                if (_source == langMap!['dimpsy']) {
+                  game.castTrait(_source!, [_target!], langMap!['lotus_flame'], {'type': 0});
+                }
+
+                attack = game.players[_source]!.attack;
+                defence = game.players[_target]!.defence;
+                double modifiedAttack = (attack + attackPlus) * attackMulti;
+                double modifiedDefence = (defence + defencePlus) * defenceMulti;
+                double baseDamage;            
+                if (modifiedAttack > modifiedDefence) {
+                  baseDamage = (modifiedAttack - modifiedDefence) * point;
                 }
                 else {
-                  baseDamage = 5 + 0.1 * (attack + attackPlus) * attackMulti;             
-                }
+                  baseDamage = 5 + 0.1 * modifiedAttack;
+                }                
                 // 云云子【晨昏寥落】
                 if (_source == langMap!['yun']) {
                   List<double> baseDamageRef = [baseDamage];
@@ -1900,7 +2219,15 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 // 飖【血灵斩】
                 if (_source == langMap!['windflutter'] && _sourcePlayer!.hasHiddenStatus('hema') && _sourcePlayer!.actionTime == 1){
                   game.addAttribute(_source!, AttributeType.attack, 15);
-                }            
+                }
+                // 好好先生【见面礼】
+                if (_source == langMap!['mr_nice'] && !_sourcePlayer!.hasHiddenStatus('rest')){
+                  game.castTrait(_source!, [_target!], langMap!['introductory_gift']);
+                }
+                // 好好先生【深重情谊】
+                if (_target == langMap!['mr_nice'] && !_sourcePlayer!.hasHiddenStatus('rest')){
+                  game.castTrait(_target!, [_source!], langMap!['imposing_favor']);
+                }                
                 game.damagePlayer(_source!, _target!, baseDamage.toInt(), DamageType.action);
                 // 记录行动
                 final recordProvider = Provider.of<RecordProvider>(context, listen: false);
@@ -1914,12 +2241,13 @@ class _AddActionDialogState extends State<AddActionDialog> {
               bool skillAble = true;
               if (skillAble) {
                 
-                // 相转移 天国邮递员 净化 外星人 追击 沉默 镭射 止杀 镜像 太阴 奇点 侵蚀 逆转乾坤 空袭 氤氲 安魂乐章 冰芒 护梦者
+                // 相转移 天国邮递员 净化 外星人 追击 沉默 镭射 止杀 镜像 太阴 奇点 侵蚀 逆转乾坤 空袭 氤氲 安魂乐章 冰芒 护梦者 谜渊漩涡
                 if ({langMap!['phase_transition'], langMap!['heaven_delivery'], langMap!['purification'], 
                   langMap!['stellar'], langMap!['chase'], langMap!['reticence'], langMap!['laser'], 
                   langMap!['kill_ceasing'], langMap!['inversion'], langMap!['fission'], langMap!['lunar'], 
                   langMap!['singularity'], langMap!['corrosion'], langMap!['karma_reversal'], langMap!['airstrike'], 
-                  langMap!['nebula_field'], langMap!['requiem'], langMap!['ice_splinter'], langMap!['dream_keeper']}.contains(_selectedSkill)) {
+                  langMap!['nebula_field'], langMap!['requiem'], langMap!['ice_splinter'], langMap!['dream_keeper'],
+                  langMap!['abyssal_whirl']}.contains(_selectedSkill)) {
                   game.castSkill(_source!, [_target!], _selectedSkill!, {});
                 }
                 // 嗜血 阈限 强化 屏障 不死 灵能注入 分裂 透支 开阳 博览 反重力 瞬影 极速 屠杀 异镜解构 封焰的135秒
@@ -1938,6 +2266,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 // 恐吓
                 else if (_selectedSkill == langMap!['intimidation']) {
                   game.castSkill(_source!, [_source!], _selectedSkill!, {'point': _intimidationPoint});
+                  game.throwDice(_source!, _intimidationPoint, DiceType.skill);
                 }
                 // 奉献
                 else if (_selectedSkill == langMap!['devotion']) {
@@ -1946,6 +2275,9 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 // 挑唆
                 else if (_selectedSkill == langMap!['instigation']) {
                   game.castSkill(_source!, [_source!], _selectedSkill!, {'points': _instigationPoints, 'isInstigated': _isPlayerInstigated});
+                  for (var tar in _instigationPoints.keys) {
+                    game.throwDice(tar, _instigationPoints[tar]!, DiceType.skill);
+                  }
                 }
                 // 魂怨
                 else if (_selectedSkill == langMap!['soul_rancor']) {
@@ -1958,16 +2290,35 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       soulTargets.add(_target!);
                     }
                   }
-                  game.castSkill(_source!, soulTargets, _selectedSkill!, {});
+                  game.castSkill(_source!, soulTargets, _selectedSkill!);
                 }
                 // 炎焕【赤焱炼狱】
-                if (_selectedSkill == langMap!['crimson_inferno']) {
+                else if (_selectedSkill == langMap!['crimson_inferno']) {
                   final targets = [if (_target != null) _target!, ..._skillTargetList];
-                  game.castSkill(_source!, targets, _selectedSkill!, {});
+                  game.castSkill(_source!, targets, _selectedSkill!);
                 }
                 // 斯威芬【造梦者】
-                if (_selectedSkill == langMap!['dream_weaver']) {
+                else if (_selectedSkill == langMap!['dream_weaver']) {
                   game.castSkill(_source!, [_source!], _selectedSkill!, {'point': _dreamWeaverChoice});
+                }
+                // 叶姬【须臾】
+                else if (_selectedSkill == langMap!['emphemeral']) {
+                  game.castSkill(_source!, [_target!], _selectedSkill!, {'status': _emphemeralStatus});
+                }
+                // 科亚特尔【天启之庭】
+                if (_selectedSkill == langMap!['apocalyptic_court']) {
+                  final targets = [if (_target != null) _target!, ..._skillTargetList];
+                  game.castSkill(_source!, targets, _selectedSkill!, {'point':_apocalypticPoint});
+                  game.throwDice(_source!, _apocalypticPoint, DiceType.skill);
+                }
+                // 祝烨明【八寒之七】
+                if (_selectedSkill == langMap!['seventh_frost']) {
+                  game.castSkill(_source!, [_target!], _selectedSkill!, {'point': _seventhFrostPoint, 'status': _seventhFrostStatus});
+                }
+                // 方塔索【入梦之手】
+                if (_selectedSkill == langMap!['dream_grasp']) {
+                  final targets = [if (_target != null) _target!, ..._skillTargetList];
+                  game.castSkill(_source!, targets, _selectedSkill!);
                 }
               }
             }
@@ -1975,7 +2326,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
               // 特质可用
               bool traitAble = true;
               // 特质不属于当前角色
-              if (_source != traitData![_selectedTrait!][0]) {
+              if (_source != traitData![_selectedTrait!]) {
                 traitAble = false;
               }
               if (traitAble) { 
@@ -1984,19 +2335,23 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   for (var damage in _luckyShieldDamages.keys) {
                     game.castTrait(_source!, [_source!], langMap!['lucky_shield'], 
                     {'damage': damage.damage, 'dmgSource': damage.source, 'point': _luckyShieldDamages[damage]});
+                    game.throwDice(_source!, _luckyShieldDamages[damage]!, DiceType.trait);
                   }
                 }
                 // 黯星【决心】
                 else if (_selectedTrait == langMap!['resolution']) {
                   game.castTrait(_source!, [_source!], langMap!['resolution'], {'point':_resolutionPoint});
+                  game.throwDice(_source!, _resolutionPoint, DiceType.trait);
                 }
                 // 方寒【耀光爆裂】
                 else if (_selectedTrait == langMap!['radiant_blast']) {
                   game.castTrait(_source!, [_target!], langMap!['radiant_blast'], {'point':_radiantBlastPoint});
+                  game.throwDice(_source!, _radiantBlastPoint, DiceType.trait);
                 }
                 // 恪玥【咕了】
                 else if (_selectedTrait == langMap!['escaping']) {
                   game.castTrait(_source!, [_source!], langMap!['escaping'], {'point':_escapingPoint});
+                  game.throwDice(_source!, _escapingPoint, DiceType.trait);
                 }
                 // 飖【血灵斩】
                 else if (_selectedTrait == langMap!['hema_slash']) {
@@ -2011,11 +2366,11 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 }
                 // 扶风【大预言】
                 else if (_selectedTrait == langMap!['grand_prophecy']) {
-                  game.castTrait(_source!, [_source!], langMap!['grand_prophecy'], {'point':_prophecyPoint});
+                  game.castTrait(_source!, [_source!], langMap!['grand_prophecy'], {'type': _prophecyChoice, 'point': _prophecyPoint});
                 }
                 // 星凝【希冀】
                 else if (_selectedTrait == langMap!['yearning']) {
-                  game.castTrait(_source!, [_target!], langMap!['yearning'], {'type':_yearningPoint});
+                  game.castTrait(_source!, [_target!], langMap!['yearning'], {'type': _yearningPoint});
                 }
                 // 星凝【祝愿】
                 else if (_selectedTrait == langMap!['blessing']) {
@@ -2023,7 +2378,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 }
                 // 时雨【天霜封印】
                 else if (_selectedTrait == langMap!['arctic_seal']) {
-                  game.castTrait(_source!, [_target!], langMap!['arctic_seal'], {'point':_arcticSealPoint});
+                  game.castTrait(_source!, [_target!], langMap!['arctic_seal'], {'point': _arcticSealPoint});
+                  game.throwDice(_source!, _arcticSealPoint, DiceType.trait);
                 }
                 // 舸灯【引渡】
                 else if (_selectedTrait == langMap!['ghost_ferry']) {
@@ -2031,19 +2387,27 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 }
                 // 高淼【轻捷妙手】
                 else if (_selectedTrait == langMap!['deft_touch']) {
-                  game.castTrait(_source!, [_target!], langMap!['deft_touch'], {'type':_deftTouchPoint, 'skill': _deftTouchSkill});
+                  game.castTrait(_source!, [_target!], langMap!['deft_touch'], {'type': _deftTouchPoint, 'skill': _deftTouchSkill});
                 }
                 // 长霾【律令】
                 else if (_selectedTrait == langMap!['decree']) {
-                  game.castTrait(_source!, [_target!], langMap!['decree'], {'type':_decreePoint});
+                  game.castTrait(_source!, [_target!], langMap!['decree'], {'type': _decreePoint});
                 }
                 // 云津【云系祝乐】
                 else if (_selectedTrait == langMap!['celestial_joy']) {
-                  game.castTrait(_source!, [_target!], langMap!['celestial_joy'], {'type':_celestialChoice, 'point': _celestialPoint});
+                  game.castTrait(_source!, [_target!], langMap!['celestial_joy'], {'type': _celestialChoice, 'point': _celestialPoint});
+                  if (_celestialChoice == 0) {
+                    game.throwDice(_source!, _celestialPoint, DiceType.trait);
+                  }
+                }
+                // 挑拣【晖夕】
+                else if (_selectedTrait == langMap!['discerning']) {
+                  game.castTrait(_source!, [_source!], langMap!['discerning'], {'point': _discerningPoint});
                 }
                 // 炎焕【心炎】
                 else if (_selectedTrait == langMap!['cardio_blaze']) {
-                  game.castTrait(_source!, [_target!], langMap!['cardio_blaze'], {'point':_cardioBlazePoint});
+                  game.castTrait(_source!, [_target!], langMap!['cardio_blaze'], {'point': _cardioBlazePoint});
+                  game.throwDice(_source!, _cardioBlazePoint, DiceType.trait);
                 }
                 // 斯威芬【梦的塑造】
                 else if (_selectedTrait == langMap!['crafting_of_dreams']) {
@@ -2051,9 +2415,35 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 }
                 // 红烬【烈焰之体】
                 else if (_selectedTrait == langMap!['conflagration_avatar']) {
-                  game.castTrait(_source!, [_source!], langMap!['conflagration_avatar'], {'type': _conflagrationChoice, 'point': _conflagrationPoint});
+                  game.castTrait(_source!, [_source!], langMap!['conflagration_avatar'], {'type': _conflagrationChoice, 'point': _conflagrationPoint});                
+                  game.throwDice(_source!, _conflagrationPoint, DiceType.trait);                  
                 }
-              }    
+                // 叶姬【永恒】
+                else if (_selectedTrait == langMap!['eternity']) {
+                  game.castTrait(_source!, [_target!], langMap!['eternity'], {'point': _eternityPoint, 'status': _eternityStatus});
+                }
+                // 太夕【黯灭】
+                else if (_selectedTrait == langMap!['dark_dissolution']) {
+                  if (_darkDissolutionChoice == 0) {
+                    game.castTrait(_source!, [_source!], langMap!['dark_dissolution'], {'type': _darkDissolutionChoice});
+                  }
+                  else {
+                    game.castTrait(_source!, [_source!], langMap!['dark_dissolution'], {'type': _darkDissolutionChoice, 'card': _darkDissolutionCard});
+                  }
+                }
+                // 太夕【吞噬之锁】
+                else if (_selectedTrait == langMap!['devouring_lock']) {
+                  game.castTrait(_source!, [_target!], langMap!['devouring_lock']);
+                }
+                // 蒙德里安【禁忌知识】
+                else if (_selectedTrait == langMap!['taboo_lore']) {
+                  game.castTrait(_source!, [_target!], langMap!['taboo_lore'], {'type': _tabooLoreChoice});
+                }
+                // 红黎【红莲业火】
+                else if (_selectedTrait == langMap!['lotus_flame']) {
+                  game.castTrait(_source!, [_target!], langMap!['lotus_flame'], {'type': 1, 'tag': _lotusFlameChoice});                  
+                }
+              }
             }
             // 道具卡设置清空
             cardSettingsManager.resetAllSettings();

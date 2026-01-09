@@ -19,6 +19,7 @@ class AssetsManager{
   Map<String, dynamic>? skillData;
   Map<String, dynamic>? traitData;
   Map<String, dynamic> statusData = {};
+  Map<String, List<String>> tagData = {};
   // 加载就绪标志与完成器，供外部 await
   final Completer<void> _readyCompleter = Completer<void>();
   bool isLoaded = false;
@@ -48,7 +49,7 @@ class AssetsManager{
     String jsonString = await rootBundle.loadString('assets/map.json');
     langMap = json.decode(jsonString);
     for (String key in langMap!.keys.toList()) {
-      langMap![key] = langMap![key]![0];
+      langMap![key] = langMap![key]!;
     }
   }
 
@@ -92,6 +93,29 @@ class AssetsManager{
         _logger.w('缺少 status 映射的翻译，使用原 key 回退: $key');
       }
       statusData[mappedKey] = statusDataRaw[key];
+    }
+
+    // 加载标签数据
+    jsonString = await rootBundle.loadString('assets/tag.json');
+    Map<String, dynamic>? tagDataRaw = json.decode(jsonString);
+    for (String key in tagDataRaw!.keys.toList()) {
+      final mappedKey = (langMap != null && langMap![key] != null)
+          ? langMap![key].toString()
+          : key;      
+      if (langMap == null || langMap![key] == null) {
+        _logger.w('缺少 tag 映射的翻译，使用原 key 回退: $key');
+      }      
+      List<String> mappedValue = [];
+      for (String tag in tagDataRaw[key]) {
+        final mappedTag = (langMap != null && langMap![tag] != null)
+            ? langMap![tag].toString()
+            : tag;
+        if (langMap == null || langMap![tag] == null) {
+          _logger.w('缺少 tag 映射的翻译，使用原 value 回退: $tag');
+        }
+        mappedValue.add(mappedTag);
+      }      
+      tagData[mappedKey] = mappedValue;
     }
   }
 }

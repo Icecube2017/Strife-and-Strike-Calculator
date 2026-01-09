@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sns_calculator/game.dart';
 import 'package:sns_calculator/assets.dart';
+import 'package:sns_calculator/core.dart';
 
 // 攻击特效设置对话框组件
 class AttackEffectSettingsDialog extends StatefulWidget {

@@ -38,6 +38,54 @@ enum DamageType{
   revive,
 }
 
+// 骰子类型
+enum DiceType{
+  action,
+  card,
+  skill,
+  trait
+}
+
+// 标签
+enum Tag{
+  sharp('锋锐'),
+  protect('铁御'),
+  vital('生机'),
+  destiny('命运'),
+  mystique('秘法'),
+  phantom('幻相'),
+  magic('魔能'),
+  weird('诡术'),
+  disorder('失序'),
+  sense('感知'),
+  heat('灼热'),
+  chill('霜寒');
+
+  final String tagId;
+
+  const Tag(this.tagId);
+}
+
+// 攻击特效
+enum AttackEffect{ 
+  lumenFlare('烛焱'),
+  oculusVeil('障目'),
+  nausea('反胃');
+
+  final String effectId;
+
+  const AttackEffect(this.effectId);
+}
+
+// 防守特效
+enum DefenceEffect{ 
+  erodeGelid('蚀凛');
+
+  final String effectId;
+
+  const DefenceEffect(this.effectId);
+}
+
 // 游戏状态标记
 class GameTurn {
   final int round;
