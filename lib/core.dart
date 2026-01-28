@@ -34,6 +34,7 @@ enum DamageType{
   action,
   physical,
   magical,
+  lost,
   heal,
   revive,
 }

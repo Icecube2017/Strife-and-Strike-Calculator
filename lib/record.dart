@@ -421,6 +421,16 @@ class RecordProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // 移除与传入记录匹配的记录
+  void removeRecord(GameRecord record) {
+    final String targetJson = jsonEncode(record.toJson());
+    final int index = _records.indexWhere((r) => jsonEncode(r.toJson()) == targetJson);
+    if (index != -1) {
+      _records.removeAt(index);
+      notifyListeners();
+    }
+  }
+
   // 获取满足指定条件的记录
   List<GameRecord> getFilteredRecords({RecordType? type, String? source, String? target,
     GameTurn? startTurn,GameTurn? endTurn}) {

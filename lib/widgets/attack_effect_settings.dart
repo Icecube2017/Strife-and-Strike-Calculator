@@ -74,7 +74,7 @@ class _AttackEffectSettingsDialogState extends State<AttackEffectSettingsDialog>
             if (widget.effect == AttackEffect.lumenFlare) ...[
               Text('烛焱点数', style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<int>(
-                value: _lumenFlarePoint,
+                initialValue: _lumenFlarePoint,
                 hint: Text('烛焱点数'),
                 items: _lumenFlareOptions.map((String item) {
                   int value = int.parse(item);
@@ -94,7 +94,7 @@ class _AttackEffectSettingsDialogState extends State<AttackEffectSettingsDialog>
             ] else if (widget.effect == AttackEffect.oculusVeil) ...[
               Text('障目点数', style: TextStyle(fontWeight: FontWeight.bold)), 
               DropdownButtonFormField<int>(
-                value: _oculusVeilPoint,
+                initialValue: _oculusVeilPoint,
                 hint: Text('障目点数'),
                 items: _oculusVeilOptions.map((String item) {
                   int value = int.parse(item);
@@ -113,7 +113,7 @@ class _AttackEffectSettingsDialogState extends State<AttackEffectSettingsDialog>
             ] else if (widget.effect == AttackEffect.nausea) ...[
               Text('反胃', style: TextStyle(fontWeight: FontWeight.bold)), 
               DropdownButtonFormField<int>(
-                value: _nauseaPoint,
+                initialValue: _nauseaPoint,
                 hint: Text('请选择反胃点数'),
                 items: _nauseaOptions.map((String item) {
                   int value = int.parse(item);
@@ -208,7 +208,7 @@ class _DefenceEffectSettingsDialogState extends State<DefenceEffectSettingsDialo
             if (widget.effect == DefenceEffect.erodeGelid) ...[
               Text('蚀凛点数', style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<int>(
-                value: _erodeGelidPoint,
+                initialValue: _erodeGelidPoint,
                 hint: Text('蚀凛点数'),
                 items: _erodeGelidOptions.map((String item) {
                   int value = int.parse(item);

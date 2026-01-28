@@ -48,9 +48,9 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
   // 混乱力场
   final List<String> _ascensionStairOptions = ['1', '2', '3', '4', '5', '6'];
   Map<String, int> _ascensionPoints = {};
-  // 极北之心
-  List<String> _arcticHeartOptions = [];
-  String _arcticHeartChoice = '';
+  // 刷新
+  List<String> _refreshmentOptions = [];
+  String _refreshmentChoice = '';
   // 极光震荡
   final List<String> _auroraOptions = ['1', '2'];
   Map<String, int> _auroraPoints = {};
@@ -99,10 +99,10 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
     } else if (_settings is AscensionStairSetting) {
       final setting = _settings as AscensionStairSetting;
       _ascensionPoints = Map<String, int>.from(setting.ascensionPoints);
-    } else if (_settings is ArcticHeartSetting) {
-      final setting = _settings as ArcticHeartSetting;
-      _arcticHeartOptions = game.players[widget.source!]!.skill.keys.toList();
-      _arcticHeartChoice = setting.arcticHeartChoice;
+    } else if (_settings is RefreshmentSetting) {
+      final setting = _settings as RefreshmentSetting;
+      _refreshmentOptions = game.players[widget.source!]!.skill.keys.toList();
+      _refreshmentChoice = setting.refreshmentChoice;
     } else if (_settings is AuroraConcussionSetting) {
       final setting = _settings as AuroraConcussionSetting;
       _auroraPoints = Map<String, int>.from(setting.auroraPoints);
@@ -139,9 +139,9 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
         newSetting = AscensionStairSetting()
           ..ascensionPoints = Map<String, int>.from(_ascensionPoints);
         break;
-      case "极北之心":
-        newSetting = ArcticHeartSetting()
-          ..arcticHeartChoice = _arcticHeartChoice;
+      case "刷新":
+        newSetting = RefreshmentSetting()
+          ..refreshmentChoice = _refreshmentChoice;
         break;
       case "极光震荡":
         newSetting = AuroraConcussionSetting()
@@ -186,7 +186,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
             if (widget.cardName == "破片水晶") ...[
               Text('水晶2d4损血', style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<int>(
-                value: _crystalSelf,
+                initialValue: _crystalSelf,
                 hint: Text('水晶2d4损血'),
                 items: _endCrystalOptions.map((String item) {
                   int value = int.parse(item);
@@ -205,7 +205,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
               SizedBox(height: 16),
               Text('水晶d8伤害', style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<int>(
-                value: _crystalMagic,
+                initialValue: _crystalMagic,
                 hint: Text('水晶d8伤害'),
                 items: _endCrystalOptions.map((String item) {
                   int value = int.parse(item);
@@ -226,7 +226,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
             else if (widget.cardName == "复合弓")...[
               Text('弃牌张数', style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<int>(
-                value: _ammoCount,
+                initialValue: _ammoCount,
                 hint: Text('弃牌张数'),
                 items: _bowOptions.map((String item) {
                   int value = int.parse(item);
@@ -247,7 +247,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
             else if(widget.cardName == "后日谈")...[
               Text('延长目标', style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<String>(
-                value: _playerProlonged.isEmpty ? null : _playerProlonged,
+                initialValue: _playerProlonged.isEmpty ? null : _playerProlonged,
                 hint: Text('延长目标'),
                 items: _redstonePlayerOptions.map((String item) {
                   return DropdownMenuItem(
@@ -267,7 +267,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
               SizedBox(height: 16),
               Text('状态延长', style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<String>(
-                value: _statusProlonged.isEmpty ? null : _statusProlonged,
+                initialValue: _statusProlonged.isEmpty ? null : _statusProlonged,
                 hint: Text('状态延长'),
                 items: (_playerProlonged.isEmpty) ? [] :
                 _redstoneOptions.map((String item) {
@@ -295,7 +295,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
                 children: [
                   Text('${player.id}:'),
                   DropdownButtonFormField<int>(
-                    value: _ascensionPoints[playerId],
+                    initialValue: _ascensionPoints[playerId],
                     hint: Text('选择点数'),
                     items: _ascensionStairOptions.map((option) {
                       int value = int.parse(option);
@@ -316,13 +316,13 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
               );
              }),
             ]
-            else if(widget.cardName == '极北之心')...[
+            else if(widget.cardName == '刷新')...[
               Text('冷却技能', style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _arcticHeartChoice.isEmpty ? null : _arcticHeartChoice,
+                initialValue: _refreshmentChoice.isEmpty ? null : _refreshmentChoice,
                 hint: Text('选择技能'),
-                items: _arcticHeartOptions.map((String item) {
+                items: _refreshmentOptions.map((String item) {
                   return DropdownMenuItem(
                     value: item,
                     child: Text(item),
@@ -330,7 +330,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
                 }).toList(),
                 onChanged: (String? newValue) {
                   setState(() {
-                    _arcticHeartChoice = newValue ?? '';
+                    _refreshmentChoice = newValue ?? '';
                   });
                 }
               )
@@ -345,7 +345,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
                 children: [
                   Text('${player.id}:'),
                   DropdownButtonFormField<int>(
-                    value: _auroraPoints[playerId],
+                    initialValue: _auroraPoints[playerId],
                     hint: Text('选择点数'),
                     items: _auroraOptions.map((option) {
                       int value = int.parse(option);
@@ -369,7 +369,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
             else if(widget.cardName == '潘多拉魔盒')...[
               Text('魔盒点数', style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<int>(
-                value: _pandoraPoint,
+                initialValue: _pandoraPoint,
                 hint: Text('魔盒点数'),
                 items: _pandoraBoxOptions.map((String item) {
                   int value = int.parse(item);
@@ -389,7 +389,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
             ] else if(widget.cardName == '折射水晶')...[
               Text('折射点数', style: TextStyle(fontWeight: FontWeight.bold)),
               DropdownButtonFormField<int>(
-                value: _amethystPoint,
+                initialValue: _amethystPoint,
                 hint: Text('折射点数'),
                 items: _amethystOptions.map((String item) {
                   int value = int.parse(item);

@@ -214,36 +214,36 @@ class AscensionStairSetting extends CardSetting {
   }
 }
 
-/// 极北之心卡设置
-class ArcticHeartSetting extends CardSetting {
-  static const String name = "极北之心";
+/// 刷新卡设置
+class RefreshmentSetting extends CardSetting {
+  static const String name = "刷新";
   
-  String arcticHeartChoice = '';
+  String refreshmentChoice = '';
 
   @override
   String get cardName => name;
 
   @override
   void fromJson(Map<String, dynamic> json) {
-    arcticHeartChoice = json['arcticHeartChoice'] ?? '';
+    refreshmentChoice = json['refreshmentChoice'] ?? '';
   }
 
   @override
   Map<String, dynamic> toJson() {
     return {
-      'arcticHeartChoice': arcticHeartChoice,
+      'refreshmentChoice': refreshmentChoice,
     };
   }
 
   @override
   void reset() {
-    arcticHeartChoice = '';
+    refreshmentChoice = '';
   }
 
   @override
   CardSetting copyWith() {
-    return ArcticHeartSetting()
-      ..arcticHeartChoice = arcticHeartChoice;
+    return RefreshmentSetting()
+      ..refreshmentChoice = refreshmentChoice;
   }
 }
 
@@ -369,8 +369,8 @@ class CardSettingFactory {
         return RedstoneSetting();
       case AscensionStairSetting.name:
         return AscensionStairSetting();
-      case ArcticHeartSetting.name:
-        return ArcticHeartSetting();
+      case RefreshmentSetting.name:
+        return RefreshmentSetting();
       case AuroraConcussionSetting.name:
         return AuroraConcussionSetting();
       case PandoraBoxSetting.name:

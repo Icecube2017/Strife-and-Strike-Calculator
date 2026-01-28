@@ -2,15 +2,23 @@ import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sns_calculator/history.dart';
+import 'package:sns_calculator/logger.dart';
 import 'package:sns_calculator/settings.dart';
 import 'package:sns_calculator/record.dart';
 import 'package:sns_calculator/assets.dart';
-import 'widgets/info_page.dart';
+import 'package:sns_calculator/widgets/info_page.dart';
+import 'package:sns_calculator/widgets/history_page.dart';
+import 'package:sns_calculator/widgets/logger_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final AssetsManager assets = AssetsManager();
   await assets.loadData();
+  
+  // 初始化 GameLogger
+  final gameLogger = GameLogger();
+  await gameLogger.initialize();
+  
   runApp(MyApp(assets: assets));
 }
 
@@ -25,6 +33,7 @@ class MyApp extends StatelessWidget {
         Provider<AssetsManager>.value(value: assets),
         ChangeNotifierProvider(create: (context) => MyAppState()),
         ChangeNotifierProvider(create: (context) => HistoryProvider()),        
+        ChangeNotifierProvider(create: (context) => GameLogger()),
         ChangeNotifierProvider(create: (context) => RecordProvider()),
         ChangeNotifierProvider(create: (context) => CardSettingsManager()),
       ],
@@ -80,8 +89,11 @@ class _MyHomePageState extends State<MyHomePage> {
         page = Placeholder();
         break;
       case 2:
-        page = Placeholder();
+        page = HistoryPage();
         break;
+      case 3:
+        page = LoggerPage();
+        break;      
     default:
         throw UnimplementedError('no widget for $selectedIndex');
     }
@@ -92,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
             children: [
               SafeArea(
                 child: NavigationRail(
-                  extended: constraints.maxWidth >= 600,
+                  extended: constraints.maxWidth >= 800,
                   destinations: [
                     NavigationRailDestination(
                       icon: Icon(Icons.home),
@@ -105,6 +117,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     NavigationRailDestination(
                       icon: Icon(Icons.history),
                       label: Text('History'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.assignment),
+                      label: Text('Logs'),
                     ),
                   ],
                   selectedIndex: selectedIndex,

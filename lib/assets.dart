@@ -16,10 +16,11 @@ class AssetsManager{
   Map<String, dynamic>? characterData;
   Map<String, dynamic>? characterTypeData;
   Map<String, dynamic>? regenerateTypeData;
-  Map<String, dynamic>? skillData;
-  Map<String, dynamic>? traitData;
+  Map<String, dynamic> skillData = {};
+  Map<String, dynamic> traitData = {};
   Map<String, dynamic> statusData = {};
   Map<String, List<String>> tagData = {};
+  Set<String> skillDeckData = {};
   // 加载就绪标志与完成器，供外部 await
   final Completer<void> _readyCompleter = Completer<void>();
   bool isLoaded = false;
@@ -76,13 +77,37 @@ class AssetsManager{
 
     // 加载技能数据
     jsonString = await rootBundle.loadString('assets/skills.json');
-    skillData = json.decode(jsonString);
+    Map<String, dynamic>? skillDataRaw = json.decode(jsonString);
+    for (String key in skillDataRaw!.keys.toList()) {
+      final mappedKey = (langMap != null && langMap![key] != null)
+          ? langMap![key].toString()
+          : key;
+      if (langMap == null || langMap![key] == null) {
+        _logger.w('缺少 skill 映射的翻译，使用原 key 回退: $key');
+      }
+      skillData[mappedKey] = skillDataRaw[key];
+    }
 
     // 加载特质数据
     jsonString = await rootBundle.loadString('assets/traits.json');
-    traitData = json.decode(jsonString);
+    Map<String, dynamic>? traitDataRaw = json.decode(jsonString);
+    for (String key in traitDataRaw!.keys.toList()) {
+      final mappedKey = (langMap != null && langMap![key] != null)
+          ? langMap![key].toString()
+          : key;
+      if (langMap == null || langMap![key] == null) {
+        _logger.w('缺少 trait 映射的翻译，使用原 key 回退: $key');
+      }
+      final mappedValue = (langMap != null && langMap![traitDataRaw[key]] != null)
+          ? langMap![traitDataRaw[key]].toString()
+          : traitDataRaw[key];
+      if (langMap == null || langMap![traitDataRaw[key]] == null) {
+        _logger.w('缺少 trait 映射的翻译，使用原 value 回退: ${traitDataRaw[key]}');
+      }
+      traitData[mappedKey] = mappedValue;      
+    }
 
-    // 加载状态数据（此处依赖 langMap 已准备）
+    // 加载状态数据
     jsonString = await rootBundle.loadString('assets/status.json');
     Map<String, dynamic>? statusDataRaw = json.decode(jsonString);
     for (String key in statusDataRaw!.keys.toList()) {
@@ -117,6 +142,20 @@ class AssetsManager{
       }      
       tagData[mappedKey] = mappedValue;
     }
+
+    // 加载技能池数据
+    jsonString = await rootBundle.loadString('assets/skill_deck.json');
+    Map<String, dynamic>? skillDeckDataRaw = json.decode(jsonString);
+    // skillDeckData = Set<String>.from(skillDeckDataRaw!['skills']);
+    for (String skill in skillDeckDataRaw!['skills']) {
+      final mappedSkill = (langMap != null && langMap![skill] != null)
+          ? langMap![skill].toString()
+          : skill;
+      skillDeckData.add(mappedSkill);
+      if (langMap == null || langMap![skill] == null) {
+        _logger.w('缺少 skill_deck 映射的翻译，使用原 key 回退: $skill');
+      }
+    }    
   }
 }
 
