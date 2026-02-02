@@ -15,7 +15,6 @@ Future<void> main() async {
   final AssetsManager assets = AssetsManager();
   await assets.loadData();
   
-  // 初始化 GameLogger
   final gameLogger = GameLogger();
   await gameLogger.initialize();
   

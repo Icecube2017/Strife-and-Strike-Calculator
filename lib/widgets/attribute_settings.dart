@@ -18,6 +18,7 @@ class AttributeSettingsDialog extends StatefulWidget {
 
 class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
   late TextEditingController healthController;
+  late TextEditingController maxHealthController;
   late TextEditingController attackController;
   late TextEditingController defenceController;
   late TextEditingController armorController;
@@ -47,6 +48,7 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
     super.initState();
     
     healthController = TextEditingController(text: widget.character.health.toString());
+    maxHealthController = TextEditingController(text: widget.character.maxHealth.toString());
     attackController = TextEditingController(text: widget.character.attack.toString());
     defenceController = TextEditingController(text: widget.character.defence.toString());
     armorController = TextEditingController(text: widget.character.armor.toString());
@@ -95,6 +97,7 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
   @override
   void dispose() {
     healthController.dispose();
+    maxHealthController.dispose();
     attackController.dispose();
     defenceController.dispose();
     armorController.dispose();
@@ -129,6 +132,7 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
     try {
       // 保存基本属性
       widget.character.health = int.parse(healthController.text);
+      widget.character.maxHealth = int.parse(maxHealthController.text);
       widget.character.attack = int.parse(attackController.text);
       widget.character.defence = int.parse(defenceController.text);
       widget.character.armor = int.parse(armorController.text);
@@ -202,6 +206,7 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
                 const Text('基本属性', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 8),
                 _buildIntAttributeRow('生命', healthController),
+                _buildIntAttributeRow('最大生命', maxHealthController),
                 _buildIntAttributeRow('攻击', attackController),
                 _buildIntAttributeRow('防御', defenceController),
                 _buildIntAttributeRow('护甲', armorController),

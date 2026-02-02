@@ -20,9 +20,8 @@
     "inversion": 10,
     "fission": 3,
     "burn_out": 3,
-    "instigation": 3,
     "trading": 2,
-    "mizar": 2,
+    "mizar": 3,
     "lunar": 2,
     "perusing": 3,
     "anti_gravity": 4,
@@ -54,5 +53,6 @@
     "deicide": 2,
     "icy_oblivion_135_bars": 3,
     "replenishment": 2,
-    "sacrificial_love": 3
+    "sacrificial_love": 3,
+    "frost_shatter": 2
 }

@@ -144,6 +144,13 @@ class _AddActionDialogState extends State<AddActionDialog> {
   int _utopiaOfCelerityChoice = 0;
   // 极寒环域
   int _glacialCirclePoint = 1;
+  // 控水
+  int _hydromancyChoice = 0;
+  // 水之刑
+  int _waterTortureChoice = 0;
+  int _waterTorturePoint = 1;
+  // <04>质能回收
+  int _massEnergyChoice = 0;
 
   // 日志系统
   static final Logger _logger = Logger();
@@ -1731,6 +1738,75 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       isExpanded: true,
                     ),
                     SizedBox(height: 16),
+                  ] else if (_selectedTrait == langMap!['hydromancy']) ...[ 
+                    Text('控水', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      initialValue:_hydromancyChoice,
+                      hint: Text('请选择控水选项'),
+                      items:  [
+                        DropdownMenuItem(value: 0, child: Text('脱水')),
+                        DropdownMenuItem(value: 1, child: Text('浸没')),
+                      ], 
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _hydromancyChoice = newValue ?? 1; 
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),
+                  ] else if (_selectedTrait == langMap!['water_torture']) ...[ 
+                    Text('水之刑', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      initialValue:_waterTortureChoice,
+                      hint: Text('请选择水刑选项'),
+                      items:  [
+                        DropdownMenuItem(value: 0, child: Text('附加窒息')),
+                        DropdownMenuItem(value: 1, child: Text('消除水刑')),
+                      ], 
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _waterTortureChoice = newValue ?? 1; 
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),
+                    if (_waterTortureChoice == 0)...[
+                      Text('水刑点数', style: TextStyle(fontWeight: FontWeight.bold)),
+                      DropdownButtonFormField(
+                        initialValue:_waterTorturePoint,
+                        hint: Text('请选择水刑点数'),
+                        items: List.generate(4, (index) => DropdownMenuItem(
+                          value: index + 1,
+                          child: Text('${index + 1}'),
+                          )).toList(),
+                        onChanged: (int? newValue) {
+                          setState(() {
+                            _waterTorturePoint = newValue ?? 1; 
+                          });
+                        },
+                        isExpanded: true,                      
+                      ),
+                      SizedBox(height: 16),
+                    ]                                        
+                  ] else if (_selectedTrait == langMap!['mass_energy_conversion']) ...[ 
+                    Text('<04>质能转换', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      initialValue: _massEnergyChoice,
+                      hint: Text('请选择质能转换选项'),
+                      items:  [
+                        DropdownMenuItem(value: 0, child: Text('自身摸两张牌')),
+                        DropdownMenuItem(value: 1, child: Text('从别人手里抽一张牌')),
+                      ], 
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _massEnergyChoice = newValue ?? 1; 
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),
                   ] 
                 ]
               ]
@@ -1746,7 +1822,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
           child: Text('取消'),
         ),
         ElevatedButton(
-          onPressed: () {            
+          onPressed: () {
             final cardSettingsManager = Provider.of<CardSettingsManager>(context, listen: false);
             _sourcePlayer = game.players[_source];
             _targetPlayer = game.players[_target];
@@ -1773,7 +1849,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 int defencePlus = 0;
                 double defenceMulti = 1;
                 // 强化系数
-                int reinforcementMulti = _sourcePlayer!.hasHiddenStatus('reinforcement') ? 2 : 1;
+                int reinforcementMulti = 1;                
                 // 行动可用
                 bool actionAble = true;
                 // 计算行动点消耗
@@ -1792,16 +1868,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     // 休憩
                     if (cardName == langMap!['rest']) {
                       cost -= 2 * reinforcementMulti;
-                    }                    
-                    // 颜若卿【调和的乌托邦】
-                    /*if (_source == langMap!['yan_ruoqing']) {
-                      List<String> tagList = tagData![cardName];
-                      if (tagList.contains(langMap!['vital'])) {
-                        List<int> costRef = [cardCost];
-                        game.castTrait(_source!, [_source!], langMap!['utopia_of_concord'], {'type': 0, 'costRef': costRef});
-                        cardCost = costRef[0];
-                      }
-                    }*/
+                    }
                     // 长霾【律令·禁空】
                     if (_sourcePlayer!.hasHiddenStatus('non_flying')) {
                       cardCost++;
@@ -1828,16 +1895,6 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 }
                 // 颜若卿【调和的乌托邦】
                 else if (_source == langMap!['yan_ruoqing']) {
-                  /*for (var rowData in _cardTableData) {
-                    String cardName = rowData['cardName'];
-                    if ({langMap!['filching'], langMap!['regenerating'], langMap!['curing'], langMap!['aurora_concussion'],
-                      langMap!['pandora_box'], langMap!['homology'], langMap!['invisibility_spell']}.contains(cardName)) {
-                      List<int> costRef = [cost];
-                      game.castTrait(_source!, [_source!], langMap!['utopia_of_concord'], {'type': 1, 'costRef': costRef});
-                      cost = costRef[0];
-                      break;
-                    }
-                  }*/
                   List<int> costRef = [cost];
                   game.castTrait(_source!, [_source!], langMap!['utopia_of_concord'], {'type': 0, 'costRef': costRef, 'cardList': cardsList});
                   game.castTrait(_source!, [_source!], langMap!['utopia_of_concord'], {'type': 1, 'costRef': costRef, 'cardList': cardsList});
@@ -1849,13 +1906,27 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   game.castTrait(_source!, [_source!], langMap!['innocent_love'], {'type': 0, 'cardList': cardsList, 'costRef': costRef});
                   cost = costRef[0];
                 }
+                // 祝烨诚【凛息】
+                else if (_source == langMap!['zhu_yecheng']) {
+                  List<int> costRef = [cost];                  
+                  game.castTrait(_source!, [_source!], langMap!['icy_stillness'], {'type': 1, 'cardList': cardsList, 'costRef': costRef});
+                  cost = costRef[0];
+                }
                 // 行动点不足
-                if (cost > _sourcePlayer!.movePoint) {
+                if (cost > _sourcePlayer!.movePoint && !{langMap!['engine_4']}.contains(_source!)) {
                   actionAble = false;
-                }                
-                // 状态【冰封】【梦境】【星牢】【造梦】
+                }
+                // EnGine-4【<04>质能转换】
+                if (_source! == langMap!['engine_4']) {
+                  cost = cardsList.isEmpty ? 1 : cardsList.length;
+                  if (_sourcePlayer!.health <= 44 * cost) {
+                    actionAble = false;
+                  }                  
+                }
+                // 状态【冰封】【梦境】【星牢】【造梦】【窒息】
                 if (_sourcePlayer!.hasStatus(langMap!['frozen']) || _sourcePlayer!.hasStatus(langMap!['dreaming']) 
-                    || _sourcePlayer!.hasStatus(langMap!['stellar_cage']) || _sourcePlayer!.hasStatus(langMap!['dream_crafting'])) {
+                    || _sourcePlayer!.hasStatus(langMap!['stellar_cage']) || _sourcePlayer!.hasStatus(langMap!['dream_crafting'])
+                    || _sourcePlayer!.hasStatus(langMap!['asphyxia'])) {
                   actionAble = false;
                 }
                 // 技能【追击】
@@ -1877,7 +1948,6 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 // 祝言夙【精神干扰】
                 if (_sourcePlayer!.hasHiddenStatus('disruption')) {
                   actionAble = false;
-                  game.addAttribute(_source!, AttributeType.movepoint, -cost);
                   game.addAttribute(_source!, AttributeType.card, -_cardTableData.length);
                   _sourcePlayer!.actionTime--;
                 }
@@ -1911,7 +1981,12 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 }         
                 if (actionAble) {
                   // 行动点减少
-                  game.addAttribute(_source!, AttributeType.movepoint, -cost);
+                  if (!{langMap!['engine_4']}.contains(_source!)) {
+                    game.addAttribute(_source!, AttributeType.movepoint, -cost);
+                  }
+                  if (_source! == langMap!['engine_4']) {
+                    game.damagePlayer('empty', _source!, 24 * cost, DamageType.lost);
+                  }
                   // 行动次数减少
                   _sourcePlayer!.actionTime--;
                   // 特质结算
@@ -1952,13 +2027,14 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       }
                     }     
                     if (cardAble) {
+                      reinforcementMulti = _sourcePlayer!.hasHiddenStatus('reinforcement') ? 2 : 1;
                       // 破片水晶
                       if (cardName == langMap!['end_crystal']) {                    
                         int crystalSelf = settings['crystalSelf'] as int? ?? 1;
                         int crystalMagic = settings['crystalMagic'] as int? ?? 1;                 
                         game.damagePlayer('empty', _source!, (30 + 15 * crystalSelf) * reinforcementMulti, DamageType.lost);
-                        for(Character chara in game.players.values){
-                          if(game.isEnemy(_source!, chara.id)) {
+                        for (Character chara in game.players.values) {
+                          if (game.isEnemy(_source!, chara.id)) {
                             game.damagePlayer(_source!, chara.id, (40 + 15 * crystalMagic) * reinforcementMulti, 
                             DamageType.physical, isAOE: true);}
                         }
@@ -2020,7 +2096,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       // 飞鸟·紫烈
                       else if (cardName == langMap!['violent_violet']) {
                         int sequence = game.gameSequence.indexOf(_source!);
-                        if(sequence == 0) {sequence = game.gameSequence.length - 1;}
+                        if (sequence == 0) {sequence = game.gameSequence.length - 1;}
                         else {sequence--;}
                         Character previousChara = game.players[game.gameSequence[sequence]]!;                      
                         game.addHiddenStatus(_target!, 'damageplus', 2 * previousChara.defence  * reinforcementMulti, 1);
@@ -2048,7 +2124,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       // 过往凝视
                       else if (cardName == langMap!['passing_gaze']) {
                         game.addHiddenStatus(_target!, 'damageplus', 100 * reinforcementMulti, 1);
-                        game.addStatus(_target!, langMap!['dissociated'], 0, 2);
+                        game.addStatus(_target!, langMap!['dissociated'], 10, 1);
                       }
                       // 寒绝凝冰
                       else if (cardName == langMap!['cryotheum']) {
@@ -2099,9 +2175,6 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       }
                       // 极北之心
                       else if (cardName == langMap!['arctic_heart']) {
-                        /*String arcticHeartChoice = settings['arcticHeartChoice'];
-                        game.players[_source]!.skill[arcticHeartChoice] = 
-                        (game.players[_source]!.skill[arcticHeartChoice] ?? 0) - 1 * reinforcementMulti;*/
                         for (var skill in game.players[_source]!.skill.keys) {
                           game.players[_source]!.skill[skill] = game.players[_source]!.skill[skill]! - 2 * reinforcementMulti < 0 
                             ? 0 : game.players[_source]!.skill[skill]! - 2 * reinforcementMulti;
@@ -2205,9 +2278,6 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       else if (cardName == langMap!['refreshment']) {
                         String refreshmentChoice = settings['refreshmentChoice'];
                         game.players[_source]!.skill[refreshmentChoice] = 0;
-                        /*for (var skill in game.players[_source]!.skill.keys) {
-                          game.players[_source]!.skill[skill] = 0;
-                        }*/
                       }
                       // 水波荡漾
                       else if (cardName == langMap!['rippling_water']) {
@@ -2248,6 +2318,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       // 迅捷术
                       else if (cardName == langMap!['swift_spell']) {
                         game.addStatus(_source!, langMap!['swift'], 1 * reinforcementMulti, 2);
+                        _sourcePlayer!.status[langMap!['swift']]![2]++;
                       }
                       // 炎极烈火
                       else if (cardName == langMap!['pyrotheum']) {
@@ -2435,6 +2506,11 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     final targets = [maxHpChara, maxSecondHpChara];
                     game.castTrait(_source!, targets, langMap!['earth_break'], {'cardList': cardsList});
                   }
+                  // 祝烨诚【凛息】
+                  else if (_source! == langMap!['zhu_yecheng']) { 
+                    game.castTrait(_source!, [_target!], langMap!['icy_stillness'], {'type': 0});
+                    game.castTrait(_source!, [_target!], langMap!['icy_stillness'], {'type': 2, 'cardList': cardsList});
+                  }
                   // 好好先生【深重情谊】
                   if (_target == langMap!['mr_nice'] && !_sourcePlayer!.hasHiddenStatus('rest')){
                     game.castTrait(_target!, [_source!], langMap!['imposing_favor']);
@@ -2456,23 +2532,6 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     game.addHiddenStatus(chara.id, 'night', 1, -1);
                     game.castTrait(chara.id, [_source!], langMap!['ruinous_shade'], {'type': 1});
                   }
-                  /*for (var chara in game.players.values) {
-                    if (chara.id == langMap!['apophis'] && _sourcePlayer!.hasStatus(langMap!['nightmare']) && !chara.isDead
-                      && _sourcePlayer!.getHiddenStatusIntensity('night') < 3) {
-                      if (_sourcePlayer!.hasStatus(langMap!['eden'])) {
-                        game.damagePlayer(chara.id, _source!, 20 + 40 * _sourcePlayer!.getStatusIntensity(langMap!['nightmare']), DamageType.magical);
-                        game.healPlayer(chara.id, chara.id, 10 + 20 * _sourcePlayer!.getStatusIntensity(langMap!['nightmare']), DamageType.heal);
-                      }
-                      else {
-                        game.damagePlayer(chara.id, _source!, 10 + 20 * _sourcePlayer!.getStatusIntensity(langMap!['nightmare']), DamageType.magical);
-                        game.healPlayer(chara.id, chara.id, 5 + 10 * _sourcePlayer!.getStatusIntensity(langMap!['nightmare']), DamageType.heal);
-                      }
-                      game.addHiddenStatus(_source!, 'night', 1, -1);
-                      game.addHiddenStatus(chara.id, 'night', 1, -1);
-                      game.castTrait(chara.id, [_source!], langMap!['ruinous_shade'], {'type': 1});
-                      break;
-                    }
-                  }*/
 
                   // 投掷骰子
                   point = game.throwDice(_source!, _target!, point, DiceType.action);
@@ -2619,6 +2678,11 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   final targets = [...game.players.keys.where((chara) => chara != 'empty' && !game.players[chara]!.isDead)];
                   game.castSkill(_source!, targets, _selectedSkill!);
                 }
+                // 祝烨诚【裁冰裂霜】
+                if (_selectedSkill == langMap!['frost_shatter']) {
+                  final targets = [if (_target != null) _target!, ..._skillTargetList];
+                  game.castSkill(_source!, targets, _selectedSkill!);
+                }
               }
             }
             else if (_actionType == '特质') {
@@ -2682,7 +2746,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 }
                 // 舸灯【引渡】
                 else if (_selectedTrait == langMap!['ghost_ferry']) {
-                  game.castTrait(_source!, [_source!], langMap!['ghost_ferry'], {"type": 2});
+                  game.castTrait(_source!, [_source!], langMap!['ghost_ferry'], {"type": 1});
                 }
                 // 高淼【轻捷妙手】
                 else if (_selectedTrait == langMap!['deft_touch']) {
@@ -2773,6 +2837,30 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   final targets = [if (_target != null) _target!, ..._traitTargetList];
                   game.castTrait(_source!, targets, langMap!['glacial_circle'], {'type': 0, 'point': _glacialCirclePoint});
                   game.throwDice(_source!, _source!, _glacialCirclePoint, DiceType.trait);
+                }
+                // 奥菲莉娅【控水】
+                else if (_selectedTrait == langMap!['hydromancy']) {
+                  game.castTrait(_source!, [_target!], langMap!['hydromancy'], {'type': _hydromancyChoice});                  
+                }
+                // 奥菲莉娅【水之刑】
+                else if (_selectedTrait == langMap!['water_torture']) {
+                  game.castTrait(_source!, [_target!], langMap!['water_torture'], {'type': _waterTortureChoice, 'point': _waterTorturePoint});
+                }
+                // EnGine-4【<04>质能转换】
+                else if (_selectedTrait == langMap!['mass_energy_conversion']) {
+                  if (_massEnergyChoice == 0) {
+                    game.castTrait(_source!, [_source!], langMap!['mass_energy_conversion'], {'type': 2});
+                  }
+                  else {
+                    String maxHpChara = '';
+                    for (var player in game.gameSequence) {
+                      if (player == langMap!['engine_4']) continue;
+                      if (maxHpChara == '' || game.players[player]!.health > game.players[maxHpChara]!.health) {
+                        maxHpChara = player;
+                      }
+                    }
+                    game.castTrait(_source!, [maxHpChara], langMap!['mass_energy_conversion'], {'type': 3});
+                  }
                 }
               }
             }

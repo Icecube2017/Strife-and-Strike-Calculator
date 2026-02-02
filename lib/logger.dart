@@ -140,7 +140,7 @@ class GameLogger extends ChangeNotifier {
 
   /// 添加行动相关日志
   void addActionLog(GameTurn gameTurn, String source, String target, int point, String cards, String detail) {
-    addLog('回合${gameTurn.round} 轮次${gameTurn.turn} 额外${gameTurn.extra}，$source 对 $target 发起攻击，卡牌为 $cards，点数为 $point', category: '行动');
+    addLog('回合${gameTurn.round} 轮次${gameTurn.turn} 额外${gameTurn.extra}，$source 对 $target 发起攻击，卡牌为 $cards，点数为 $point， 参数为 $detail', category: '行动');
   }
 
   // 添加属性相关日志
@@ -150,7 +150,7 @@ class GameLogger extends ChangeNotifier {
 
   /// 添加状态相关日志
   void addStatusLog(GameTurn gameTurn, String playerId, String status, int intensity, int layer) {
-    addLog('回合${gameTurn.round} 轮次${gameTurn.turn} 额外${gameTurn.extra}，玩家 $playerId 状态 $status: 层数 $layer，强度 $intensity', category: '状态');
+    addLog('回合${gameTurn.round} 轮次${gameTurn.turn} 额外${gameTurn.extra}，玩家 $playerId 状态 $status: 强度 $intensity、层数 $layer', category: '状态');
   }
 
   /// 添加技能相关日志
@@ -165,7 +165,7 @@ class GameLogger extends ChangeNotifier {
 
   // 添加伤害相关日志
   void addDamageLog(GameTurn gameTurn, String source, String target, int damage, DamageType damageType, String detail) {
-    addLog('回合${gameTurn.round} 轮次${gameTurn.turn} 额外${gameTurn.extra}，$source 对 $target 造成 $damage ($damageType) 点伤害', category: '伤害');
+    addLog('回合${gameTurn.round} 轮次${gameTurn.turn} 额外${gameTurn.extra}，$source 对 $target 造成 $damage ($damageType) 点伤害，参数为 $detail', category: '伤害');
   }
 
   /// 添加治疗相关日志
