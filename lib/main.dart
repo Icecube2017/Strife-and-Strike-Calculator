@@ -7,6 +7,7 @@ import 'package:sns_calculator/settings.dart';
 import 'package:sns_calculator/record.dart';
 import 'package:sns_calculator/assets.dart';
 import 'package:sns_calculator/widgets/info_page.dart';
+import 'package:sns_calculator/widgets/search_page.dart';
 import 'package:sns_calculator/widgets/history_page.dart';
 import 'package:sns_calculator/widgets/logger_page.dart';
 
@@ -98,13 +99,38 @@ class _MyHomePageState extends State<MyHomePage> {
     }
     return LayoutBuilder(
       builder: (context, constraints) {
+        final bool isNarrow = constraints.maxWidth < 600;
+
+        if (isNarrow) {
+          // 窄屏：使用 BottomNavigationBar
+          return Scaffold(
+            body: SafeArea(child: page),
+            bottomNavigationBar: BottomNavigationBar(
+              currentIndex: selectedIndex,
+              type: BottomNavigationBarType.fixed,
+              onTap: (value) {
+                setState(() {
+                  selectedIndex = value;
+                });
+              },
+              items: const [
+                BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
+                BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
+                BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Logs'),
+              ],
+            ),
+          );
+        }
+
+        // 宽屏：保留 NavigationRail
         return Scaffold(
           body: Row(
             children: [
               SafeArea(
                 child: NavigationRail(
                   extended: constraints.maxWidth >= 800,
-                  destinations: [
+                  destinations: const [
                     NavigationRailDestination(
                       icon: Icon(Icons.home),
                       label: Text('Home'),

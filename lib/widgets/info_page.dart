@@ -17,6 +17,7 @@ import 'package:sns_calculator/widgets/history_page.dart';
 import 'package:sns_calculator/widgets/attribute_settings.dart';
 import 'package:sns_calculator/widgets/game_logger.dart';
 import 'package:sns_calculator/widgets/skill_rolling.dart';
+import 'package:lpinyin/lpinyin.dart';
 
 class InfoPage extends StatefulWidget {
   const InfoPage({super.key});
@@ -62,6 +63,7 @@ class _InfoPageState extends State<InfoPage> {
     characterTypeData = assets.characterTypeData;
     regenerateTypeData = assets.regenerateTypeData;
     dropdownItems = characterData?.keys.toList() ?? [];
+    dropdownItems.remove('角色');
     game = GameManager().game;
     final recordProvider = Provider.of<RecordProvider>(context, listen: false);
     final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
@@ -563,432 +565,203 @@ void _restoreGameState(String stateJson) {
     }
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('SnS Info')),
+      appBar: AppBar(
+        title: const Text('SnS Info'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
+            child: ElevatedButton(
+              onPressed: () => _resetGameTurn(),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                textStyle: const TextStyle(fontSize: 14),
+                minimumSize: const Size(64, 36),
+              ),
+              child: const Text('重置计分'),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
+            child: ElevatedButton(
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) => const GameLoggerWindow(),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                textStyle: const TextStyle(fontSize: 14),
+                minimumSize: const Size(64, 36),
+              ),
+              child: const Text('查看日志'),
+            ),
+          ),
+        ],
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 1. 顶部操作栏 - 改为自适应宽度排列
+            // 1. 顶部操作栏 - 自适应矩阵式按钮
             LayoutBuilder(
               builder: (context, constraints) {
-                // 根据屏幕宽度决定按钮排列方式
-                bool isWideScreen = constraints.maxWidth > 600;
+                const double narrowWidthThreshold = 600; // 窄屏阈值（px）
+                final double width = constraints.maxWidth;
 
-                if (isWideScreen) {
-                  // 宽屏：按顺序分为两行排列
-                  return Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: game.gameState == GameState.waiting ? () => _showDropdownMenu() : null,
-                              style: ElevatedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              child: const Text('添加角色'),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: (selectedIndex != null && game.gameState == GameState.waiting) ? _deleteSelectedRow : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('删除角色'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: (selectedIndex != null) ? _showAttributeSettingsDialog : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('编辑属性'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: game.gameState == GameState.waiting ? () => game.toggleGameType() : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: Text('切换模式：${game.gameType.name}'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: (game.gameState == GameState.waiting && game.gameType == GameType.team) ? () => _showTeamManagerDialog() : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('队伍管理'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: game.players.keys.length < 3 ? null : () => _showAddActionDialog(),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('添加行动'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: game.players.keys.length < 3 ? null : () => _changeGameTurn(),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('轮次变更'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _resetGameTurn(),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('重置计分'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _createNewSave(),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      // backgroundColor: Colors.orange,
-                    ),
-                    child: const Text('新建'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _showLoadDialog(),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('加载'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
-                      return historyProvider.currentHistoryIndex > 0 ? _undo() : null;
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('撤销'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
-                      return historyProvider.currentHistoryIndex < historyProvider.history.length - 1 ? _redo() : null;
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('重做'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _saveGameToFile(),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('保存'),
-                  ),
-                ),
-                const SizedBox(width: 16),                
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => const GameLoggerWindow(),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('查看日志'),
-                  ),
-                ),
-                
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [                
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => const SkillRollingDialog(),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('抽取技能'),
-                  ),
-                ),
-              ],
-            )     
-          ],
-        );
-      } else {
-        // 窄屏：网格排列
-        return Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: game.gameState == GameState.waiting ? () => _showDropdownMenu() : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('添加角色'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: (selectedIndex != null && game.gameState == GameState.waiting) ? _deleteSelectedRow : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('删除角色'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [         
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: (selectedIndex != null) ? _showAttributeSettingsDialog : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('编辑属性'),
-                  ),
-                ),
-                const SizedBox(width: 8),       
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: game.gameState == GameState.waiting ? () => game.toggleGameType() : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: Text('切换模式：${game.gameType.name}'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: (game.gameState == GameState.waiting && game.gameType == GameType.team) ? () => _showTeamManagerDialog() : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('队伍管理'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: game.players.keys.length < 3 ? null : () => _showAddActionDialog(),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('添加行动'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [                
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: game.players.keys.length < 3 ? null : () => _changeGameTurn(),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('轮次变更'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _resetGameTurn(),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('重置计分'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _createNewSave(),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      //backgroundColor: Colors.orange,
-                    ),
-                    child: const Text('新建'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => _showLoadDialog(),
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('加载'),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
-                      return historyProvider.currentHistoryIndex > 0 ? _undo() : null;
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('撤销'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
-                      return historyProvider.currentHistoryIndex < historyProvider.history.length - 1 ? _redo() : null;
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                    ),
-                    child: const Text('重做'),
-                  ),
-                ),
-              ],
-            ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () => _saveGameToFile(),
-                              style: ElevatedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              child: const Text('保存'),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => const GameLoggerWindow(),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              child: const Text('查看日志'),
-                            ),
-                          ),
-                        ]
+                // 自适应列数：窄屏强制 2 列，宽屏按宽度计算列数并限制在 3-6 列
+                int columns;
+                if (width < narrowWidthThreshold) {
+                  columns = 3;
+                } else {
+                  columns = (width / 180).floor();
+                  if (columns < 3) columns = 3;
+                  if (columns > 6) columns = 6;
+                }
+
+                // 按钮规格：label 与对应的 onPressed（为 null 表示禁用）
+                // 已将部分按钮移动到回合卡片或 AppBar，因此这里移除它们
+                final List<Map<String, dynamic>> specs = [
+                  {'label': '添加角色', 'on': game.gameState == GameState.waiting ? () => _showAddCharacterDialog() : null},
+                  {'label': '删除角色', 'on': (selectedIndex != null && game.gameState == GameState.waiting) ? _deleteSelectedRow : null},
+                  {'label': '编辑属性', 'on': (selectedIndex != null) ? _showAttributeSettingsDialog : null},
+                  {'label': '切换模式\n${game.gameType.name}', 'on': game.gameState == GameState.waiting ? () => game.toggleGameType() : null},
+                  {'label': '队伍管理', 'on': (game.gameState == GameState.waiting && game.gameType == GameType.team) ? () => _showTeamManagerDialog() : null},
+                  {'label': '新建', 'on': () => _createNewSave()},
+                  {'label': '加载', 'on': () => _showLoadDialog()},
+                  {'label': '保存', 'on': () => _saveGameToFile()},
+                  {'label': '抽取技能', 'on': () { showDialog(context: context, builder: (context) => const SkillRollingDialog()); }},
+                ];
+
+                // 固定按钮高度并让按钮填充单元格
+                const double buttonHeight = 36;
+
+                // 统一按钮样式构造器：按钮会扩展填充格子
+                Widget buildActionButton(Map<String, dynamic> spec) {
+                  final VoidCallback? onPressed = spec['on'] as VoidCallback?;
+                  return SizedBox.expand(
+                    child: ElevatedButton(
+                      onPressed: onPressed,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        textStyle: const TextStyle(fontSize: 14),
+                        minimumSize: const Size(64, buttonHeight),
                       ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [                          
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => const SkillRollingDialog(),
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                padding: EdgeInsets.symmetric(vertical: 12),
-                              ),
-                              child: const Text('抽取技能'),
-                            ),
-                          ),
-                        ],
-                      )
-                    ],
+                      child: Center(child: Text(spec['label'].toString(), textAlign: TextAlign.center)),
+                    ),
                   );
                 }
+
+                // 使用 GridView 并通过 SliverGridDelegate 设置每个格子的固定高度（mainAxisExtent）
+                return GridView(
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    mainAxisExtent: buttonHeight,
+                  ),
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  children: specs.map(buildActionButton).toList(),
+                );
               },
             ),
-            const SizedBox(height: 16),
+            
+            const SizedBox(height: 16.0),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                // 2. 当前回合进度显示区域
+                Column(
+                  children: [
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('当前回合\t ${game.round}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('当前轮次\t ${game.turn}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('额外回合\t ${game.extra}', style: const TextStyle(color: Colors.lightBlue, fontSize: 16, fontWeight: FontWeight.bold)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const Spacer(),
+
+                Builder(
+                  builder: (context) {
+                  // 统一获取历史提供者和判断撤销/重做可用性
+                    final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
+                    final bool canUndo = historyProvider.currentHistoryIndex > 0;
+                    final bool canRedo = historyProvider.currentHistoryIndex < historyProvider.history.length - 1;
+                    const double smallButtonHeight = 36;
+
+                    return Row(
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Column(
+                          children: [
+                            SizedBox(
+                              height: smallButtonHeight,
+                              child: ElevatedButton(
+                                onPressed: canUndo ? _undo : null,
+                                style: ElevatedButton.styleFrom(minimumSize: const Size(120, smallButtonHeight)),
+                                child: const Text('撤销'),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: smallButtonHeight,
+                              child: ElevatedButton(
+                                onPressed: canRedo ? _redo : null,
+                                style: ElevatedButton.styleFrom(minimumSize: const Size(120, smallButtonHeight)),
+                                child: const Text('重做'),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(width: 8),
+                        Column(
+                          children: [
+                            SizedBox(
+                              height: smallButtonHeight,
+                              child: ElevatedButton(
+                                onPressed: game.players.keys.length < 3 ? null : () => _showAddActionDialog(),
+                                style: ElevatedButton.styleFrom(minimumSize: const Size(120, smallButtonHeight)),
+                                child: const Text('添加行动'),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            SizedBox(
+                              height: smallButtonHeight,
+                              child: ElevatedButton(
+                                onPressed: game.players.keys.length < 3 ? null : () => _changeGameTurn(),
+                                style: ElevatedButton.styleFrom(minimumSize: const Size(120, smallButtonHeight)),
+                                child: const Text('轮次变更'),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],      
+                    );
+                  },
+                ),
+              ],
+            ),
+            
+
             // 2. 表格区域（用Expanded避免溢出）
-            Text('当前回合：${game.round}',
-              style: TextStyle(
-                fontSize: 18, 
-                fontWeight: FontWeight.bold)
-                ),
-            const SizedBox(height: 4),
-            Text('当前轮次：${game.turn}',
-              style: TextStyle( 
-                fontSize: 18,
-                fontWeight: FontWeight.bold)
-                ),
-            const SizedBox(height: 4),
-            Text('额外回合：${game.extra}',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold)
-                ),
             Expanded(
               child: Scrollbar(
                 controller: _horizontalScrollController,
@@ -1075,7 +848,146 @@ void _restoreGameState(String stateJson) {
     );
   }
 
-  // 3. 弹出下拉菜单（选择项后添加行）
+  // 2. 弹出添加角色对话框（长列表：按拼音首字母分组、每组内矩阵排列、可滚动）
+  void _showAddCharacterDialog() {
+    // 准备数据源：所有可添加的角色名（来自 characterData keys），剔除已在游戏中的
+    final allNames = characterData?.keys.toList() ?? [];
+    allNames.remove('角色');
+    final available = allNames.where((name) => !game.players.keys.contains(name)).toList();
+
+    // 生成分组 map：首字母 -> list of names
+    Map<String, List<String>> groups = {};
+    for (var name in available) {
+      String initial;
+      try {
+        final short = PinyinHelper.getShortPinyin(name);
+        initial = short.isNotEmpty ? short[0].toUpperCase() : name[0].toUpperCase();
+      } catch (_) {
+        initial = name.isNotEmpty ? name[0].toUpperCase() : '#';
+      }
+      if (!RegExp(r'[A-Z]').hasMatch(initial)) initial = '#';
+      groups.putIfAbsent(initial, () => []).add(name);
+    }
+
+    // 对每个组内按完整拼音排序
+    for (var key in groups.keys) {
+      groups[key]!.sort((a, b) {
+        final pa = PinyinHelper.getPinyinE(a, separator: '');
+        final pb = PinyinHelper.getPinyinE(b, separator: '');
+        return pa.compareTo(pb);
+      });
+    }
+
+    // 组 keys 排序（字母顺序，# 放最后）
+    final sortedKeys = groups.keys.toList()..sort((a, b) {
+      if (a == '#') return 1;
+      if (b == '#') return -1;
+      return a.compareTo(b);
+    });
+
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return Dialog(
+          child: LayoutBuilder(builder: (context, constraints) {
+            final double maxW = constraints.maxWidth > 600 ? 600 : constraints.maxWidth;
+            return SizedBox(
+              width: maxW,
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        const Expanded(child: Text('添加角色', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                        IconButton(
+                          icon: const Icon(Icons.close),
+                          onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: Scrollbar(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: sortedKeys.length,
+                        itemBuilder: (context, idx) {
+                          final key = sortedKeys[idx];
+                          final names = groups[key]!;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // 分组标题
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 6.0),
+                                  child: Text(key, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                                ),
+                                // 矩阵：自适应列数（3-6）
+                                LayoutBuilder(builder: (context, box) {
+                                  final double w = box.maxWidth;
+                                  int columns = (w / 140).floor();
+                                  if (columns < 3) columns = 3;
+                                  if (columns > 6) columns = 6;
+
+                                  return GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: columns,
+                                      crossAxisSpacing: 8,
+                                      mainAxisSpacing: 8,
+                                      mainAxisExtent: 40,
+                                    ),
+                                    itemCount: names.length,
+                                    itemBuilder: (context, i) {
+                                      final name = names[i];
+                                      return ElevatedButton(
+                                        onPressed: () {
+                                          // 添加角色并关闭对话框
+                                          setState(() {
+                                            int health = characterTypeData?[characterData?[name][0]][0] ?? 0;
+                                            int attack = characterTypeData?[characterData?[name][0]][1] ?? 0;
+                                            int defence = characterTypeData?[characterData?[name][0]][2] ?? 0;
+                                            int movePoint = 0;
+                                            int maxMove = regenerateTypeData?[characterData?[name][1]][0] ?? 0;
+                                            int moveRegen = regenerateTypeData?[characterData?[name][1]][1] ?? 0;
+                                            int regenType = regenerateTypeData?[characterData?[name][1]][2] ?? 0;
+                                            int regenTurn = regenerateTypeData?[characterData?[name][1]][3] ?? 0;
+                                            Character character = Character(name, health, attack, defence, movePoint, maxMove, moveRegen, regenType, regenTurn);
+                                            game.addPlayer(character);
+                                            tableData.add({'column1': name});
+                                          });
+                                          Navigator.of(ctx).pop();
+                                        },
+                                        style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                                        child: Text(name, textAlign: TextAlign.center),
+                                      );
+                                    },
+                                  );
+                                }),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        );
+      }
+    );
+  }
+
+  /*
   void _showDropdownMenu() {
     showMenu(
       context: context,
@@ -1108,6 +1020,7 @@ void _restoreGameState(String stateJson) {
       }
     });
   }
+  */
 
   // 队伍管理弹窗
   void _showTeamManagerDialog(){

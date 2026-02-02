@@ -13,6 +13,11 @@ class AssetsManager{
   static final Logger _logger = Logger();
 
   Map<String, dynamic>? langMap;
+  // 明确的 id -> label / label -> id 映射，便于在不破坏现有兼容性的前提下逐步迁移
+  final Map<String, String> idToLabel = {};
+  final Map<String, String> labelToId = {};
+  Map<String, String>? idtoLabel;
+  Map<String, String>? labeltoId;
   Map<String, dynamic>? characterData;
   Map<String, dynamic>? characterTypeData;
   Map<String, dynamic>? regenerateTypeData;
@@ -49,10 +54,24 @@ class AssetsManager{
   Future<void> _loadLang() async {
     String jsonString = await rootBundle.loadString('assets/map.json');
     langMap = json.decode(jsonString);
+    // 将原始 map 按照明确类型存入 idToLabel，同时构造逆映射并检测冲突
     for (String key in langMap!.keys.toList()) {
-      langMap![key] = langMap![key]!;
+      final value = langMap![key];
+      final label = value == null ? '' : value.toString();
+      idToLabel[key] = label;
+      if (labelToId.containsKey(label)) {
+        _logger.w('发现重复的 label 映射："$label" 对应 ${labelToId[label]} 和 $key');
+      } else {
+        labelToId[label] = key;
+      }
     }
   }
+
+  // 返回给定 id 的展示文本，如不存在则回退为 id 自身
+  String labelFor(String id) => idToLabel[id] ?? id;
+
+  // 在需要从 label 反查 id 的场景下使用，找不到返回 null
+  String? idForLabel(String label) => labelToId[label];
 
   // 其他资源的加载，依赖 langMap 已经准备好
   Future<void> _loadOtherAssets() async {

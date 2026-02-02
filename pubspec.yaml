@@ -33,6 +33,7 @@ dependencies:
   logger: ^2.6.2
   path_provider: ^2.1.5
   shared_preferences: ^2.2.2
+  lpinyin: ^2.0.3
   flutter:
     sdk: flutter
 

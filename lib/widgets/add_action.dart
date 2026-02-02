@@ -9,6 +9,7 @@ import 'package:sns_calculator/settings.dart';
 import 'package:sns_calculator/logger.dart';
 import 'package:sns_calculator/widgets/attack_effect_settings.dart';
 import 'package:sns_calculator/widgets/card_settings.dart';
+import 'package:lpinyin/lpinyin.dart';
 
 class AddActionDialog extends StatefulWidget {
   final List<String> characterList;
@@ -26,7 +27,7 @@ class AddActionDialog extends StatefulWidget {
 
 class _AddActionDialogState extends State<AddActionDialog> {
   // 第一个下拉菜单选项
-  final List<String> _actionTypes = ['行动', '技能', '特质'];
+  // final List<String> _actionTypes = ['行动', '技能', '特质'];
   
   // 各个下拉菜单的当前选中值
   String? _actionType;
@@ -231,60 +232,167 @@ class _AddActionDialogState extends State<AddActionDialog> {
       }
     }
 
-    await showMenu(
-      context: context,
-      position: RelativeRect.fromLTRB(0, 0, 0, 0),
-      items: cardTypes!.map((String item) {
-        return PopupMenuItem(
-          value: item,
-          child: Text(item),
-        );
-      }).toList(),
-    ).then((String? selectedValue) {
-      if (selectedValue != null) {
-        setState(() {
-          // 添加到表格数据中
-          _cardTableData.add({
-            'cardName': selectedValue,
-            'settings': <String, dynamic>{}, // 可用于存储该行的设置
-          });
-        });
-        // 添加到道具卡设置管理器中（不在 setState 中执行获取 provider）
-        final cardSettingManager = Provider.of<CardSettingsManager>(context, listen: false);
-        cardSettingManager.addNewCard(selectedValue);
-        // 初始化部分设置
-        if (langMap != null && selectedValue == langMap!['redstone']) {
-          RedstoneSetting setting = RedstoneSetting();
-          setting.playerProlonged = _source!;
-          setting.statusProlonged = game.players[_source!]!.status.isEmpty ? '' : game.players[_source!]!.status.keys.first;
-          cardSettingManager.updateCardSettings(_cardTableData.length - 1, setting);
-        }
-        else if (langMap != null && selectedValue == langMap!['ascension_stair']) {
-          AscensionStairSetting setting = AscensionStairSetting();
-          for (var chara in game.players.values) {
-            if (chara.id != 'empty') {
-              setting.ascensionPoints[chara.id] = 1;
-            }              
-          }
-          cardSettingManager.updateCardSettings(_cardTableData.length - 1, setting);
-        }
-        else if (langMap != null && selectedValue == langMap!['refreshment']) {
-          RefreshmentSetting setting = RefreshmentSetting();
-          String skill = game.players[_source!]!.skill.isEmpty ? '' : game.players[_source!]!.skill.keys.first;
-          setting.refreshmentChoice = skill;
-          cardSettingManager.updateCardSettings(_cardTableData.length - 1, setting);
-        }
-        else if (langMap != null && selectedValue == langMap!['aurora_concussion']) {
-          AuroraConcussionSetting setting = AuroraConcussionSetting();
-          for (var chara in game.players.values) {
-            if (game.isEnemy(_source!, chara.id)) {
-              setting.auroraPoints[chara.id] = 1;
-            }              
-          }
-          cardSettingManager.updateCardSettings(_cardTableData.length - 1, setting);
-        }
+    // 构建按拼音首字母分组的数据结构
+    final allCards = cardTypes ?? [];
+    // 生成分组 map：首字母 -> list of card names
+    Map<String, List<String>> groups = {};
+    for (var name in allCards) {
+      String initial;
+      try {
+        final short = PinyinHelper.getShortPinyin(name);
+        initial = short.isNotEmpty ? short[0].toUpperCase() : name[0].toUpperCase();
+      } catch (_) {
+        initial = name.isNotEmpty ? name[0].toUpperCase() : '#';
       }
+      if (!RegExp(r'[A-Z]').hasMatch(initial)) initial = '#';
+      groups.putIfAbsent(initial, () => []).add(name);
+    }
+
+    // 组内按完整拼音排序
+    for (var key in groups.keys) {
+      groups[key]!.sort((a, b) {
+        final pa = PinyinHelper.getPinyinE(a, separator: '');
+        final pb = PinyinHelper.getPinyinE(b, separator: '');
+        return pa.compareTo(pb);
+      });
+    }
+
+    final sortedKeys = groups.keys.toList()..sort((a, b) {
+      if (a == '#') return 1;
+      if (b == '#') return -1;
+      return a.compareTo(b);
     });
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return Dialog(
+          child: LayoutBuilder(builder: (context, constraints) {
+            final double maxW = constraints.maxWidth > 600 ? 600 : constraints.maxWidth;
+            return SizedBox(
+              width: maxW,
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        const Expanded(child: Text('添加道具卡', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.of(ctx).pop()),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: Scrollbar(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: sortedKeys.length,
+                        itemBuilder: (context, idx) {
+                          final key = sortedKeys[idx];
+                          final names = groups[key]!;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 6.0),
+                                  child: Text(key, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                                ),
+                                LayoutBuilder(builder: (context, box) {
+                                  final double w = box.maxWidth;
+                                  int columns = (w / 140).floor();
+                                  if (columns < 3) columns = 3;
+                                  if (columns > 6) columns = 6;
+
+                                  return GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: columns,
+                                      crossAxisSpacing: 8,
+                                      mainAxisSpacing: 8,
+                                      mainAxisExtent: 40,
+                                    ),
+                                    itemCount: names.length,
+                                    itemBuilder: (context, i) {
+                                      final name = names[i];
+                                      return ElevatedButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            // 添加到表格数据（允许重复选择）
+                                            _cardTableData.add({
+                                              'cardName': name,
+                                              'settings': <String, dynamic>{},
+                                            });
+                                          });
+                                          // 添加到道具卡设置管理器
+                                          final cardSettingManager = Provider.of<CardSettingsManager>(context, listen: false);
+                                          cardSettingManager.addNewCard(name);
+                                          // 初始化部分设置（沿用原逻辑）
+                                          if (langMap != null && name == langMap!['redstone']) {
+                                            RedstoneSetting setting = RedstoneSetting();
+                                            setting.playerProlonged = _source!;
+                                            setting.statusProlonged = game.players[_source!]!.status.isEmpty ? '' : game.players[_source!]!.status.keys.first;
+                                            cardSettingManager.updateCardSettings(_cardTableData.length - 1, setting);
+                                          }
+                                          else if (langMap != null && name == langMap!['ascension_stair']) {
+                                            AscensionStairSetting setting = AscensionStairSetting();
+                                            for (var chara in game.players.values) {
+                                              if (chara.id != 'empty') {
+                                                setting.ascensionPoints[chara.id] = 1;
+                                              }
+                                            }
+                                            cardSettingManager.updateCardSettings(_cardTableData.length - 1, setting);
+                                          }
+                                          else if (langMap != null && name == langMap!['refreshment']) {
+                                            RefreshmentSetting setting = RefreshmentSetting();
+                                            String skill = game.players[_source!]!.skill.isEmpty ? '' : game.players[_source!]!.skill.keys.first;
+                                            setting.refreshmentChoice = skill;
+                                            cardSettingManager.updateCardSettings(_cardTableData.length - 1, setting);
+                                          }
+                                          else if (langMap != null && name == langMap!['aurora_concussion']) {
+                                            AuroraConcussionSetting setting = AuroraConcussionSetting();
+                                            for (var chara in game.players.values) {
+                                              if (game.isEnemy(_source!, chara.id)) {
+                                                setting.auroraPoints[chara.id] = 1;
+                                              }
+                                            }
+                                            cardSettingManager.updateCardSettings(_cardTableData.length - 1, setting);
+                                          }
+
+                                          // 不关闭对话框，以允许重复添加；如果需要一次添加后自动关闭，调用 Navigator.of(ctx).pop();
+                                        },
+                                        style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                                        child: Text(name, textAlign: TextAlign.center),
+                                      );
+                                    },
+                                  );
+                                }),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(ctx).pop(),
+                      child: const Text('完成'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        );
+      },
+    );
   }
 
   // 删除道具卡行
@@ -477,7 +585,12 @@ class _AddActionDialogState extends State<AddActionDialog> {
 
     await showMenu(
       context: context,
-      position: RelativeRect.fromLTRB(0, 0, 0, 0),
+      position: RelativeRect.fromLTRB(
+        MediaQuery.of(context).size.width / 2,
+        MediaQuery.of(context).size.height / 2,
+        MediaQuery.of(context).size.width / 2,
+        MediaQuery.of(context).size.height / 2,
+      ),
       items: skillTargetItems,
     ).then((String? selectedValue) {
       if (!mounted) return;
@@ -571,6 +684,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
         ],
       );
     }
+
     return AlertDialog(
       title: Text('添加行动'),
       content: SizedBox(
@@ -580,74 +694,118 @@ class _AddActionDialogState extends State<AddActionDialog> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 第一个下拉菜单
+              // 行动类型选择
               Text('行动类型', style: TextStyle(fontWeight: FontWeight.bold)),
-              DropdownButtonFormField<String>(
-                initialValue: _actionType,
-                hint: Text('请选择行动类型'),
-                items: _actionTypes.map((String item) {
-                  return DropdownMenuItem(
-                    value: item,
-                    child: Text(item),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _actionType = newValue;
-                  });
-                },
-                isExpanded: true,
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // 使用 ToggleButtons 实现按下后保持选中、切换时取消的行为
+                  ToggleButtons(
+                    isSelected: [
+                      _actionType == '行动',
+                      _actionType == '技能',
+                      _actionType == '特质',
+                    ],
+                    onPressed: (int index) {
+                      setState(() {
+                        switch (index) {
+                          case 0:
+                            _actionType = '行动';
+                            break;
+                          case 1:
+                            _actionType = '技能';
+                            break;
+                          case 2:
+                            _actionType = '特质';
+                            break;
+                        }
+                      });
+                    },
+                    constraints: const BoxConstraints(minWidth: 80, minHeight: 36),
+                    borderRadius: BorderRadius.circular(6),
+                    selectedColor: Colors.white,
+                    fillColor: Theme.of(context).colorScheme.primary,
+                    children: const [
+                      Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('行动')),
+                      Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('技能')),
+                      Padding(padding: EdgeInsets.symmetric(horizontal: 12), child: Text('特质')),
+                    ],
+                  ),
+                ],
               ),
-              SizedBox(height: 16),
-              
-              // 第二个下拉菜单（来自表格第一列）
-              Text('进攻角色', style: TextStyle(fontWeight: FontWeight.bold)),
-              DropdownButtonFormField<String>(
-                initialValue: _source,
-                hint: Text('请选择第一个角色'),
-                items: widget.characterList.where((item) => !game.players[item]!.isDead 
-                  && !game.players[item]!.hasStatus(langMap!['gugu']))
-                .map((String item) {
-                  return DropdownMenuItem(
-                    value: item,
-                    child: Text(item),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _source = newValue;
-                    // 如果第三个下拉菜单选择了与第二个相同的角色，则重置
-                    if (_target == newValue) {
-                      _target = null;
-                    }
-                  });
-                },
-                isExpanded: true,
-              ),
-              SizedBox(height: 16),
-              
-              // 第三个下拉菜单（来自表格第一列，但排除第二个菜单已选择的项）
-              Text('防守角色', style: TextStyle(fontWeight: FontWeight.bold)),
-              DropdownButtonFormField<String>(
-                initialValue: _target,
-                hint: Text('请选择第二个角色'),
-                items: widget.characterList
-                    .where((item) => !game.players[item]!.isDead 
-                      && !game.players[item]!.hasStatus(langMap!['gugu']))
-                    .map((String item) {
-                      return DropdownMenuItem(
-                        value: item,
-                        child: Text(item),
-                      );
-                    }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _target = newValue;
-                  });
-                },
-                isExpanded: true,
-              ),
-              SizedBox(height: 16),
+              Text('主动角色', style: TextStyle(fontWeight: FontWeight.bold)),
+              LayoutBuilder(builder: (context, box) {
+                // 按人数决定每行列数：<=4 每行2个，否则每行3个
+                final candidates = widget.characterList.where((item) => !game.players[item]!.isDead && !game.players[item]!.hasStatus(langMap!['gugu'])).toList();
+                final int columns = candidates.length <= 4 ? 2 : 3;
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    mainAxisExtent: 40,
+                  ),
+                  itemCount: candidates.length,
+                  itemBuilder: (context, i) {
+                    final name = candidates[i];
+                    final bool selected = _source == name;
+                    return ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _source = name;
+                          if (_target == name) _target = null;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        backgroundColor: selected ? Theme.of(context).colorScheme.primary : null,
+                        foregroundColor: selected ? Colors.white : null,
+                      ),
+                      child: Text(name, textAlign: TextAlign.center),
+                    );
+                  },
+                );
+              }),
+              const SizedBox(height: 12),
+
+              Text('被动角色', style: TextStyle(fontWeight: FontWeight.bold)),
+              LayoutBuilder(builder: (context, box) {
+                final candidates = widget.characterList.where((item) => !game.players[item]!.isDead && !game.players[item]!.hasStatus(langMap!['gugu'])).toList();
+                final int columns = candidates.length <= 4 ? 2 : 3;
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: columns,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    mainAxisExtent: 40,
+                  ),
+                  itemCount: candidates.length,
+                  itemBuilder: (context, i) {
+                    final name = candidates[i];
+                    final bool selected = _target == name;
+                    return ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _target = name;
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        backgroundColor: selected ? Theme.of(context).colorScheme.primary : null,
+                        foregroundColor: selected ? Colors.white : null,
+                      ),
+                      child: Text(name, textAlign: TextAlign.center),
+                    );
+                  },
+                );
+              }),
+              const SizedBox(height: 16),
               
               // 条件性显示的道具卡选择区域（仅在选择"行动"时显示）
               if (_actionType == '行动') ...[
@@ -830,7 +988,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 ],
                 SizedBox(height: 16),
               ] else if (_actionType == '技能') ...[
-                Text('技能目标', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('额外目标', style: TextStyle(fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: _showSkillTargetSelectionMenu,
@@ -1080,8 +1238,11 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     )
                   ] 
                 ]
-              ] else if (_actionType == '特质') ...[
-                Text('特质目标', style: TextStyle(fontWeight: FontWeight.bold)),
+              ]
+
+              // 特质
+              else if (_actionType == '特质') ...[
+                Text('额外目标', style: TextStyle(fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: _showTraitTargetSelectionMenu,
@@ -1814,6 +1975,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
           ),
         ),
       ),
+      
       actions: [
         TextButton(
           onPressed: () {
