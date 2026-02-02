@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui_web';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:logger/logger.dart';
@@ -30,8 +31,8 @@ class _InfoPageState extends State<InfoPage> {
   // 表格数据（每行包含各列内容）
   List<Map<String, dynamic>> tableData = [];
   final ScrollController _horizontalScrollController = ScrollController();
-  // 当前选中的行索引（null表示无选中）
-  int? selectedIndex;
+  // 当前选中的卡片 id（null表示无选中）
+  String? selectedIndex;
   // 游戏数据id
   String gameId = 'game1';
   // 游戏数据
@@ -553,13 +554,13 @@ void _restoreGameState(String stateJson) {
   Color _getTeamColor(int? teamId) { 
     switch (teamId) {
       case 1:
-        return Colors.red;
+        return Colors.redAccent;
       case 2:
         return Colors.blue;
       case 3:
         return Colors.green;
       case 4:
-        return Colors.yellow;
+        return Colors.yellow[700]!;
       default:
         return Colors.black;
     }
@@ -569,24 +570,35 @@ void _restoreGameState(String stateJson) {
 
   @override
   Widget build(BuildContext context) {
+    // 保证 tableData 与 game.gameSequence 同步：页面切换或重建时恢复卡片列表
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final seq = game.gameSequence;
+      final needsSync = (tableData.isEmpty && seq.isNotEmpty) || tableData.length != seq.length || tableData.any((e) => !seq.contains(e['column1']));
+      if (needsSync) {
+        setState(() {
+          tableData = seq.map((id) => {'column1': id}).toList();
+          if (selectedIndex != null && !game.players.containsKey(selectedIndex)) selectedIndex = null;
+        });
+      }
+    });
     return Scaffold(
       appBar: AppBar(
         title: const Text('SnS Info'),
         actions: [
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
+            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
             child: ElevatedButton(
               onPressed: () => _resetGameTurn(),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                textStyle: const TextStyle(fontSize: 14),
-                minimumSize: const Size(64, 36),
+                textStyle: const TextStyle(fontSize: 16),
               ),
               child: const Text('重置计分'),
             ),
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 6.0),
+            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
             child: ElevatedButton(
               onPressed: () {
                 showDialog(
@@ -596,8 +608,7 @@ void _restoreGameState(String stateJson) {
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                textStyle: const TextStyle(fontSize: 14),
-                minimumSize: const Size(64, 36),
+                textStyle: const TextStyle(fontSize: 16),
               ),
               child: const Text('查看日志'),
             ),
@@ -687,9 +698,9 @@ void _restoreGameState(String stateJson) {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('当前回合\t ${game.round}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              Text('当前轮次\t ${game.turn}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              Text('额外回合\t ${game.extra}', style: const TextStyle(color: Colors.lightBlue, fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('当前回合       ${game.round}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('当前轮次       ${game.turn}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('额外回合       ${game.extra}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
@@ -761,86 +772,226 @@ void _restoreGameState(String stateJson) {
             ),
             
 
-            // 2. 表格区域（用Expanded避免溢出）
+            // 卡片式显示角色信息（响应式：当单个卡片宽度超过1100时分两列），卡片高度自适应
             Expanded(
-              child: Scrollbar(
-                controller: _horizontalScrollController,
-                thumbVisibility: true,
-                child: SingleChildScrollView(
-                  controller: _horizontalScrollController,
-                  scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(
-                        // 修复点2：设置最小宽度约束
-                        constraints: BoxConstraints(
-                          minWidth: MediaQuery.of(context).size.width,
+              child: LayoutBuilder(builder: (context, constraints) {
+                final double width = constraints.maxWidth;
+                final int columns = width > 1100 ? 2 : 1;
+                final double spacing = 12;
+                final double itemWidth = (width - (columns - 1) * spacing) / columns;
+                final roles = tableData.map((e) => e['column1'] as String).where((r) => game.players.containsKey(r)).toList();
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.only(top: 8.0),
+                  child: Wrap(
+                    spacing: spacing,
+                    runSpacing: spacing,
+                    children: roles.map((roleName) {
+                      final character = game.players[roleName]!;
+                      int health = character.health;
+                      int armor = character.armor;
+                      int attack = character.attack;
+                      int defence = character.defence;
+                      int movePoint = character.movePoint;
+                      int maxMovePoint = character.maxMove;
+                      int cardCount = character.cardCount;
+                      Map<String, List<dynamic>> status = character.status;
+                      Map<String, List<dynamic>> hiddenStatus = character.hiddenStatus;
+                      Map<String, int> skill = character.skill;
+
+                      final bool isSelected = selectedIndex == roleName;
+
+                      return GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            selectedIndex = isSelected ? null : roleName;
+                          });
+                        },
+                        child: SizedBox(
+                          width: itemWidth,
+                          child: Container(
+                            padding: const EdgeInsets.all(12.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(8.0),
+                              border: isSelected
+                                  ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
+                                  : Border.all(color: Colors.grey.shade300, width: 1),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // 顶部: 名称 + 血量/护盾指示
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        roleName,
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                          color: character.isDead ? Colors.grey : _getTeamColor(game.getPlayerTeam(roleName))),
+                                      ),
+                                    ),
+                                    // 简短的生命数值和护盾图标
+                                    Row(
+                                      children: [
+                                        if (armor > 0) ...[
+                                          const Icon(Icons.health_and_safety, color: Colors.blueGrey, size: 16),
+                                          const SizedBox(width: 4),
+                                          Text('$armor', style: const TextStyle(fontSize: 14)),
+                                          const SizedBox(width: 8),
+                                        ],
+                                        const Icon(Icons.water_drop, color: Colors.redAccent, size: 16),
+                                        const SizedBox(width: 4),
+                                        Text('$health / ${character.maxHealth}', style: const TextStyle(fontSize: 14)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+
+                                // 生命值
+                                if (!character.isDead) LayoutBuilder(builder: (context, box) {
+                                  final double fullW = box.maxWidth;
+                                  final double pct = (character.maxHealth > 0) ? (health / character.maxHealth).clamp(0.0, 1.0) : 0.0;
+                                  final double greenW = fullW * pct;
+                                  final double armorPct = (character.maxHealth > 0) ? (armor / character.maxHealth).clamp(0.0, 1.0) : 0.0;
+                                  double armorW = fullW * armorPct;
+                                  if (armor > health) armorW = greenW;
+
+                                  return SizedBox(
+                                    height: 6,
+                                    child: Stack(
+                                      children: [
+                                        Container(
+                                          height: 18,
+                                          decoration: BoxDecoration(
+                                            color: Colors.transparent,
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                        ),
+                                        // 健康背景（淡绿色、左对齐）
+                                        Positioned(
+                                          left: 0,
+                                          top: 0,
+                                          bottom: 0,
+                                          child: Container(
+                                            width: greenW,
+                                            height: 18,
+                                            decoration: BoxDecoration(
+                                              color: Colors.lightBlue,
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                          ),
+                                        ),
+                                        // 护盾叠加在血量上，右侧与血量右边界对齐（白色）
+                                        if (armor > 0)
+                                          Positioned(
+                                            left: (greenW - armorW).clamp(0.0, fullW),
+                                            top: 0,
+                                            bottom: 0,
+                                            child: Container(
+                                              width: armorW,
+                                              height: 18,
+                                              decoration: BoxDecoration(
+                                                color: Colors.lightBlue[100],
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(color: Colors.blueGrey[200]!, width: 0.5),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                                const SizedBox(height: 4),
+
+                                // 属性行
+                                Row(
+                                  children: [
+                                    Icon(Icons.gps_fixed, color: Colors.blue, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text('$attack', style: const TextStyle(fontSize: 15)),
+                                    const Spacer(),
+                                    Icon(Icons.shield, color: Colors.blue, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text('$defence', style: const TextStyle(fontSize: 15)),
+                                    const Spacer(),
+                                    Icon(Icons.bolt, color: Colors.blue, size: 20),
+                                    Text('$movePoint / $maxMovePoint', style: const TextStyle(fontSize: 15)),
+                                    const Spacer(),
+                                    Icon(Icons.style, color: Colors.blue, size: 16),
+                                    const SizedBox(width: 4),
+                                    Text('$cardCount', style: const TextStyle(fontSize: 15)),
+                                    const Spacer(),
+                                  ],
+                                ),
+
+                                // 状态组（图标与具体状态同一行，具体状态每行四个）
+                                if (!character.isDead && (status.isNotEmpty || hiddenStatus.isNotEmpty)) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.auto_awesome, size: 16),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: LayoutBuilder(builder: (context, box) {
+                                          final double innerW = box.maxWidth;
+                                          final double smallSpacing = 6;
+                                          final double smallItemW = (innerW - smallSpacing * 3) / 4;
+                                          List<Widget> chips = [];
+
+                                          status.forEach((k, v) {
+                                            final int layers = (v.isNotEmpty) ? (v[0] as int) : 0;
+                                            final dynamic intensity = (v.length > 1) ? v[1] : '';
+                                            chips.add(_buildStatusCard(k, intensity, layers.toString(), smallItemW, hidden: false));
+                                          });
+                                          hiddenStatus.forEach((k, v) {
+                                            final int layers = (v.isNotEmpty) ? (v[0] as int) : 0;
+                                            final dynamic intensity = (v.length > 1) ? v[1] : '';
+                                            chips.add(_buildStatusCard(k, intensity, layers.toString(), smallItemW, hidden: true));
+                                          });
+
+                                          return Wrap(spacing: smallSpacing, runSpacing: smallSpacing, children: chips);
+                                        }),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+                                // 技能组（图标与具体技能同一行，具体技能每行四个）
+                                if (skill.isNotEmpty) ...[
+                                  Row(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Icon(Icons.auto_fix_high, size: 16),
+                                      const SizedBox(width: 6),
+                                      Expanded(
+                                        child: LayoutBuilder(builder: (context, box) {
+                                          final double innerW = box.maxWidth;
+                                          final double smallSpacing = 6;
+                                          final double smallItemW = (innerW - smallSpacing * 3) / 4;
+                                          List<Widget> chips = [];
+                                          skill.forEach((k, v) {
+                                            chips.add(_buildSkillCard(k, v.toString(), smallItemW));
+                                          });
+                                          return Wrap(spacing: smallSpacing, runSpacing: smallSpacing, children: chips);
+                                        }),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
                         ),
-                    child: DataTable(
-                      // 固定列定义（列名可自定义）
-                      columns: [
-                        DataColumn(label: Text('角色')),
-                        DataColumn(label: Text('生命')),
-                        DataColumn(label: Text('攻击')),                      
-                        DataColumn(label: Text('防御')),
-                        DataColumn(label: Text('行动点')),
-                        DataColumn(label: Text('手牌数')),
-                        DataColumn(label: Text('状态')),
-                        DataColumn(label: Text('技能'))
-                      ],
-                      columnSpacing: 28.0,
-                      // 表格行数据
-                      rows: tableData.asMap().entries.map((entry) {
-                        final int rowIndex = entry.key;
-                        final Map<String, dynamic> rowData = entry.value;
-                        final String roleName = rowData['column1'];
-                        //final List<dynamic>? roleInfo = characterData![roleName];
-                        int health = game.players[roleName]!.health;
-                        int armor = game.players[roleName]!.armor;
-                        int attack = game.players[roleName]!.attack;
-                        int defence = game.players[roleName]!.defence;
-                        int movePoint = game.players[roleName]!.movePoint;
-                        int maxMovePoint = game.players[roleName]!.maxMove;
-                        int cardCount = game.players[roleName]!.cardCount;
-                        Map<String, List<dynamic>> status = game.players[roleName]!.status;
-                        Map<String, List<dynamic>> hiddenStatus = game.players[roleName]!.hiddenStatus;
-                        Map<String, int> skill = game.players[roleName]!.skill;
-                        String statusText = "", skillText = "";
-                        for(var key in status.keys){
-                          statusText += "$key[${status[key]![0]}](${status[key]![1]}) ";
-                        }
-                        for(var key in hiddenStatus.keys){
-                          //if ({'dark', 'forbidden', 'light_elf'}.contains(key)) {
-                            statusText += "$key[${hiddenStatus[key]![0]}](${hiddenStatus[key]![1]}) ";
-                          //}                          
-                        }                        
-                        for(var key in skill.keys){
-                          skillText += "$key[${skill[key]!}] ";
-                        }
-                        return DataRow(
-                          // 行选中状态（绑定selectedIndex）
-                          selected: selectedIndex == rowIndex,
-                          // 行选择回调（更新选中状态）
-                          onSelectChanged: (bool? isSelected) {
-                            setState(() {
-                              selectedIndex = isSelected == true ? rowIndex : null;
-                            });
-                          },
-                          // 行单元格（第一列显示下拉选中值，其他列留空）
-                          cells: [
-                            DataCell(Text(roleName, style: TextStyle(color: game.players[roleName]!.isDead ? Colors.grey : _getTeamColor(game.getPlayerTeam(roleName))))),
-                            DataCell(Text('${health.toString()}(${armor.toString()})')),
-                            DataCell(Text(attack.toString())),
-                            DataCell(Text(defence.toString())),
-                            DataCell(Text('${movePoint.toString()}/${maxMovePoint.toString()}')),
-                            DataCell(Text(cardCount.toString())),
-                            DataCell(Text(statusText)),
-                            DataCell(Text(skillText)),
-                          ]
-                        );
-                      }).toList(),
-                    ),
+                      );
+                    }).toList(),
                   ),
-                ),
-              ),
+                );
+              }),
             ),
           ],
         ),
@@ -1030,91 +1181,133 @@ void _restoreGameState(String stateJson) {
         return StatefulBuilder(
           builder: (context, setStateDialog){
             var teamKeys = game.teams.keys.toList()..sort();
-            return AlertDialog(
-              title: const Text('队伍管理'),
-              content: SizedBox(
-                width: 400,
-                child: SingleChildScrollView(
+            final allPlayers = game.gameSequence.toList();
+
+            return Dialog(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 700),
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      ElevatedButton(
-                        onPressed: (){
-                          setStateDialog((){
-                            game.addTeam();
-                          });
-                          game.refresh();                          
-                        },
-                        child: const Text('添加队伍'),
-                      ),
-                      const SizedBox(height: 12),
-                      ...teamKeys.map((tid){
-                        var members = game.teams[tid] ?? <String>{};
-                        // 可选添加的玩家（所有已存在的玩家）
-                        var available = game.gameSequence.where((p) => !members.contains(p)).toList();
-                        return Card(
-                          elevation: 0,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text('队伍 $tid', style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    const Spacer(),
-                                    IconButton(
-                                      onPressed: (){
-                                        setStateDialog((){
-                                          game.removeTeam(tid);
-                                        });
-                                        game.refresh();
-                                      },
-                                      icon: const Icon(Icons.delete_forever, color: Colors.red),
-                                      tooltip: '删除队伍',
-                                    )
-                                  ],
-                                ),
-                                const SizedBox(height: 8),
-                                Wrap(
-                                  spacing: 8,
-                                  children: [
-                                    ...members.map((m){
-                                      return Chip(
-                                        label: Text(m),
-                                        onDeleted: (){
-                                          setStateDialog((){
-                                            game.removePlayerFromTeam(tid, m);
-                                          });
-                                          game.refresh();
-                                        },
-                                      );
-                                    }),
-                                    // 添加成员按钮
-                                    PopupMenuButton<String>(
-                                      itemBuilder: (context) => available.map((p) => PopupMenuItem(value: p, child: Text(p))).toList(),
-                                      onSelected: (String p){
-                                        setStateDialog((){
-                                          game.addPlayerToTeam(tid, p);
-                                        });
-                                        game.refresh();
-                                      },
-                                      child: Chip(label: Row(children: const [Icon(Icons.add), SizedBox(width:6), Text('添加成员')])),
-                                    )
-                                  ],
-                                )
-                              ],
-                            ),
+                      Row(
+                        children: [
+                          const Expanded(child: Text('  队伍管理', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                          ElevatedButton.icon(
+                            onPressed: (){
+                              setStateDialog((){
+                                game.addTeam();
+                              });
+                              game.refresh();
+                            },
+                            icon: const Icon(Icons.add),
+                            label: const Text('添加队伍'),
                           ),
-                        );
-                      }),
+                          const SizedBox(width: 8),
+                          ElevatedButton.icon(
+                            onPressed: teamKeys.isEmpty ? null : (){
+                              setStateDialog((){
+                                // 删除最后一个队伍
+                                final last = teamKeys.isNotEmpty ? teamKeys.last : null;
+                                if (last != null) game.removeTeam(last);
+                              });
+                              game.refresh();
+                            },
+                            icon: const Icon(Icons.remove, color: Colors.white),
+                            label: const Text('减少队伍', style: TextStyle(color: Colors.white)),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+
+                      // 列出每个队伍：标题 + 网格按钮（每个角色一个按钮，已选中表示在该队伍中）
+                      Flexible(
+                        child: SingleChildScrollView(
+                          child: Column(
+                            children: teamKeys.map((tid) {
+                              final members = game.teams[tid] ?? <String>{};
+                              return Card(
+                                elevation: 0,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Text('  队伍 $tid', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                          const Spacer(),
+                                          IconButton(
+                                            onPressed: (){
+                                              setStateDialog((){
+                                                game.removeTeam(tid);
+                                              });
+                                              game.refresh();
+                                            },
+                                            icon: const Icon(Icons.delete_forever, color: Colors.red),
+                                          )
+                                        ],
+                                      ),
+
+                                      // 按钮网格：每个角色为按钮，四列
+                                      LayoutBuilder(builder: (context, box) {
+                                        final double w = box.maxWidth;
+                                        final int columns = 3;
+                                        final double itemW = (w - (columns - 1) * 8) / columns;
+                                        return Wrap(
+                                          spacing: 8,
+                                          runSpacing: 8,
+                                          children: allPlayers.map((p) {
+                                            final bool selected = members.contains(p);
+                                            return SizedBox(
+                                              width: itemW,
+                                              child: ElevatedButton(
+                                                style: ElevatedButton.styleFrom(
+                                                  backgroundColor: selected ? Theme.of(context).colorScheme.primary : null,
+                                                  foregroundColor: selected ? Colors.white : null,
+                                                  padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+                                                ),
+                                                onPressed: (){
+                                                  setStateDialog((){
+                                                    if (selected) {
+                                                      // 从当前队伍移除
+                                                      game.removePlayerFromTeam(tid, p);
+                                                    } else {
+                                                      // 确保该角色在其他队伍中被移除
+                                                      for (var key in game.teams.keys.toList()){
+                                                        if (game.teams[key]!.contains(p)) {
+                                                          game.removePlayerFromTeam(key, p);
+                                                        }
+                                                      }
+                                                      game.addPlayerToTeam(tid, p);
+                                                    }
+                                                  });
+                                                  game.refresh();
+                                                },
+                                                child: Text(p, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14)),
+                                              ),
+                                            );
+                                          }).toList(),
+                                        );
+                                      }),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+                      Align(alignment: Alignment.centerRight, child: TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('关闭'))),
                     ],
                   ),
                 ),
               ),
-              actions: [
-                TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('关闭')),
-              ],
             );
           }
         );
@@ -1125,9 +1318,11 @@ void _restoreGameState(String stateJson) {
   // 4. 删除选中行（更新表格数据和选中状态）
   void _deleteSelectedRow() {
     setState(() {
-      String roleName = tableData[selectedIndex!]['column1'];
+      if (selectedIndex == null) return;
+      String roleName = selectedIndex!;
       game.removePlayer(game.players[roleName]!);
-      tableData.removeAt(selectedIndex!);
+      final idx = tableData.indexWhere((e) => e['column1'] == roleName);
+      if (idx != -1) tableData.removeAt(idx);
       selectedIndex = null; // 重置选中状态
     });
   }
@@ -1151,14 +1346,13 @@ void _restoreGameState(String stateJson) {
 
   // 新增方法：显示编辑属性的弹窗
   void _showAttributeSettingsDialog() {
-    if (selectedIndex == null || selectedIndex! >= tableData.length) {
+    if (selectedIndex == null || tableData.indexWhere((e) => e['column1'] == selectedIndex) == -1) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('请先选择一个角色')),
       );
       return;
     }
-
-    String roleName = tableData[selectedIndex!]['column1'];
+    String roleName = selectedIndex!;
     Character? character = game.players[roleName];
 
     if (character == null) {
@@ -1195,6 +1389,74 @@ void _restoreGameState(String stateJson) {
     game.refresh();
     recordProvider.clearRecords();
     _saveCurrentStateToHistory(); // 此处仍然存在问题：清空后添加角色，删除角色再回退会导致报错
+  }
+
+  // 小卡片：状态展示（右上角圈点表示层数，卡片内部右侧显示强度；hidden 为 true 时文字灰色）
+  Widget _buildStatusCard(String name, int layers, String intensity, double width, {bool hidden = false}) {
+    return SizedBox(
+      width: width,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8),
+            decoration: BoxDecoration(
+              color: hidden ? Colors.grey.shade100 : Colors.white,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.grey.shade300, width: 0.8),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    name,
+                    style: TextStyle(fontSize: 12, color: hidden ? Colors.grey : Colors.black87,),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(intensity, style: TextStyle(fontSize: 12, color: hidden ? Colors.grey : Colors.black87, fontWeight: FontWeight.bold)),
+                const SizedBox(width: 6),              
+              ],
+            ),
+          ),
+          // 右上角圈点表示层数
+          if (layers > 0)
+            Positioned(
+              right: -4,
+              top: -4,
+              child: CircleAvatar(
+                radius: 9,
+                backgroundColor: Colors.cyan[900],
+                child: Text(layers.toString(), style: const TextStyle(color: Colors.white, fontSize: 12)),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // 小卡片：技能展示（卡片内部右侧显示数值）
+  Widget _buildSkillCard(String name, String value, double width) {
+    return SizedBox(
+      width: width,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: Colors.grey.shade300, width: 0.8),
+        ),
+        child: Row(
+          children: [
+            Expanded(child: Text(name, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
+            const SizedBox(width: 6),
+            Text(value, style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.bold)),
+            const SizedBox(width: 6),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
