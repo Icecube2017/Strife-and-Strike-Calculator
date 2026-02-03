@@ -3755,7 +3755,7 @@ class Game extends ChangeNotifier{
     if (target == langMap!['yan_ruoqing']) {
       castTrait(target, [target], langMap!['utopia_of_concord'], {'type': 2, 'damage': damage});
     }
-    // EnGine-4【<04>质能回收】
+    // EnGine-4【<04>质能转换】
     if (source == langMap!['engine_4']) {
       castTrait(source, [target], langMap!['mass_energy_conversion'], {'type': 0, 'damage': damage});
     }
@@ -3914,7 +3914,7 @@ class Game extends ChangeNotifier{
       if (chara.id == langMap!['zephyr'] && turn == gameSequence.length) {
         castTrait(chara.id, [chara.id], langMap!['gun_shy'], {'type': 0});
       }
-      // EnGine-4【<04>质能回收】
+      // EnGine-4【<04>质能转换】
       if (chara.id == langMap!['engine_4'] && turn == gameSequence.length) {
         castTrait(chara.id, [chara.id], langMap!['mass_energy_conversion'], {'type': 1});
       }

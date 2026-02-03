@@ -59,6 +59,7 @@
     "rest": "休憩",
     "rippling_water": "水波荡漾",
     "high_energy_can": "高能罐头",
+
     "chinro": "茵竹",
     "neko": "妮卡欧",
     "yun": "云云子",
@@ -120,6 +121,7 @@
     "lancelot": "兰斯洛特",
     "zhu_yecheng": "祝烨诚",
     "lan_wence": "蓝文策",
+
     "self_encouragement": "自勉",
     "tireless_observer": "不倦的观测者",
     "distinct_road": "明晰的来时路",
@@ -193,6 +195,8 @@
     "thermal_recovery": "<0C>热能回收",
     "smoldering_rage": "不断燃烧的愤怒",
     "chaotic_strikes": "毫无章法的进攻",
+    "mass_energy_conversion": "<04>质能转换",
+
     "benevolence": "仁慈",
     "phase_transition": "相转移",
     "heaven_delivery": "天国邮递员",
@@ -249,6 +253,8 @@
     "replenishment": "补给",
     "icy_oblivion_135_bars": "冰灭的135小节",
     "sacrificial_love": "奉献之爱",
+    "frost_shatter": "裁冰裂霜",
+
     "strength": "力量",
     "regeneration": "再生",
     "exhausted": "脱力",
@@ -298,6 +304,10 @@
     "nightmare":"夜魇",
     "prey":"猎物",
     "poised": "蓄势",
+    "dehydration": "脱水",
+    "submerged": "浸没",
+    "asphyxia": "窒息",
+
     "sharp": "锋锐",
     "protect": "铁御",
     "vital": "生机",

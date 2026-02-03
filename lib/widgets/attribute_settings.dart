@@ -288,7 +288,7 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.green,
                       ),
-                      child: const Text('保存'),
+                      child: const Text('保存', style: TextStyle(color: Colors.white)),
                     ),
                   ],
                 ),

@@ -364,7 +364,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                                             cardSettingManager.updateCardSettings(_cardTableData.length - 1, setting);
                                           }
 
-                                          // 不关闭对话框，以允许重复添加；如果需要一次添加后自动关闭，调用 Navigator.of(ctx).pop();
+                                        Navigator.of(ctx).pop();
                                         },
                                         style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
                                         child: Text(name, textAlign: TextAlign.center),
@@ -379,11 +379,267 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       ),
                     ),
                   ),
+                ],
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+
+  // 显示技能选择对话框（单选，替换现有 _selectedSkill）
+  Future<void> _showSkillSelectionDialog() async {
+    if (!_assetsLoaded || skillData == null) {
+      final assets = Provider.of<AssetsManager>(context, listen: false);
+      if (assets.skillData == null) {
+        await _loadAssetsData();
+        if (skillData == null) return;
+      } else {
+        setState(() {
+          cardTypes = assets.cardTypes;
+          skillData = assets.skillData;
+          traitData = assets.traitData;
+          tagData = assets.tagData;
+          langMap = assets.langMap;
+          _assetsLoaded = true;
+        });
+      }
+    }
+
+    final allSkills = skillData!.keys.toList();
+    // group by pinyin initial like card dialog
+    Map<String, List<String>> groups = {};
+    for (var name in allSkills) {
+      String initial;
+      try {
+        final short = PinyinHelper.getShortPinyin(name);
+        initial = short.isNotEmpty ? short[0].toUpperCase() : name[0].toUpperCase();
+      } catch (_) {
+        initial = name.isNotEmpty ? name[0].toUpperCase() : '#';
+      }
+      if (!RegExp(r'[A-Z]').hasMatch(initial)) initial = '#';
+      groups.putIfAbsent(initial, () => []).add(name);
+    }
+    for (var key in groups.keys) {
+      groups[key]!.sort((a, b) {
+        final pa = PinyinHelper.getPinyinE(a, separator: '');
+        final pb = PinyinHelper.getPinyinE(b, separator: '');
+        return pa.compareTo(pb);
+      });
+    }
+    final sortedKeys = groups.keys.toList()..sort((a, b) {
+      if (a == '#') return 1;
+      if (b == '#') return -1;
+      return a.compareTo(b);
+    });
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return Dialog(
+          child: LayoutBuilder(builder: (context, constraints) {
+            final double maxW = constraints.maxWidth > 600 ? 600 : constraints.maxWidth;
+            return SizedBox(
+              width: maxW,
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Column(
+                children: [
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.of(ctx).pop(),
-                      child: const Text('完成'),
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        const Expanded(child: Text('选择技能', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.of(ctx).pop()),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: Scrollbar(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: sortedKeys.length,
+                        itemBuilder: (context, idx) {
+                          final key = sortedKeys[idx];
+                          final names = groups[key]!;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 6.0),
+                                  child: Text(key, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                                ),
+                                LayoutBuilder(builder: (context, box) {
+                                  final double w = box.maxWidth;
+                                  int columns = (w / 140).floor();
+                                  if (columns < 3) columns = 3;
+                                  if (columns > 6) columns = 6;
+
+                                  return GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: columns,
+                                      crossAxisSpacing: 8,
+                                      mainAxisSpacing: 8,
+                                      mainAxisExtent: 40,
+                                    ),
+                                    itemCount: names.length,
+                                    itemBuilder: (context, i) {
+                                      final name = names[i];
+                                      return ElevatedButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _selectedSkill = name;
+                                          });
+                                          Navigator.of(ctx).pop();
+                                        },
+                                        style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                                        child: Text(name, textAlign: TextAlign.center),
+                                      );
+                                    },
+                                  );
+                                }),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+
+  // 显示特质选择对话框（单选，替换现有 _selectedTrait）
+  Future<void> _showTraitSelectionDialog() async {
+    if (!_assetsLoaded || traitData == null) {
+      final assets = Provider.of<AssetsManager>(context, listen: false);
+      if (assets.traitData == null) {
+        await _loadAssetsData();
+        if (traitData == null) return;
+      } else {
+        setState(() {
+          cardTypes = assets.cardTypes;
+          skillData = assets.skillData;
+          traitData = assets.traitData;
+          tagData = assets.tagData;
+          langMap = assets.langMap;
+          _assetsLoaded = true;
+        });
+      }
+    }
+
+    final allTraits = traitData!.keys.toList();
+    Map<String, List<String>> groups = {};
+    for (var name in allTraits) {
+      String initial;
+      try {
+        final short = PinyinHelper.getShortPinyin(name);
+        initial = short.isNotEmpty ? short[0].toUpperCase() : name[0].toUpperCase();
+      } catch (_) {
+        initial = name.isNotEmpty ? name[0].toUpperCase() : '#';
+      }
+      if (!RegExp(r'[A-Z]').hasMatch(initial)) initial = '#';
+      groups.putIfAbsent(initial, () => []).add(name);
+    }
+    for (var key in groups.keys) {
+      groups[key]!.sort((a, b) {
+        final pa = PinyinHelper.getPinyinE(a, separator: '');
+        final pb = PinyinHelper.getPinyinE(b, separator: '');
+        return pa.compareTo(pb);
+      });
+    }
+    final sortedKeys = groups.keys.toList()..sort((a, b) {
+      if (a == '#') return 1;
+      if (b == '#') return -1;
+      return a.compareTo(b);
+    });
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return Dialog(
+          child: LayoutBuilder(builder: (context, constraints) {
+            final double maxW = constraints.maxWidth > 600 ? 600 : constraints.maxWidth;
+            return SizedBox(
+              width: maxW,
+              height: MediaQuery.of(context).size.height * 0.7,
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Row(
+                      children: [
+                        const Expanded(child: Text('选择特质', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                        IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.of(ctx).pop()),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  Expanded(
+                    child: Scrollbar(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: sortedKeys.length,
+                        itemBuilder: (context, idx) {
+                          final key = sortedKeys[idx];
+                          final names = groups[key]!;
+
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 12.0),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 6.0),
+                                  child: Text(key, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                                ),
+                                LayoutBuilder(builder: (context, box) {
+                                  final double w = box.maxWidth;
+                                  int columns = (w / 140).floor();
+                                  if (columns < 3) columns = 3;
+                                  if (columns > 6) columns = 6;
+
+                                  return GridView.builder(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: columns,
+                                      crossAxisSpacing: 8,
+                                      mainAxisSpacing: 8,
+                                      mainAxisExtent: 40,
+                                    ),
+                                    itemCount: names.length,
+                                    itemBuilder: (context, i) {
+                                      final name = names[i];
+                                      return ElevatedButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            _selectedTrait = name;
+                                          });
+                                          Navigator.of(ctx).pop();
+                                        },
+                                        style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 8)),
+                                        child: Text(name, textAlign: TextAlign.center),
+                                      );
+                                    },
+                                  );
+                                }),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],
@@ -645,7 +901,12 @@ class _AddActionDialogState extends State<AddActionDialog> {
 
     await showMenu(
       context: context,
-      position: RelativeRect.fromLTRB(0, 0, 0, 0),
+      position: RelativeRect.fromLTRB(
+        MediaQuery.of(context).size.width / 2,
+        MediaQuery.of(context).size.height / 2,
+        MediaQuery.of(context).size.width / 2,
+        MediaQuery.of(context).size.height / 2,
+      ),
       items: traitTargetItems,
     ).then((String? selectedValue) {
       if (!mounted) return;
@@ -838,45 +1099,39 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 // 道具卡表格
                 if (_cardTableData.isNotEmpty) ...[
                   Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                    ),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columns: [
-                          DataColumn(label: Text('名称')),
-                          DataColumn(label: Text('操作')),
-                        ],
-                        rows: _cardTableData.asMap().entries.map((entry) {
-                          final int index = entry.key;
-                          final Map<String, dynamic> rowData = entry.value;
-                          final String cardName = rowData['cardName'];
-                          
-                          return DataRow(
-                            cells: [
-                              DataCell(Text(cardName)),
-                              DataCell(
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.delete, size: 18),
-                                      onPressed: () => _deleteCardRow(index),
-                                      tooltip: '删除',
-                                    ),
-                                    IconButton(
-                                      icon: Icon(Icons.settings, size: 18),
-                                      onPressed: () => _showCardSettingsDialog(index, cardName),
-                                      tooltip: '设置',
-                                    ),
-                                  ],
+                    padding: const EdgeInsets.all(8),
+                    child: Wrap(
+                      spacing: 8,
+                      children: _cardTableData.asMap().entries.map((entry) {
+                        final int index = entry.key;
+                        final Map<String, dynamic> rowData = entry.value;
+                        final String cardName = rowData['cardName'];
+
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                Text(cardName),
+                                const SizedBox(width: 12),
+                                Spacer(),
+                                IconButton(
+                                  icon: Icon(Icons.settings, size: 18),
+                                  onPressed: () => _showCardSettingsDialog(index, cardName),
+                                  tooltip: '设置',
                                 ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
-                      ),
+                                IconButton(
+                                  icon: Icon(Icons.delete, size: 18),
+                                  onPressed: () => _deleteCardRow(index),
+                                  tooltip: '删除',
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ),
                 ],
@@ -891,45 +1146,39 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 // 攻击特效表格
                 if (_attackEffectTableData.isNotEmpty) ...[
                   Container(
-                    decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    ),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columns: [
-                          DataColumn(label: Text('攻击特效')),
-                          DataColumn(label: Text('操作')),
-                        ],
-                        rows: _attackEffectTableData.asMap().entries.map((entry) {
+                    padding: const EdgeInsets.all(8),
+                    child: Wrap(
+                      spacing: 8,
+                      children: _attackEffectTableData.asMap().entries.map((entry) {
                           final int index = entry.key;
                           final Map<String, dynamic> rowData = entry.value;
                           final AttackEffect effect = rowData['effect'];
             
-                          return DataRow(
-                            cells: [
-                              DataCell(Text(effect.effectId)),
-                              DataCell(
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.delete, size: 18),
-                                      onPressed: () => _deleteAttackEffectRow(index),
-                                      tooltip: '删除',
-                                    ),
-                                    IconButton(
-                                      icon: Icon(Icons.settings, size: 18),
-                                      onPressed: () => _showAttackEffectSettingsDialog(index, effect),
-                                      tooltip: '设置',
-                                    ),
-                                  ],
-                                ),
+                          return Card(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisSize: MainAxisSize.max,
+                                children: [
+                                  Text(effect.effectId),
+                                  const SizedBox(width: 12),
+                                  Spacer(),
+                                  IconButton(
+                                    icon: Icon(Icons.delete, size: 18),
+                                    onPressed: () => _deleteAttackEffectRow(index),
+                                    tooltip: '删除',
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.settings, size: 18),
+                                    onPressed: () => _showAttackEffectSettingsDialog(index, effect),
+                                    tooltip: '设置',
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           );
                         }).toList(),
-                      ),
                     ),
                   ),
                 ],
@@ -944,45 +1193,39 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 // 防守特效表格
                 if (_defenceEffectTableData.isNotEmpty) ...[
                   Container(
-                    decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
-                    ),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columns: [
-                          DataColumn(label: Text('防守特效')),
-                          DataColumn(label: Text('操作')),
-                        ],
-                        rows: _defenceEffectTableData.asMap().entries.map((entry) {
+                    padding: const EdgeInsets.all(8),
+                    child: Wrap(
+                      spacing: 8,
+                      children: _defenceEffectTableData.asMap().entries.map((entry) {
                           final int index = entry.key;
                           final Map<String, dynamic> rowData = entry.value;
                           final DefenceEffect effect = rowData['effect'];
             
-                          return DataRow(
-                            cells: [
-                              DataCell(Text(effect.effectId)),
-                              DataCell(
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.delete, size: 18),
-                                      onPressed: () => _deleteDefenceEffectRow(index),
-                                      tooltip: '删除',
-                                    ),
-                                    IconButton(
-                                      icon: Icon(Icons.settings, size: 18),
-                                      onPressed: () => _showDefenceEffectSettingsDialog(index, effect),
-                                      tooltip: '设置',
-                                    ),
-                                  ],
-                                ),
+                          return Card(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisSize: MainAxisSize.max,
+                                children: [
+                                  Text(effect.effectId),
+                                  const SizedBox(width: 12),
+                                  Spacer(),
+                                  IconButton(
+                                    icon: Icon(Icons.delete, size: 18),
+                                    onPressed: () => _deleteDefenceEffectRow(index),
+                                    tooltip: '删除',
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.settings, size: 18),
+                                    onPressed: () => _showDefenceEffectSettingsDialog(index, effect),
+                                    tooltip: '设置',
                               ),
-                            ],
+                                ],
+                              ),
+                            ),
                           );
                         }).toList(),
-                      ),
                     ),
                   ),
                 ],
@@ -996,59 +1239,57 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 SizedBox(height: 8),
 
                 if(_skillTargetList.isNotEmpty) ...[
-                  Container(
-                    decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
+                 Container(
+                    padding: const EdgeInsets.all(8),
+                    child: Wrap(
+                      spacing: 8,
+                      children: _skillTargetList.asMap().entries.map((entry) {
+                        final int index = entry.key;
+                        final String target = entry.value;
+
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                Text(target),
+                                const SizedBox(width: 12),
+                                Spacer(),
+                                IconButton(
+                                  icon: Icon(Icons.delete, size: 18),
+                                  onPressed: () => _removeSkillTarget(index),
+                                )                                    
+                              ]
+                            )
+                          )
+                        );
+                      }).toList(),
                     ),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columns: [
-                          DataColumn(label: Text('技能目标')),
-                          DataColumn(label: Text('操作')),
-                        ],
-                        rows: _skillTargetList.asMap().entries.map((entry) { 
-                          final int index = entry.key;
-                          final String target = entry.value;
-                            return DataRow(
-                              cells: [
-                                DataCell(Text(target)),
-                                DataCell(
-                                  Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      IconButton(
-                                        icon: Icon(Icons.delete, size: 18),
-                                        onPressed: () => _removeSkillTarget(index),
-                                    )                                    
-                                  ]
-                                )
-                              )
-                            ]
-                          );
-                        }).toList(),
-                      )
-                    )
-                  )
+                  ),
                 ],
                 SizedBox(height: 16),
 
                 Text('技能选择', style: TextStyle(fontWeight: FontWeight.bold)),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedSkill,
-                  hint: Text('请选择技能'),
-                  items: skillData!.keys.map((String item) {
-                    return DropdownMenuItem<String>(
-                      value: item,
-                      child: Text(item),
-                    );
-                  }).toList(), 
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedSkill = newValue;
-                    });
-                  },
-                  isExpanded: true,
+                Row(
+                  children: [
+                    Expanded(child: Text(_selectedSkill ?? '未选择技能')),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _showSkillSelectionDialog,
+                      child: Text(_selectedSkill == null ? '选择技能' : '更换技能'),
+                    ),
+                    if (_selectedSkill != null) ...[
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() { _selectedSkill = null; });
+                        },
+                      ),
+                    ],
+                  ],
                 ),
                 SizedBox(height: 16),
 
@@ -1251,58 +1492,56 @@ class _AddActionDialogState extends State<AddActionDialog> {
 
                 if(_traitTargetList.isNotEmpty) ...[
                   Container(
-                    decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey),
+                    padding: const EdgeInsets.all(8),
+                    child: Wrap(
+                      spacing: 8,
+                      children: _traitTargetList.asMap().entries.map((entry) {
+                        final int index = entry.key;
+                        final String target = entry.value;
+
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                Text(target),
+                                const SizedBox(width: 12),
+                                Spacer(),
+                                IconButton(
+                                  icon: Icon(Icons.delete, size: 18),
+                                  onPressed: () => _removeTraitTarget(index),
+                                )                                    
+                              ]
+                            )
+                          )
+                        );
+                      }).toList(),
                     ),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: DataTable(
-                        columns: [
-                          DataColumn(label: Text('特质目标')),
-                          DataColumn(label: Text('操作')),
-                        ],
-                        rows: _traitTargetList.asMap().entries.map((entry) { 
-                          final int index = entry.key;
-                          final String target = entry.value;
-                          return DataRow(
-                            cells: [
-                              DataCell(Text(target)),
-                              DataCell(
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.delete, size: 18),
-                                      onPressed: () => _removeTraitTarget(index),
-                                    )                                    
-                                  ]
-                                )
-                              )
-                            ]
-                          );
-                        }).toList(),
-                      )
-                    )
-                  )
+                  ),
                 ],
                 SizedBox(height: 16),
 
                 Text('特质选择', style: TextStyle(fontWeight: FontWeight.bold)),
-                DropdownButtonFormField<String>(
-                  initialValue: _selectedTrait,
-                  hint: Text('请选择特质'),
-                  items: traitData!.keys.map((String item) {
-                    return DropdownMenuItem<String>(
-                      value: item,
-                      child: Text(item),
-                    );
-                  }).toList(), 
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      _selectedTrait = newValue;
-                    });
-                  },
-                  isExpanded: true,
+                Row(
+                  children: [
+                    Expanded(child: Text(_selectedTrait ?? '未选择特质')),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: _showTraitSelectionDialog,
+                      child: Text(_selectedTrait == null ? '选择特质' : '更换特质'),
+                    ),
+                    if (_selectedTrait != null) ...[
+                      const SizedBox(width: 8),
+                      IconButton(
+                        icon: Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() { _selectedTrait = null; });
+                        },
+                      ),
+                    ],
+                  ],
                 ),
                 SizedBox(height: 16),
 
@@ -2081,7 +2320,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 // EnGine-4【<04>质能转换】
                 if (_source! == langMap!['engine_4']) {
                   cost = cardsList.isEmpty ? 1 : cardsList.length;
-                  if (_sourcePlayer!.health <= 44 * cost) {
+                  if (_sourcePlayer!.health <= 24 * cost) {
                     actionAble = false;
                   }                  
                 }
