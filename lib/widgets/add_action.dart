@@ -687,10 +687,11 @@ class _AddActionDialogState extends State<AddActionDialog> {
     showMenu(
       context: context,
       position: RelativeRect.fromRect(
-        Rect.fromCenter(
-          center: Offset(0, MediaQuery.of(context).size.height / 2), 
-          width: 200, 
-          height: 300),
+        Rect.fromLTRB(
+          MediaQuery.of(context).size.width / 2,
+          MediaQuery.of(context).size.height / 2,
+          MediaQuery.of(context).size.width / 2,
+          MediaQuery.of(context).size.height / 2),
           Offset.zero & MediaQuery.of(context).size,
       ),
       items: attackEffects.map((AttackEffect effect) {
@@ -744,10 +745,11 @@ class _AddActionDialogState extends State<AddActionDialog> {
     showMenu(
       context: context,
       position: RelativeRect.fromRect(
-        Rect.fromCenter(
-          center: Offset(0, MediaQuery.of(context).size.height / 2), 
-          width: 200, 
-          height: 300),
+        Rect.fromLTRB(
+          MediaQuery.of(context).size.width / 2,
+          MediaQuery.of(context).size.height / 2,
+          MediaQuery.of(context).size.width / 2,
+          MediaQuery.of(context).size.height / 2),
           Offset.zero & MediaQuery.of(context).size,
       ),
       items: defenceEffects.map((DefenceEffect effect) {
@@ -1094,12 +1096,11 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   onPressed: _showCardSelectionMenu,
                   child: Text('添加道具卡'),
                 ),
-                SizedBox(height: 8),
                 
                 // 道具卡表格
                 if (_cardTableData.isNotEmpty) ...[
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(4),
                     child: Wrap(
                       spacing: 8,
                       children: _cardTableData.asMap().entries.map((entry) {
@@ -1135,13 +1136,12 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     ),
                   ),
                 ],
-                SizedBox(height: 16),
+                SizedBox(height: 8),
                 // 添加攻击特效按钮
                 ElevatedButton(
                   onPressed: _showAttackEffectSelectionMenu,
                   child: Text('添加攻击特效'),
                 ),
-                SizedBox(height: 8),
   
                 // 攻击特效表格
                 if (_attackEffectTableData.isNotEmpty) ...[
@@ -1165,14 +1165,14 @@ class _AddActionDialogState extends State<AddActionDialog> {
                                   const SizedBox(width: 12),
                                   Spacer(),
                                   IconButton(
-                                    icon: Icon(Icons.delete, size: 18),
-                                    onPressed: () => _deleteAttackEffectRow(index),
-                                    tooltip: '删除',
-                                  ),
-                                  IconButton(
                                     icon: Icon(Icons.settings, size: 18),
                                     onPressed: () => _showAttackEffectSettingsDialog(index, effect),
                                     tooltip: '设置',
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.delete, size: 18),
+                                    onPressed: () => _deleteAttackEffectRow(index),
+                                    tooltip: '删除',
                                   ),
                                 ],
                               ),
@@ -1182,13 +1182,12 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     ),
                   ),
                 ],
-                SizedBox(height: 16),
+                SizedBox(height: 8),
                 // 添加防守特效按钮
                 ElevatedButton(
                   onPressed: _showDefenceEffectSelectionMenu,
                   child: Text('添加防守特效'),
                 ),
-                SizedBox(height: 8),
   
                 // 防守特效表格
                 if (_defenceEffectTableData.isNotEmpty) ...[
@@ -1212,15 +1211,15 @@ class _AddActionDialogState extends State<AddActionDialog> {
                                   const SizedBox(width: 12),
                                   Spacer(),
                                   IconButton(
+                                    icon: Icon(Icons.settings, size: 18),
+                                    onPressed: () => _showDefenceEffectSettingsDialog(index, effect),
+                                    tooltip: '设置',
+                                  ),
+                                  IconButton(
                                     icon: Icon(Icons.delete, size: 18),
                                     onPressed: () => _deleteDefenceEffectRow(index),
                                     tooltip: '删除',
                                   ),
-                                  IconButton(
-                                    icon: Icon(Icons.settings, size: 18),
-                                    onPressed: () => _showDefenceEffectSettingsDialog(index, effect),
-                                    tooltip: '设置',
-                              ),
                                 ],
                               ),
                             ),
@@ -1229,7 +1228,6 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     ),
                   ),
                 ],
-                SizedBox(height: 16),
               ] else if (_actionType == '技能') ...[
                 Text('额外目标', style: TextStyle(fontWeight: FontWeight.bold)),
                 SizedBox(height: 8),

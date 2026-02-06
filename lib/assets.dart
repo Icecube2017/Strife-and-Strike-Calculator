@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
+// import 'package:sns_calculator/core.dart';
+part 'package:sns_calculator/assets.g.dart';
 
 class AssetsManager{
   // 单例模式，确保全局只有一个AssetsManager实例
@@ -26,6 +29,12 @@ class AssetsManager{
   Map<String, dynamic> statusData = {};
   Map<String, List<String>> tagData = {};
   Set<String> skillDeckData = {};
+
+  List<CharacterInfo> characterInfoData = [];
+  List<CardInfo> cardInfoData = [];
+  List<SkillInfo> skillInfoData = [];
+  List<StatusInfo> statusInfoData = [];
+
   // 加载就绪标志与完成器，供外部 await
   final Completer<void> _readyCompleter = Completer<void>();
   bool isLoaded = false;
@@ -39,6 +48,7 @@ class AssetsManager{
       // 明确按顺序加载：先语言，再其他依赖语言的资源（如 status）
       await _loadLang();
       await _loadOtherAssets();
+      await _loadSearchingAssets();
     } catch (e) {
       _logger.e('加载JSON文件失败: $e');
       rethrow;
@@ -176,8 +186,141 @@ class AssetsManager{
       }
     }    
   }
+
+
+  Future<void> _loadSearchingAssets() async {
+    String jsonString;
+    List<dynamic> jsonList;
+
+    jsonString = await rootBundle.loadString('assets/search_page/character.json');
+    jsonList = json.decode(jsonString);
+    characterInfoData = jsonList.map((e) => CharacterInfo.fromJson(e)).toList();
+
+    jsonString = await rootBundle.loadString('assets/search_page/card.json');
+    jsonList = json.decode(jsonString);
+    cardInfoData = jsonList.map((e) => CardInfo.fromJson(e)).toList();
+
+    jsonString = await rootBundle.loadString('assets/search_page/skill.json');
+    jsonList = json.decode(jsonString);
+    skillInfoData = jsonList.map((e) => SkillInfo.fromJson(e)).toList();
+
+    jsonString = await rootBundle.loadString('assets/search_page/status.json');
+    jsonList = json.decode(jsonString);
+    statusInfoData = jsonList.map((e) => StatusInfo.fromJson(e)).toList();
+  }
 }
 
+@JsonSerializable()
+class CharacterInfo {
+  final String id;
+  final String name;
+  final String panelType;
+  final String species;
+  final List<dynamic> tags;
+  final List<TraitInfo> traits;
+  final List<SkillInfo> skills;
+  final String? quote;
+  final String? belonging;
+  final String? designer;
+
+  CharacterInfo ({
+    required this.id,
+    required this.name,
+    required this.panelType,
+    required this.species,
+    required this.tags,
+    required this.traits,
+    required this.skills,
+    this.quote,
+    this.belonging,
+    this.designer,
+  });
+
+    factory CharacterInfo.fromJson(Map<String, dynamic> json) => _$CharacterInfoFromJson(json);
+}
+
+@JsonSerializable()
+class TraitInfo {
+  final String id;
+  final String name;
+  final String description;
+
+  TraitInfo ({
+    required this.id,
+    required this.name,
+    required this.description,
+  });
+
+  factory TraitInfo.fromJson(Map<String, dynamic> json) => _$TraitInfoFromJson(json);
+}
+
+@JsonSerializable()
+class SkillInfo {
+  final String id;
+  final String name;
+  final String description;
+  final String? availableTiming;
+  final int? cd;
+  final int? cost;
+  final String? comments;
+
+  SkillInfo ({
+    required this.id,
+    required this.name,
+    required this.description,
+    this.availableTiming,
+    this.cd,
+    this.cost,
+    this.comments,
+  });
+
+  factory SkillInfo.fromJson(Map<String, dynamic> json) => _$SkillInfoFromJson(json);
+}
+
+@JsonSerializable()
+class CardInfo {
+  final String id;
+  final String name;
+  final String description;
+  final List<dynamic> tags;
+
+  CardInfo ({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.tags,
+  });
+
+  factory CardInfo.fromJson(Map<String, dynamic> json) => _$CardInfoFromJson(json);
+}
+
+@JsonSerializable()
+class StatusInfo {
+  final String id;
+  final String name;
+  final int type;
+  final String description;
+  final bool hasIntensity;
+  final bool hasStack;
+  final bool? stackable;
+  final bool decayOverTurn;
+  final String? comments;
+
+  StatusInfo ({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.description,
+    required this.hasIntensity,
+    required this.hasStack,
+    required this.stackable,
+    required this.decayOverTurn,
+    this.comments,
+  });
+
+    factory StatusInfo.fromJson(Map<String, dynamic> json) => _$StatusInfoFromJson(json);
+
+}
 /*Future<Map<String, dynamic>> loadJsonFromAssets(String filePath) async {
   String jsonString = await rootBundle.loadString(filePath);
   return jsonDecode(jsonString);

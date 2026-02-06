@@ -47,6 +47,20 @@ enum DiceType{
   trait
 }
 
+// 模板
+enum PanelType {
+  defensive('防御型'),
+  supportive('支援型'),
+  balanced('平衡型'),
+  challenging('挑战型'),
+  brutal('暴龙天'),
+  vital('生命型');
+
+
+  final String panelTypeId;
+  const PanelType(this.panelTypeId);
+}
+
 // 标签
 enum Tag{
   sharp('锋锐'),
@@ -85,6 +99,16 @@ enum DefenceEffect{
   final String effectId;
 
   const DefenceEffect(this.effectId);
+}
+
+// 状态效果标记
+enum StatusTag {
+  pos('正面'),
+  neg('负面'),
+  nut('中性');
+
+  final String statusTag;
+  const StatusTag(this.statusTag);
 }
 
 // 游戏状态标记

@@ -1,0 +1,493 @@
+[
+  {
+    "id": "apollo_arrow",
+    "name": "阿波罗之箭",
+    "description": "#目标@dfn@#为全场最低时，本次攻击伤害#+100@dpi@#",
+    "tags": [
+      "锋锐"
+    ]
+  },
+  {
+    "id": "octastal",
+    "name": "八重镜",
+    "description": "本次攻击#@eff@骰点#变为#@dc8i@#",
+    "tags": [
+      "命运"
+    ]
+  },
+  {
+    "id": "babel_tower",
+    "name": "巴别塔",
+    "description": "1轮内所有玩家均不可被#@eff@附加##@sta@状态#",
+    "tags": [
+      "诡术"
+    ]
+  },
+  {
+    "id": "rapier",
+    "name": "长剑",
+    "description": "自身#+15@ati@#",
+    "tags": [
+      "锋锐"
+    ]
+  },
+  {
+    "id": "filching",
+    "name": "抽薪",
+    "description": "#@mov@偷取#目标#1@crd@#，#@mov@抽取##1@crd@#",
+    "tags": [
+      "诡术"
+    ]
+  },
+  {
+    "id": "damocles_sword",
+    "name": "达摩克利斯之剑",
+    "description": "本轮结束后，使#生命值@hpn@#最高的角色#损失150@hpd@#",
+    "tags": [
+      "魔能"
+    ]
+  },
+  {
+    "id": "wood_sword",
+    "name": "短刀",
+    "description": "自身#+10@ati@#",
+    "tags": [
+      "锋锐"
+    ]
+  },
+  {
+    "id": "slowness_spell",
+    "name": "钝化术",
+    "description": "#@eff@攻击附加##2层@lyn@##1强度@inn@##迟缓@stn@#",
+    "tags": [
+      "秘法"
+    ]
+  },
+  {
+    "id": "corrupt_pendant",
+    "name": "堕灵吊坠",
+    "description": "#@mov@偷取#目标#60@hpi@##5@ati@#",
+    "tags": [
+      "魔能",
+      "生机"
+    ]
+  },
+  {
+    "id": "violent_violet",
+    "name": "飞鸟·紫烈",
+    "description": "本次攻击伤害#+2@dpi@#×#上一行动角色@dfn@#",
+    "tags": [
+      "锋锐"
+    ]
+  },
+  {
+    "id": "bow",
+    "name": "复合弓",
+    "description": "弃掉全部#手牌@crd@#，对目标造成#@crd@#×#75@dmd@#",
+    "tags": [
+      "魔能"
+    ]
+  },
+  {
+    "id": "high_cap",
+    "name": "高帽子",
+    "description": "#@eff@攻击附加##1层@lyn@##骑虎难下@stn@#",
+    "tags": [
+      "诡术"
+    ]
+  },
+  {
+    "id": "high_energy_can",
+    "name": "高能罐头",
+    "description": "自身#+2@mpi@上限#，#+1@mpi@#",
+    "tags": [
+      "感知"
+    ]
+  },
+  {
+    "id": "hero_legend",
+    "name": "鼓舞",
+    "description": "自身#回复100@hpi@#，本次攻击#+10@ati@#",
+    "tags": [
+      "锋锐",
+      "生机"
+    ]
+  },
+  {
+    "id": "passing_gaze",
+    "name": "过往凝视",
+    "description": "本次攻击伤害#+100@dpi@#，#@eff@附加##1层@lyn@##10强度@inn@##游离@stn@#",
+    "tags": [
+      "魔能",
+      "生机"
+    ]
+  },
+  {
+    "id": "cryotheum",
+    "name": "寒绝凝冰",
+    "description": "#@eff@攻击附加##2层@lyn@##5强度@inn@##霜冻@stn@#",
+    "tags": [
+      "秘法",
+      "霜寒"
+    ]
+  },
+  {
+    "id": "redstone",
+    "name": "后日谈",
+    "description": "#任意状态@sta@##+1@lay@#",
+    "tags": [
+      "秘法"
+    ]
+  },
+  {
+    "id": "heart_locket",
+    "name": "护身符",
+    "description": "自身#+10@dfi@#",
+    "tags": [
+      "铁御"
+    ]
+  },
+  {
+    "id": "regenerating",
+    "name": "缓生",
+    "description": "自身#@eff@获得##2层@lyp@##6强度@inp@##再生@stp@#",
+    "tags": [
+      "生机"
+    ]
+  },
+  {
+    "id": "chaotic_dr6ill",
+    "name": "混沌电钻",
+    "description": "#@eff@攻击附加##1层@lyn@##混乱@stn@#",
+    "tags": [
+      "诡术"
+    ]
+  },
+  {
+    "id": "ascension_stair",
+    "name": "混乱力场",
+    "description": "#消耗10%最大@hpd@#，所有角色#D6@dcxn@#，对#@dr1n@点数#最小者造成#最大点数@dr6n@#×#50@dpd@#",
+    "tags": [
+      "魔能",
+      "失序"
+    ]
+  },
+  {
+    "id": "arctic_heart",
+    "name": "极北之心",
+    "description": "自身所有#技能@skl@##-2@cdi@#",
+    "tags": [
+      "幻相"
+    ]
+  },
+  {
+    "id": "aurora_concussion",
+    "name": "极光震荡",
+    "description": "#消耗50@hpd@#，所有非友方角色#D2@dcxn@#，若为#@dr1n@#则#@eff@附加##1层@lyn@##脱力@stn@#",
+    "tags": [
+      "魔能"
+    ]
+  },
+  {
+    "id": "dream_shelter",
+    "name": "加护",
+    "description": "自身#回复100@hpi@#，下一次受攻击时#+10@dfi@#",
+    "tags": [
+      "铁御",
+      "生机"
+    ]
+  },
+  {
+    "id": "arrow",
+    "name": "箭",
+    "description": "本次攻击#+50@dpi@#",
+    "tags": [
+      "锋锐"
+    ]
+  },
+  {
+    "id": "mace",
+    "name": "狼牙棒",
+    "description": "本次攻击伤害#+90@dpi@#，#@eff@附加##2层@lyn@##破盾@stn@#",
+    "tags": [
+      "锋锐"
+    ]
+  },
+  {
+    "id": "track",
+    "name": "猎魔灵刃",
+    "description": "目标#闪避@nul@#；若目标持有#闪避@sta@#，则本次攻击#+50%@dpi@#",
+    "tags": [
+      "魔能"
+    ]
+  },
+  {
+    "id": "crimson_swoop",
+    "name": "林鸟·赤掠",
+    "description": "本次攻击伤害增加#上一位行动角色@ati@#",
+    "tags": [
+      "锋锐"
+    ]
+  },
+  {
+    "id": "echo_glimpse",
+    "name": "聆音掠影",
+    "description": "#@eff@攻击附加##1层@lyn@##恍惚@stn@#",
+    "tags": [
+      "诡术"
+    ]
+  },
+  {
+    "id": "hexastal",
+    "name": "六方棱",
+    "description": "本次攻击#@eff@骰点#变为#@dc6i@#",
+    "tags": [
+      "命运"
+    ]
+  },
+  {
+    "id": "strength_spell",
+    "name": "蛮力术",
+    "description": "自身#@eff@获得##2层@lyp@##3强度@inp@##力量@stp@#",
+    "tags": [
+      "秘法"
+    ]
+  },
+  {
+    "id": "strength_spell_ii",
+    "name": "蛮力术II",
+    "description": "自身#@eff@获得##2层@lyp@##6强度@inp@##力量@stp@#",
+    "tags": [
+      "秘法"
+    ]
+  },
+  {
+    "id": "nano_permeation",
+    "name": "纳米渗透",
+    "description": "本次攻击#+55@dpi@#，攻击时#@nul@无视##目标@dfn@#",
+    "tags": [
+      "锋锐"
+    ]
+  },
+  {
+    "id": "pandora_box",
+    "name": "潘多拉魔盒",
+    "description": "自身进行#D6@dcxn@#，若为#@dr3n_dr6n@#则全体角色#回复100@hpi@#，否则全体角色#受到300@dmd@#",
+    "tags": [
+      "魔能",
+      "失序"
+    ]
+  },
+  {
+    "id": "end_crystal",
+    "name": "破片水晶",
+    "description": "#消耗30+15×2@dc4d_hpd@#，对所有非友方角色造成#40+15×@dc8d_dpd@#",
+    "tags": [
+      "魔能"
+    ]
+  },
+  {
+    "id": "hologram",
+    "name": "全息投影",
+    "description": "从技能池中#@mov@抽取#一个#技能@skl@#，使用一次后该#技能@skl_nul@#",
+    "tags": [
+      "诡术",
+      "幻相"
+    ]
+  },
+  {
+    "id": "glory_road",
+    "name": "荣光循途",
+    "description": "自身#@eff@获得##1层@lyp@##1强度@inp@##磨砺@stp@#",
+    "tags": [
+      "锋锐"
+    ]
+  },
+  {
+    "id": "penetrate",
+    "name": "融甲宝珠",
+    "description": "目标#@shd_nul@#；若目标有#@shn@#，则本次攻击#+50%@dpi@#",
+    "tags": [
+      "锋锐"
+    ]
+  },
+  {
+    "id": "clover_blessing",
+    "name": "三叶草之祝",
+    "description": "本次攻击#@dcxn@骰点+2#",
+    "tags": [
+      "命运"
+    ]
+  },
+  {
+    "id": "decastal",
+    "name": "十面璃",
+    "description": "本次攻击#@eff@骰点#变为#@dc0i@#",
+    "tags": [
+      "命运"
+    ]
+  },
+  {
+    "id": "refreshment",
+    "name": "刷新",
+    "description": "将自身一个#技能@skl@#重置为#0@cdi@#",
+    "tags": [
+      "诡术"
+    ]
+  },
+  {
+    "id": "rippling_water",
+    "name": "水波荡漾",
+    "description": "#@eff@攻击附加##1层@lyn@##1强度@inn@##氤氲@stn@#",
+    "tags": [
+      "秘法"
+    ]
+  },
+  {
+    "id": "curing",
+    "name": "瞬疗",
+    "description": "自身#回复120@hpi@#",
+    "tags": [
+      "生机"
+    ]
+  },
+  {
+    "id": "flover_wish",
+    "name": "四叶草之愿",
+    "description": "本次攻击#@dcxn@骰点×2#",
+    "tags": [
+      "命运"
+    ]
+  },
+  {
+    "id": "aether_shroud",
+    "name": "天穹尘埃之障",
+    "description": "#@eff@攻击附加##1层@lyn@##障目@stn@#",
+    "tags": [
+      "诡术"
+    ]
+  },
+  {
+    "id": "homology",
+    "name": "同调",
+    "description": "将一名其他角色的一个#自然衰减状态@sta@##@eff@叠加#至自身",
+    "tags": [
+      "秘法"
+    ]
+  },
+  {
+    "id": "critical_strike",
+    "name": "无敌贯通",
+    "description": "本次攻击造成#真实伤害@dtn@#，且#@nul@战斗续行#",
+    "tags": [
+      "锋锐"
+    ]
+  },
+  {
+    "id": "sisyphus_stone",
+    "name": "西西弗斯之石头",
+    "description": "#@eff@攻击附加##1层@lyn@##消磨@stn@#",
+    "tags": [
+      "诡术"
+    ]
+  },
+  {
+    "id": "rest",
+    "name": "休憩",
+    "description": "本次行动#消耗@mpi@-2#",
+    "tags": [
+      "感知"
+    ]
+  },
+  {
+    "id": "swift_spell",
+    "name": "迅捷术",
+    "description": "自身#@eff@获得##2层@lyp@##1强度@inp@##迅捷@stp@#",
+    "tags": [
+      "秘法"
+    ]
+  },
+  {
+    "id": "pyrotheum",
+    "name": "炎极烈火",
+    "description": "#@eff@攻击附加##3层@lyn@##5强度@inn@##灼炎@stn@#",
+    "tags": [
+      "秘法",
+      "灼热"
+    ]
+  },
+  {
+    "id": "eden_garden",
+    "name": "失乐园",
+    "description": "下一个#@mov@使用##技能@skl@#的角色#@eff@附加###1层@lyn@##2强度@inn@##脆弱@stn@#",
+    "tags": [
+      "秘法"
+    ]
+  },
+  {
+    "id": "fragment",
+    "name": "遗失碎片",
+    "description": "本次攻击#+45@dpi@#，并#@mov@抽取##2@crd@#",
+    "tags": [
+      "锋锐",
+      "幻相"
+    ]
+  },
+  {
+    "id": "invisibility_spell",
+    "name": "隐身术",
+    "description": "自身#@eff@获得##1层@lyp@##闪避@stp@#",
+    "tags": [
+      "秘法"
+    ]
+  },
+  {
+    "id": "flame_spear",
+    "name": "御术者长矛·炎",
+    "description": "自身#@eff@获得##1层@lyp@##烛焱@stp@#",
+    "tags": [
+      "灼热"
+    ]
+  },
+  {
+    "id": "frost_shield",
+    "name": "御术者重盾·霜",
+    "description": "自身#@eff@获得##1层@lyp@##凛蚀@stp@#",
+    "tags": [
+      "霜寒"
+    ]
+  },
+  {
+    "id": "shield",
+    "name": "圆盾",
+    "description": "自身#+5@dfi@#，#@eff@获得##100@shi@#",
+    "tags": [
+      "铁御"
+    ]
+  },
+  {
+    "id": "declaration",
+    "name": "昭示",
+    "description": "#@mov@揭露#目标的#手牌@crd@#和#技能@skl@#，并弃置其#1@crd@#",
+    "tags": [
+      "诡术"
+    ]
+  },
+  {
+    "id": "amethyst",
+    "name": "折射水晶",
+    "description": "自身进行#D2@dcxn@#，为#@dr1n@#则本次攻击#+80@dpi@#，#@dr2n@#则本次攻击#-40@dpd@#",
+    "tags": [
+      "锋锐",
+      "失序"
+    ]
+  },
+  {
+    "id": "end_halberd",
+    "name": "终焉长戟",
+    "description": "本次攻击#+50%@dpi@#",
+    "tags": [
+      "锋锐"
+    ]
+  }
+]

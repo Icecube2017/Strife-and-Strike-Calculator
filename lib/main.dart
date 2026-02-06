@@ -7,6 +7,7 @@ import 'package:sns_calculator/settings.dart';
 import 'package:sns_calculator/record.dart';
 import 'package:sns_calculator/assets.dart';
 import 'package:sns_calculator/widgets/info_page.dart';
+import 'package:sns_calculator/widgets/pinned_page.dart';
 import 'package:sns_calculator/widgets/search_page.dart';
 import 'package:sns_calculator/widgets/history_page.dart';
 import 'package:sns_calculator/widgets/logger_page.dart';
@@ -32,7 +33,8 @@ class MyApp extends StatelessWidget {
       providers: [
         Provider<AssetsManager>.value(value: assets),
         ChangeNotifierProvider(create: (context) => MyAppState()),
-        ChangeNotifierProvider(create: (context) => HistoryProvider()),        
+        ChangeNotifierProvider(create: (context) => HistoryProvider()),
+        ChangeNotifierProvider(create: (context) => PinnedProvider()),
         ChangeNotifierProvider(create: (context) => GameLogger()),
         ChangeNotifierProvider(create: (context) => RecordProvider()),
         ChangeNotifierProvider(create: (context) => CardSettingsManager()),
@@ -89,9 +91,12 @@ class _MyHomePageState extends State<MyHomePage> {
         page = Placeholder();
         break;
       case 2:
-        page = HistoryPage();
+        page = SearchPage();
         break;
       case 3:
+        page = HistoryPage();
+        break;
+      case 4:
         page = LoggerPage();
         break;      
     default:
@@ -115,6 +120,7 @@ class _MyHomePageState extends State<MyHomePage> {
               },
               items: const [
                 BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+                BottomNavigationBarItem(icon: Icon(Icons.push_pin), label: "Pinned"),
                 BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Search'),
                 BottomNavigationBarItem(icon: Icon(Icons.history), label: 'History'),
                 BottomNavigationBarItem(icon: Icon(Icons.assignment), label: 'Logs'),
@@ -134,6 +140,10 @@ class _MyHomePageState extends State<MyHomePage> {
                     NavigationRailDestination(
                       icon: Icon(Icons.home),
                       label: Text('Home'),
+                    ),
+                    NavigationRailDestination(
+                      icon: Icon(Icons.push_pin),
+                      label: Text("Pinned")
                     ),
                     NavigationRailDestination(
                       icon: Icon(Icons.search),

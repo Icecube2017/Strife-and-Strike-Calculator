@@ -1,0 +1,1574 @@
+[
+  {
+    "id": "chinro",
+    "name": "茵竹",
+    "panelType": "生命型",
+    "species": "人",
+    "tags": [
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "self_encouragement",
+        "name": "自勉",
+        "description": "回合结束时，若#@hpn@首次≤50%且>0#，则#回复至80%最大@hpi@#；#@nul@免疫##游离@sta@#"
+      }
+    ],
+    "skills": [],
+    "quote": "我更倾向，不去否认自己踏上的道路。",
+    "belonging": "纳冉洛",
+    "designer": "晴箬"
+  },
+  {
+    "id": "neko",
+    "name": "妮卡欧·希纬什",
+    "panelType": "平衡型",
+    "species": "人",
+    "tags": [
+      "支援",
+      "回转"
+    ],
+    "traits": [
+      {
+        "id": "tireless_observer",
+        "name": "不倦的观测者",
+        "description": "#@mov@使用##技能@skl@#后，#技能@skl@##-1@cdn@#"
+      },
+      {
+        "id": "distinct_road",
+        "name": "明晰的来时路",
+        "description": "游戏开始时，#@mov@抽取#一个额外的#技能@skl@#"
+      }
+    ],
+    "skills": [],
+    "quote": "凝望星空与未来，牢记来路与过去。",
+    "belonging": null,
+    "designer": "晴箬"
+  },
+  {
+    "id": "yun",
+    "name": "云云子",
+    "panelType": "挑战型",
+    "species": "狮鹫人混血/庇斯特",
+    "tags": [
+      "输出"
+    ],
+    "traits": [
+      {
+        "id": "dusk_void",
+        "name": "晨昏寥落",
+        "description": "攻击造成#D@dcxn@-1#×#@atn@-30##真实伤害@dtn@#"
+      }
+    ],
+    "skills": [],
+    "quote": "是为割昏晓。",
+    "belonging": "世界之背",
+    "designer": "光追"
+  },
+  {
+    "id": "starduster",
+    "name": "星尘",
+    "panelType": "支援型",
+    "species": "猫人混血/庇斯特",
+    "tags": [
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "lucky_shield",
+        "name": "幸运壁垒",
+        "description": "受到物理伤害时#D6@dcxn@#，为#@dr1n_dr6n@#时闪避"
+      }
+    ],
+    "skills": [],
+    "quote": "心中常怀仁慈，好运常伴于身",
+    "belonging": "纳冉洛",
+    "designer": "星韶"
+  },
+  {
+    "id": "darkstar",
+    "name": "黯星",
+    "panelType": "暴龙天",
+    "species": "猫人混血/庇斯特",
+    "tags": [
+      "输出",
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "resolution",
+        "name": "决心",
+        "description": "个人回合开始时，若#@hpn@≤0#则#D6@dcxn@#，为#@dr1n_dr5n_dr6n@#时#@mov@战斗续行#并#回复1@hpi@#；不可#@nul@无效化#"
+      }
+    ],
+    "skills": [
+      {
+        "id": "massacre",
+        "name": "屠杀",
+        "description": "单次#伤害@dpn_dmn_dtn@≥250#时，#@mov@额外进行#一个回合，#+5@ati@#，#+100@hpi@#；额外回合内触发时仅获得增益"
+      }
+    ],
+    "quote": "我已经失去一切了，已经没有在乎的了。唯一驱使我的，是毁灭的意志",
+    "belonging": "纳冉洛",
+    "designer": "星韶"
+  },
+  {
+    "id": "fang_han",
+    "name": "方寒",
+    "panelType": "平衡型",
+    "species": "改造人/人",
+    "tags": [
+      "防护",
+      "反控"
+    ],
+    "traits": [
+      {
+        "id": "radiant_blast",
+        "name": "耀光爆裂",
+        "description": "回合开始时，#D6@dcxn@#，为#@dr4n_dr5n@#时使一名角色#灵耀@stp@##+1强度@inp@#，为#@dr6n@#则#+2强度@inp@#"
+      }
+    ],
+    "skills": [],
+    "quote": "你必须为你的破坏付出点什么。",
+    "belonging": "坎蒂斯/马奇兰",
+    "designer": "冰块"
+  },
+  {
+    "id": "pigeon",
+    "name": "恪玥",
+    "panelType": "防御型",
+    "species": "鸽子成精/庇斯特",
+    "tags": [
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "escaping",
+        "name": "咕尘散",
+        "description": "每轮开始时，#D6@dcxn@#，为#@dr3n_dr6n@#时#咕咕@stn@##+1层@lay@#"
+      },
+      {
+        "id": "gus_return",
+        "name": "歇尘凡",
+        "description": "当本回合未获得#咕咕层数@stn_lay@#时，统计上次连续拥有#咕咕@stn@#的#回合数@lay@#，对所有敌方角色造成#60@lay@#/敌方角色总数#法术@dmd@#"
+      }
+    ],
+    "skills": [],
+    "quote": "一定便是一定，没回来？只是时间问题！",
+    "belonging": "禾川",
+    "designer": "晴箬"
+  },
+  {
+    "id": "windflutter",
+    "name": "岚",
+    "panelType": "平衡型",
+    "species": "人",
+    "tags": [
+      "爆发"
+    ],
+    "traits": [
+      {
+        "id": "demonic_avatar",
+        "name": "天魔体",
+        "description": "#@hpn@≤50%#时，攻击伤害+50%"
+      },
+      {
+        "id": "hema_slash",
+        "name": "血灵斩",
+        "description": "个人回合开始时，可选择消耗1MP并弃1张牌，额外行动一次且该次行动ATK+15"
+      }
+    ],
+    "skills": [],
+    "quote": "我须燃尽生命……不惜一切。",
+    "belonging": "坎蒂斯/马奇兰",
+    "designer": "冰块"
+  },
+  {
+    "id": "loveless",
+    "name": "“恋慕”",
+    "panelType": "暴龙天",
+    "species": "实验造物/机械",
+    "tags": [
+      "爆发"
+    ],
+    "traits": [
+      {
+        "id": "dont_forget_me",
+        "name": "勿忘我",
+        "description": "攻击伤害+230%；受到伤害+170%；第1回合恋慕受到致命伤害时战斗续行并在第2回合开始时死亡"
+      }
+    ],
+    "skills": [
+      {
+        "id": "nebula",
+        "name": "氤氲",
+        "description": "指定1名角色，为其附加强度为1、层数为2的【氤氲】"
+      }
+    ],
+    "quote": "口口口口口。",
+    "belonging": "世界之背",
+    "designer": "光追"
+  },
+  {
+    "id": "k97",
+    "name": "K97",
+    "panelType": "防御型",
+    "species": "机器人/机械",
+    "tags": [
+      "防护"
+    ],
+    "traits": [
+      {
+        "id": "binary",
+        "name": "二进制",
+        "description": "第2n-1个个人回合开始时，转换100生命值为护盾；第2n个个人回合开始时，转换所有护盾为血量；拥有护盾时受到物理/法术伤害-60％"
+      }
+    ],
+    "skills": [],
+    "quote": "哔——",
+    "belonging": null,
+    "designer": "尾号"
+  },
+  {
+    "id": "andrenin",
+    "name": "安德宁",
+    "panelType": "平衡型",
+    "species": "猫猫/庇斯特",
+    "tags": [
+      "敏捷"
+    ],
+    "traits": [
+      {
+        "id": "rondo",
+        "name": "回旋曲",
+        "description": "本回合造成伤害≤150时，自身获得层数为1的【闪避】"
+      }
+    ],
+    "skills": [],
+    "quote": "攻守有道喵！",
+    "belonging": "帕托斯塔",
+    "designer": "光追"
+  },
+  {
+    "id": "flowwind",
+    "name": "扶风",
+    "panelType": "支援型",
+    "species": "猫猫/庇斯特",
+    "tags": [
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "grand_prophecy",
+        "name": "大预言",
+        "description": "在任意角色掷骰后令其再次骰点，可以选择是否花费1MP替换结果；每大回合限一次"
+      }
+    ],
+    "skills": [],
+    "quote": "大预言的力量，就是纵使神明在此，我亦能胜天半子！",
+    "belonging": "纳冉洛",
+    "designer": "星韶"
+  },
+  {
+    "id": "dr_min",
+    "name": "敏博士",
+    "panelType": "挑战型",
+    "species": "人",
+    "tags": [
+      "爆发",
+      "支援"
+    ],
+    "traits": [
+      {
+        "id": "mapping",
+        "name": "映射",
+        "description": "攻击使用d6骰子；卡牌<全息影像>可以投影两个技能"
+      }
+    ],
+    "skills": [
+      {
+        "id": "deconstruction",
+        "name": "异镜解构",
+        "description": "将1MP视为任意一张除刷新外的当前卡组的道具卡打出，但不能使用其他道具卡"
+      }
+    ],
+    "quote": "科技的力量远不及此。",
+    "belonging": "纳冉洛",
+    "designer": "星韶"
+  },
+  {
+    "id": "nepst",
+    "name": "奈普斯特",
+    "panelType": "平衡型",
+    "species": "幽灵/魂",
+    "tags": [
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "spectralization",
+        "name": "幽魂化",
+        "description": "群体攻击伤害对奈普斯特无效；个人回合开始时，清除自身所有状态效果"
+      },
+      {
+        "id": "little_spook",
+        "name": "小惊吓",
+        "description": "回合开始时，对上一回合未攻击的角色附加强度为1、层数为2的【不安】"
+      }
+    ],
+    "skills": [],
+    "quote": "看不见我看不见我……",
+    "belonging": null,
+    "designer": "星韶"
+  },
+  {
+    "id": "starcondon",
+    "name": "星凝",
+    "panelType": "平衡型",
+    "species": "猫人混血/庇斯特",
+    "tags": [
+      "增益"
+    ],
+    "traits": [
+      {
+        "id": "yearning",
+        "name": "希冀",
+        "description": "个人回合结束时，可以给一名角色附加回合内攻击造成伤害×0.1的<ATK>或<DEF>，持续1R"
+      },
+      {
+        "id": "blessing",
+        "name": "祝愿",
+        "description": "消耗1MP，清除一名角色的负面状态并使其回复生命100点"
+      }
+    ],
+    "skills": [],
+    "quote": "我不想再失去你了。（团战专属）",
+    "belonging": "纳冉洛",
+    "designer": "星韶"
+  },
+  {
+    "id": "shigure",
+    "name": "时雨",
+    "panelType": "平衡型",
+    "species": "人/代行人",
+    "tags": [
+      "削弱",
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "arctic_seal",
+        "name": "天霜封印",
+        "description": "当场上有角色受到【霜冻】伤害时，可选择进行d6判定，d6=1/3/6时为其附加层数为1的【冰封】"
+      },
+      {
+        "id": "icy_blood",
+        "name": "寒冰血脉",
+        "description": "免疫【霜冻】/【冰封】；受到攻击时，攻击伤害-30×伤害来源【霜冻】强度"
+      }
+    ],
+    "skills": [
+      {
+        "id": "ice_splinter",
+        "name": "冰芒",
+        "description": "指定1名角色，对其造成80点法术伤害，并使其【霜冻】强度+3、层数+1"
+      }
+    ],
+    "quote": "冰河世纪，霜封大地。",
+    "belonging": "坎蒂斯/马奇兰",
+    "designer": "冰块"
+  },
+  {
+    "id": "tussiu",
+    "name": "图西乌·那错天",
+    "panelType": "挑战型",
+    "species": "改造人/人",
+    "tags": [
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "transit",
+        "name": "凌日",
+        "description": "道具的最终伤害加成对图西乌无效"
+      },
+      {
+        "id": "eclipse",
+        "name": "蚀月",
+        "description": "受到攻击时，骰点使用原始点数；骰点大于5时视为5"
+      }
+    ],
+    "skills": [],
+    "quote": "日晕明灭，上载盛光，下洒流影。抟日之辉，初曦示欣，落日明愁。",
+    "belonging": "禾川",
+    "designer": "光追"
+  },
+  {
+    "id": "gentou",
+    "name": "舸灯",
+    "panelType": "生命型",
+    "species": "鬼/魂",
+    "tags": [
+      "输出"
+    ],
+    "traits": [
+      {
+        "id": "ghost_ferry",
+        "name": "引渡",
+        "description": "每次行动消耗的MP-1；可以选择消耗2MP摸两张牌，并使本次攻击伤害+45"
+      }
+    ],
+    "skills": [],
+    "quote": "呃啊啊啊……",
+    "belonging": null,
+    "designer": "尾号"
+  },
+  {
+    "id": "cimme",
+    "name": "赐弥",
+    "panelType": "暴龙天",
+    "species": "程序/机械",
+    "tags": [
+      "输出",
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "upon_the_clouds",
+        "name": "在云端",
+        "description": "在抽卡和MP回复结束后，记录此时的手牌数、MP、HP、状态效果、技能CD作为<存档>；若在自身回合外死亡，立刻回档至最近的<存档>；每个<存档>只能使用一次"
+      }
+    ],
+    "skills": [
+      {
+        "id": "data_transmit",
+        "name": "数据传输",
+        "description": "可以复制场上出现过的技能并使用，CD与复制的技能的CD相同，每个技能上限一次"
+      }
+    ],
+    "quote": "身处云端，我心永恒",
+    "belonging": null,
+    "designer": "星韶"
+  },
+  {
+    "id": "gao_miao",
+    "name": "高淼",
+    "panelType": "挑战型",
+    "species": " 人",
+    "tags": [
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "gamblers_mentality",
+        "name": "赌徒心理",
+        "description": "无视场景“维加斯赌场”的效果"
+      },
+      {
+        "id": "deft_touch",
+        "name": "轻捷妙手",
+        "description": "回合开始时，可以选择额外抽一张牌或窃取一名角色的非专属技一回合"
+      }
+    ],
+    "skills": [],
+    "quote": "没想到吧！",
+    "belonging": null,
+    "designer": "星韶"
+  },
+  {
+    "id": "froth",
+    "name": "沫",
+    "panelType": "挑战型",
+    "species": "卢悉孚",
+    "tags": [
+      "爆发"
+    ],
+    "traits": [
+      {
+        "id": "annihilative_cycle",
+        "name": "湮灭性轮回",
+        "description": "攻击对目标造成的伤害×2，其本次损失HP的40%将在下一大回合末为其回复为等量护盾"
+      }
+    ],
+    "skills": [],
+    "quote": "在消磨中消磨。",
+    "belonging": "世界之背",
+    "designer": "光追"
+  },
+  {
+    "id": "sumoggu",
+    "name": "长霾",
+    "panelType": "平衡型",
+    "species": "人/代行人",
+    "tags": [
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "im_drunk",
+        "name": "我还能喝",
+        "description": "一直处于醉酒状态，回合开始时，增加50点<酒水>；受到物理/法术/真实伤害时增加伤害值×0.4点<酒水>。受到物理/法术伤害>300时，引起剧烈反应<呕吐>，清空<酒水>点数，对目标造成<酒水>点物理伤害并且附加层数为2的【反胃】，自身获得强度为3、层数为1的【虚弱】，期间无法布置律令"
+      },
+      {
+        "id": "decree",
+        "name": "律令",
+        "description": "回合开始时，可以选择消耗1MP，为一名角色布置下列<律令>之一，持续1R\n<禁空>所有行动MP消耗+1；<天锁>手牌上限为3张；\n<封魔>禁止发动特质；<缚灵>ATK-10，DEF-10 ；\n角色一回合至多被一个<律令>影响，且不会连续受同一<律令>影响"
+      }
+    ],
+    "skills": [],
+    "quote": "下次一定不喝这么多……",
+    "belonging": "坎蒂斯/马奇兰",
+    "designer": "冰块"
+  },
+  {
+    "id": "clouddamp",
+    "name": "云津",
+    "panelType": "支援型",
+    "species": "人",
+    "tags": [
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "celestial_joy",
+        "name": "云系祝乐",
+        "description": "每消耗2MP，进行一次d2判定，d2=1时更换1张手牌，d2=2时获得1点MP；MP到达上限时，可以选择消耗2MP摸1张牌"
+      }
+    ],
+    "skills": [],
+    "quote": "山云草莽，水云鱼鳞，旱云烟火，雨云水波。",
+    "belonging": "帕托斯塔",
+    "designer": "晴箬"
+  },
+  {
+    "id": "kiyu",
+    "name": "晖夕",
+    "panelType": "平衡型",
+    "species": "鼠类成精/庇斯特",
+    "tags": [
+      "输出"
+    ],
+    "traits": [
+      {
+        "id": "discerning",
+        "name": "挑拣",
+        "description": "造成伤害的骰点判定可以进行两次并任选一个结果"
+      }
+    ],
+    "skills": [],
+    "quote": "挑挑拣拣，哪一个是更好的选择？",
+    "belonging": "禾川",
+    "designer": "晴箬"
+  },
+  {
+    "id": "tang_jingyan",
+    "name": "唐菁延",
+    "panelType": "挑战型",
+    "species": "人",
+    "tags": [
+      "辅助"
+    ],
+    "traits": [
+      {
+        "id": "lingering_light",
+        "name": "延光",
+        "description": "使用技能时，若目标为敌方角色，扣除目标「该技能CD/3（向上取整）」点MP；若目标为自己或友方角色，为自己及所有友方角色回复「该技能CD/3（向上取整）」点MP"
+      },
+      {
+        "id": "glowing_light",
+        "name": "盈光",
+        "description": "使用技能时，不消耗该技能所需的MP"
+      }
+    ],
+    "skills": [],
+    "quote": "疾驰的光线，绽放应有的辉芒！",
+    "belonging": null,
+    "designer": "晴箬"
+  },
+  {
+    "id": "enkan",
+    "name": "炎焕",
+    "panelType": "挑战型",
+    "species": "人",
+    "tags": [
+      "输出"
+    ],
+    "traits": [
+      {
+        "id": "cardio_blaze",
+        "name": "心炎",
+        "description": "回合开始时，可以选择消耗1MP进行d6判定，d6=2/3/4时为全场持有负面效果的角色附加强度为5、层数为1的【狱焱】"
+      }
+    ],
+    "skills": [
+      {
+        "id": "crimson_inferno",
+        "name": "赤焱炼狱",
+        "description": "指定至多3名角色，为其附加强度为5、层数为1的【灼炎】"
+      }
+    ],
+    "quote": "从你内心深处燃起的黑炎，将燃尽一切。",
+    "belonging": null,
+    "designer": "冰块"
+  },
+  {
+    "id": "fan_qiu",
+    "name": "樊求",
+    "panelType": "支援型",
+    "species": "人",
+    "tags": [
+      "输出"
+    ],
+    "traits": [
+      {
+        "id": "ranger",
+        "name": "游侠",
+        "description": "回合开始时，若场上有友方单位则DEF+10；若场上不存在友方单位则ATK+15；两种效果每局游戏仅判定一次"
+      }
+    ],
+    "skills": [],
+    "quote": "若要生存，须看他人眼色行事。",
+    "belonging": null,
+    "designer": null
+  },
+  {
+    "id": "sweven",
+    "name": "斯威芬",
+    "panelType": "挑战型",
+    "species": "龙族",
+    "tags": [
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "crafting_of_dreams",
+        "name": "梦的塑造",
+        "description": "可以选择消耗2MP并弃1张牌，为自身附加【造梦】，摸牌后可选择清除【造梦】；可以攻击持有【梦境】状态的角色，且攻击伤害+10%\n（【造梦】：无法行动及发动技能，受到物理/法术伤害-25%；自身回合结束时进行d6判定，d6=1/2/6时<梦>印记+2，否则+1）"
+      }
+    ],
+    "skills": [
+      {
+        "id": "dream_weaver",
+        "name": "造梦者",
+        "description": "消耗1/3/5个<梦>印记，效果如下：\n1)本次攻击附加100点法术伤害，并使一名角色获得1R【梦境】\n3)本次攻击附加任意一张道具卡\n5)自身ATK+30，DEF+30，持续2R，且为全体非友方角色附加层数为1的【梦境】\nCD：2/6/10"
+      }
+    ],
+    "quote": "困……",
+    "belonging": null,
+    "designer": "星韶"
+  },
+  {
+    "id": "ember",
+    "name": "红烬",
+    "panelType": "暴龙天",
+    "species": "人",
+    "tags": [
+      "爆发"
+    ],
+    "traits": [
+      {
+        "id": "conflagration_avatar",
+        "name": "烈焰之体",
+        "description": "免疫【霜冻】/【冰封】；攻击或受到攻击时，进行d6判定，d6=2/4/5时使目标或伤害来源【灼炎】层数+3、强度+5"
+      }
+    ],
+    "skills": [
+      {
+        "id": "sealed_flame_135_seconds",
+        "name": "封焰的135秒",
+        "description": "场上【灼炎】总层数≥6时，攻击时引爆所有【灼炎】，对所有持有【灼炎】的非友方角色造成150%本次攻击伤害的真实伤害并清空【灼炎】层数"
+      }
+    ],
+    "quote": null,
+    "belonging": null,
+    "designer": "星韶"
+  },
+  {
+    "id": "yu_mengde",
+    "name": "余梦得",
+    "panelType": "生命型",
+    "species": "人",
+    "tags": [
+      "防护"
+    ],
+    "traits": [
+      {
+        "id": "guardian_of_dreams",
+        "name": "梦的守护",
+        "description": "若本回合不发动攻击，则获得层数为1的【护梦】（受到伤害-20%；友方单位受到伤害时，伤害转移给持有者）；若本回合不发动攻击且不使用技能，则【护梦者】CD-1"
+      }
+    ],
+    "skills": [
+      {
+        "id": "dream_keeper",
+        "name": "护梦者",
+        "description": "指定1名角色，为其附加强度为2、层数为1的【虚弱】和强度为1、层数为1的【迟缓】"
+      }
+    ],
+    "quote": "在我倒下之前，不会让你出事！",
+    "belonging": null,
+    "designer": "星韶"
+  },
+  {
+    "id": "mr_nice",
+    "name": "“好好先生”",
+    "panelType": "平衡型",
+    "species": "人",
+    "tags": [
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "introductory_gift",
+        "name": "“见面礼”",
+        "description": "首次选取某个角色作为攻击目标时，为其送上层数为1的【见面礼】（使用技能时，受到自身ATK×2的无来源法术伤害，并附加层数为2的【混乱】）"
+      },
+      {
+        "id": "imposing_favor",
+        "name": "“深重情谊”",
+        "description": "上一回合攻击过“好好先生”的角色再不能再攻击“好好先生”，场上余2人时不生效"
+      }
+    ],
+    "skills": [
+      {
+        "id": "reciprocity",
+        "name": "“礼尚往来”",
+        "description": "选定一名送过“见面礼”的角色，偷取其自身上回合受到总伤害的一半的生命值  CD：4"
+      }
+    ],
+    "quote": "哦，哦，Mr.Good，总会为最亲爱的朋友们准备意想不到的惊喜！",
+    "belonging": null,
+    "designer": "光追vs.希尔"
+  },
+  {
+    "id": "ye",
+    "name": "叶姬",
+    "panelType": "挑战型",
+    "species": "人",
+    "tags": [
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "eternity",
+        "name": "永恒",
+        "description": "回合开始时，可以选择消耗X-1点MP，使一名角色的某一状态层数+X（该状态需要有强度属性），若X=0，则回复1点MP"
+      }
+    ],
+    "skills": [
+      {
+        "id": "emphemeral",
+        "name": "须臾",
+        "description": "指定1名角色，将其持有的一个状态的强度变为强度×层数，且层数变为1"
+      }
+    ],
+    "quote": null,
+    "belonging": null,
+    "designer": "星韶"
+  },
+  {
+    "id": "nyxumbra",
+    "name": "太夕",
+    "panelType": "平衡型",
+    "species": "卢悉孚",
+    "tags": [
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "dark_dissolution",
+        "name": "黯灭",
+        "description": "回合开始时，可以选择消耗1MP或弃1张牌，获得1点<暗能>；若弃置的牌tag数≥2，额外获得1点<暗能>；<暗能>上限为10点，每1点<暗能>都会使你的ATK+2"
+      },
+      {
+        "id": "devouring_lock",
+        "name": "吞噬之锁",
+        "description": "可以选择消耗2点<暗能>，使一名角色流失100点HP并附加层数为1的【束缚】，自身回复100点HP；该特质无发动次数限制"
+      }
+    ],
+    "skills": [
+      {
+        "id": "abyssal_whirl",
+        "name": "谜渊漩涡",
+        "description": "强制一次攻击的目标为自己，自身至多受到300点伤害，溢出的每50点伤害可转化为1点【暗能】CD：2"
+      }
+    ],
+    "quote": null,
+    "belonging": "世界之背",
+    "designer": "冰块"
+  },
+  {
+    "id": "quetzalcoatl",
+    "name": "科亚特尔",
+    "panelType": "支援型",
+    "species": "伪神圣造物/安戈洛",
+    "tags": [
+      "辅助"
+    ],
+    "traits": [
+      {
+        "id": "artificial_eden",
+        "name": "拟造“伊甸园”",
+        "description": "回合结束时，若没有造成伤害，则下次攻击ATK×1.5并获得层数为1的【圣化】（被附加负面效果时，清除该效果，并使【圣化】减少1层）"
+      },
+      {
+        "id": "balance_of_light_and_shadow",
+        "name": "善恶天平",
+        "description": "若自身同时持有【伊甸园】和【夜魇】效果，ATK+15"
+      }
+    ],
+    "skills": [
+      {
+        "id": "apocalyptic_court",
+        "name": "天启之庭",
+        "description": "指定至多3名角色，为其附加强度为d4、层数为2的【伊甸园】（清空并免疫一切负面效果，ATK+3×，且下次受到物理/法术伤害时，伤害-25%） CD：3"
+      }
+    ],
+    "quote": null,
+    "belonging": null,
+    "designer": "大冰"
+  },
+  {
+    "id": "mondrian",
+    "name": "蒙德里安",
+    "panelType": "平衡型",
+    "species": "人",
+    "tags": [
+      "输出"
+    ],
+    "traits": [
+      {
+        "id": "taboo_lore",
+        "name": "禁忌知识",
+        "description": "场上有角色骰点≥4时，获得1颗<禁果>；自身攻击或受击时，可选择消耗1颗<禁果>，对目标造成75点法术伤害并使骰点+1/-1，若目标持有【伊甸园】效果，改为清除其【伊甸园】效果，自身受到75点法术伤害；阿波菲斯在场时，蒙德里安可获得其【夜魇】60%回复"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": null,
+    "designer": "希尔"
+  },
+  {
+    "id": "apophis",
+    "name": "阿波菲斯",
+    "panelType": "挑战型",
+    "species": "人",
+    "tags": [
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "ruinous_shade",
+        "name": "毁灭暗影",
+        "description": "攻击附加强度为1、层数为2的【夜魇】；若其持有【伊甸园】效果，无视【伊甸园】并且【夜魇】的效果翻倍；阿波菲斯免疫【夜魇】效果；蒙德里安在场时，其身上每1颗<禁果>都会使【夜魇】额外造成30点法术伤害"
+      },
+      {
+        "id": "endless_night",
+        "name": "永夜无终",
+        "description": "全场【夜魇】伤害每累计结算9次，【夜魇】强度永久+1"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": null,
+    "designer": "光追"
+  },
+  {
+    "id": "dimpsy",
+    "name": "红黎",
+    "panelType": "平衡型",
+    "species": "？",
+    "tags": [
+      "输出",
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "lotus_flame",
+        "name": "红莲业火",
+        "description": "攻击时，为目标附加强度为5、层数为1的【灼炎】；若攻击前目标已持有【灼炎】效果，则选择一个标签，其本回合禁止使用带有该标签的卡牌"
+      },
+      {
+        "id": "ice_fire_fusion",
+        "name": "冰火相融",
+        "description": "若攻击之后目标不持有【灼炎】效果，则本次攻击伤害+50%"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": null,
+    "designer": "星韶"
+  },
+  {
+    "id": "zhu_yeming",
+    "name": "祝烨明",
+    "panelType": "平衡型",
+    "species": "奇美拉/半龙",
+    "tags": [
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "cryo_fissuring",
+        "name": "八裂",
+        "description": "造成伤害后，每100点伤害会将层数为1的【润化】转变为层数为1的【冰封】，当场上有角色从【冰封】中解除时，对其造成其最大生命值12.5%的法术伤害"
+      }
+    ],
+    "skills": [
+      {
+        "id": "seventh_frost",
+        "name": "八寒之七",
+        "description": "攻击前使用，消耗50X点生命值选定目标身上的一个延时状态转变为X层【润化】CD：2"
+      }
+    ],
+    "quote": null,
+    "belonging": "禾川",
+    "designer": "光追"
+  },
+  {
+    "id": "phantos",
+    "name": "方塔索",
+    "panelType": "平衡型",
+    "species": "人",
+    "tags": [
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "astral_projection",
+        "name": "神游",
+        "description": "持有【梦境】效果时，受到物理/法术伤害-100%；受到伤害时额外损失生命40点；可以攻击持有有【梦境】效果的角色"
+      }
+    ],
+    "skills": [
+      {
+        "id": "dream_grasp",
+        "name": "入梦之手",
+        "description": "指定至多3个不生效的角色，剩余角色立即进入梦境，附加层数为1的【梦境】 CD：3"
+      }
+    ],
+    "quote": null,
+    "belonging": null,
+    "designer": "冰块"
+  },
+  {
+    "id": "long_yuche",
+    "name": "龙宇澈",
+    "panelType": "生命型",
+    "species": "人",
+    "tags": [
+      "爆发",
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "radiance",
+        "name": "光耀",
+        "description": "回合开始时，可以选择弃1张牌，召唤1只<光灵>，初始上限为2只；生命值每下降200点，<光灵>上限+1，至多5只；受到物理/法术伤害时，进行d10判定，骰点≤光灵个数时，受到伤害-100%"
+      },
+      {
+        "id": "soul_burning",
+        "name": "燃魂",
+        "description": "拥有第1只<光灵>后禁疗"
+      }
+    ],
+    "skills": [
+      {
+        "id": "sacrifice",
+        "name": "牺牲",
+        "description": "献祭所有<光灵>，每只<光灵>使自己ATK+5， DEF+5，持续2R；技能结束后，流失250点HP CD：5"
+      }
+    ],
+    "quote": null,
+    "belonging": null,
+    "designer": "冰块"
+  },
+  {
+    "id": "eris_make",
+    "name": "祝言夙",
+    "panelType": "支援型",
+    "species": "人",
+    "tags": [
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "mental_disruption",
+        "name": "精神干扰",
+        "description": "你的上家与下家行动后需进行d6判定，d6=3/4时该次行动不生效，返还消耗MP"
+      }
+    ],
+    "skills": [
+      {
+        "id": "soul_tremor",
+        "name": "灵魂震荡",
+        "description": "指定1名角色，其每使用一张道具牌，将额外消耗1MP，若其MP<2，则禁止其行动，持续1R CD：2"
+      }
+    ],
+    "quote": null,
+    "belonging": null,
+    "designer": "光追feat.冰块"
+  },
+  {
+    "id": "seiwaku",
+    "name": "星惑",
+    "panelType": "支援型",
+    "species": "猫",
+    "tags": [
+      "输出"
+    ],
+    "traits": [
+      {
+        "id": "collective_utopia",
+        "name": "众人的乌托邦",
+        "description": "每有一个友方单位（包括自己和召唤物），攻击时骰点+1；掷骰后原始点数≥6时，攻击时骰点永久+1"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": "帕托斯塔",
+    "designer": "星韶"
+  },
+  {
+    "id": "tang_yade",
+    "name": "唐亚德",
+    "panelType": "平衡型",
+    "species": "人",
+    "tags": [
+      "爆发"
+    ],
+    "traits": [
+      {
+        "id": "utopia_of_clarity",
+        "name": "清心的乌托邦",
+        "description": "使用技能时，可指定一名角色，对其造成80点法术伤害；带有<诡术>/<魔能>标签的卡牌不生效，不可无效化；每打出一张<诡术>/<魔能>卡牌，所有技能CD-1"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": "帕托斯塔",
+    "designer": "星韶"
+  },
+  {
+    "id": "lei_gang",
+    "name": "雷刚",
+    "panelType": "暴龙天",
+    "species": "人",
+    "tags": [
+      "爆发"
+    ],
+    "traits": [
+      {
+        "id": "utopia_of_resolve",
+        "name": "决意的乌托邦",
+        "description": "禁疗，不可无效化；生命值首次低于300时，获得100点护盾和层数为1的【屏障】；HP<300时，每打出一张<生机>卡牌可以获得50点护盾；HP≥300时， 每打出一张<锋锐>/<生机>卡牌，自身流失100点HP，同时摸1张牌；攻击时，可以附带绿色的<生机>卡牌"
+      }
+    ],
+    "skills": [
+      {
+        "id": "deicide",
+        "name": "斩神",
+        "description": "流失20%HP，获得10%最大HP点护盾(均向上取整)；HP≥300时，本次攻击ATK+10；HP<300时，本次攻击骰点必定为最大值，并视为原始点数，无法修改 CD：2(HP≥300) 6(HP<300)"
+      }
+    ],
+    "quote": null,
+    "belonging": "帕托斯塔",
+    "designer": "星韶"
+  },
+  {
+    "id": "lu_feng",
+    "name": "陆风",
+    "panelType": "挑战型",
+    "species": "人",
+    "tags": [
+      "输出"
+    ],
+    "traits": [
+      {
+        "id": "utopia_of_celerity",
+        "name": "追猎的乌托邦",
+        "description": "攻击后，可以将一张手牌放在目标的状态栏，使其获得【猎物】印记；攻击持有【猎物】的角色将消耗【猎物】，并发动印记对应的牌效果，攻击伤害+20%；受到攻击时，若伤害来源持有【猎物】，可以消耗【猎物】并减少20%受到攻击伤害"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": "帕托斯塔",
+    "designer": "星韶"
+  },
+  {
+    "id": "an_shanding",
+    "name": "安山定",
+    "panelType": "防御型",
+    "species": "人",
+    "tags": [
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "utopia_of_upspring",
+        "name": "后发的乌托邦",
+        "description": "若本回合不出牌且不使用技能，自身获得层数为1的【蓄势】（攻击伤害+100%），且直到下一次行动前，受到伤害-25%"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": "帕托斯塔",
+    "designer": "星韶"
+  },
+  {
+    "id": "yan_ruoqing",
+    "name": "颜若卿",
+    "panelType": "生命型",
+    "species": "人",
+    "tags": [
+      "防护"
+    ],
+    "traits": [
+      {
+        "id": "utopia_of_concord",
+        "name": "调和的乌托邦",
+        "description": "<生机>卡牌不消耗MP；如果本次行动不造成伤害，本次行动不消耗MP；单次受到伤害≥250时，自身获得层数为1、强度为3的【再生】，并摸1张牌"
+      }
+    ],
+    "skills": [
+      {
+        "id": "replenishment",
+        "name": "补给",
+        "description": "HP>250时，流失250点HP并摸1张牌，指定一名角色回复250点生命，并从手牌中挑选两张牌交给该角色 CD：2"
+      }
+    ],
+    "quote": null,
+    "belonging": "帕托斯塔",
+    "designer": "星韶"
+  },
+  {
+    "id": "ting_xinyu",
+    "name": "亭歆雨",
+    "panelType": "平衡型",
+    "species": "人/代行人",
+    "tags": [
+      "输出",
+      "生存",
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "aurelysium",
+        "name": "彼岸之金",
+        "description": "带有2个标签及以上的道具卡不生效，不可无效化；打出的道具卡每一个标签都会提供对应的效果，且总tag数≥5时，所有效果翻倍，效果如下：\n<锋锐>ATK+5；<铁御>DEF+5；\n<生机>回复50点HP；<命运>攻击时d点+1；\n<秘法>正面状态层数+1；<幻相>抽一张牌\n<魔能>清除目标护盾和闪避（翻倍时同时清除目标所有正面状态）\n<诡术>禁用目标技能，持续1R（翻倍时同时禁用目标特质）\n<失序>目标失去1MP<感知>回复1MP\n<灼热>：追加30点法术伤害；<霜寒>为目标附加层数为1、强度为1的【霜冻】"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": null,
+    "designer": "光追feat.冰块"
+  },
+  {
+    "id": "bai_xie",
+    "name": "白谢",
+    "panelType": "平衡型",
+    "species": "人",
+    "tags": [
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "glacial_circle",
+        "name": "极寒环域",
+        "description": "受到物理伤害时进行d6判定，d6=2/4/5时受到伤害-50%，并选择至多2名角色附加层数为1、强度为3的【霜冻】；【霜冻】结算时将额外造成永久的ATK-2，DEF-3；【冰封】结束时将额外造成永久的ATK-5，DEF-5"
+      }
+    ],
+    "skills": [
+      {
+        "id": "icy_oblivion_135_bars",
+        "name": "冰灭的135小节",
+        "description": "指定至多3名角色，对其附加层数为1的【冰封】，每指定一名角色，流失100点HP；场上每存在1层【霜冻】，所需HP-50点 CD：2"
+      }
+    ],
+    "quote": null,
+    "belonging": null,
+    "designer": null
+  },
+  {
+    "id": "shen_shuhua",
+    "name": "沈姝华",
+    "panelType": "支援型",
+    "species": "精灵",
+    "tags": [
+      "支援"
+    ],
+    "traits": [
+      {
+        "id": "innocent_love",
+        "name": "纯洁之爱",
+        "description": "连续使用拥有同一标签的道具卡时，所需MP为1；场上有角色护盾消失时，摸1张牌"
+      }
+    ],
+    "skills": [
+      {
+        "id": "sacrificial_love",
+        "name": "奉献之爱",
+        "description": "所有角色获得50点护盾，自身与友方角色额外获得50点护盾 CD：2"
+      }
+    ],
+    "quote": null,
+    "belonging": "纳冉洛",
+    "designer": "星韶"
+  },
+  {
+    "id": "turbach",
+    "name": "图尔巴赫",
+    "panelType": "生命型",
+    "species": "精灵",
+    "tags": [
+      "生存",
+      "辅助"
+    ],
+    "traits": [
+      {
+        "id": "life_breath",
+        "name": "生息",
+        "description": "若一回合内受到伤害>300，则在下回合开始时偷取所有角色50点HP"
+      },
+      {
+        "id": "earth_break",
+        "name": "破土",
+        "description": "每使用一张<生机>卡牌，为场上生命值最高的2名敌方角色附加层数为1、强度为5的【撕裂】"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": "宜里达兰卡",
+    "designer": "希尔"
+  },
+  {
+    "id": "zephyr",
+    "name": "湍云",
+    "panelType": "平衡型",
+    "species": "人",
+    "tags": [
+      "输出"
+    ],
+    "traits": [
+      {
+        "id": "hold_breath",
+        "name": "屏息",
+        "description": "个人回合开始时，上一回合造成伤害<120则【蓄力】层数+1、强度+3；上一回合若未进行攻击则【蓄力】层数+1、强度+5"
+      },
+      {
+        "id": "gun_shy",
+        "name": "惊弓",
+        "description": "个人回合开始时，上一回合造成伤害>300则获得层数为1、强度为1的【不安】"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": "和歌",
+    "designer": "希尔"
+  },
+  {
+    "id": "refre_3",
+    "name": "ReFre-3",
+    "panelType": "平衡型",
+    "species": "马奇纳/机械",
+    "tags": [
+      "输出",
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "defensive_protocol",
+        "name": "<06>自卫协议",
+        "description": "被其他角色增加负面状态效果层数或强度时，反击，造成等同于自身ATK-DEF点数的伤害，并为状态效果来源附加层数为1、强度为5的【霜冻】"
+      },
+      {
+        "id": "thermal_recovery",
+        "name": "<0C>热能回收",
+        "description": "场上任意角色受到【霜冻】伤害时，自身获得层数为1、强度与其【霜冻】等同的【蓄力】"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": "纳冉洛",
+    "designer": "希尔"
+  },
+  {
+    "id": "lor",
+    "name": "洛尔",
+    "panelType": "挑战型",
+    "species": "人",
+    "tags": [
+      "输出",
+      "爆发"
+    ],
+    "traits": [
+      {
+        "id": "smoldering_rage",
+        "name": "不断燃烧的愤怒",
+        "description": "每损失200HP，ATK+5；开局时自身获得层数为1、强度为5的【重伤】"
+      },
+      {
+        "id": "chaotic_strikes",
+        "name": "毫无章法的进攻",
+        "description": "攻击时，若骰点≤2则目标【失衡】强度+3×目标ATK/10（向下取整），层数+1；若骰点≥3且目标带有【失衡】，则对目标造成一次<冲击>，且此次攻击伤害减少50%"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": "洪格法斯",
+    "designer": "希尔"
+  },
+  {
+    "id": "valedictus",
+    "name": "卿别",
+    "panelType": "支援型",
+    "species": "卢悉孚",
+    "tags": [
+      "增益",
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "nightmare_ballad",
+        "name": "夜魇游吟",
+        "description": "攻击前，可以选择消耗1MP，为目标附加层数为1的【梦境】，无法连续两回合对同一目标使用；卿别可以攻击陷入【梦境】的角色；陷入【梦境】的角色受到的物理/法术伤害提高20%；若有玩家【梦境】层数归零，其获得强度为1、层数为1的【困倦】（ATK-5×强度，DEF-5×强度）"
+      }
+    ],
+    "skills": [
+      {
+        "id": "requiem",
+        "name": "安魂乐章",
+        "description": "指定1名陷入【梦境】的角色，其获得如下效果：攻击目标指定为卿别，且每次受到的物理/法术伤害增加75点，持续2R  CD：3"
+      }
+    ],
+    "quote": null,
+    "belonging": null,
+    "designer": "光追 feat. 冰块"
+  },
+  {
+    "id": "ophelia",
+    "name": "奥菲莉娅",
+    "panelType": "挑战型",
+    "species": "人",
+    "tags": [
+      "控制",
+      "输出"
+    ],
+    "traits": [
+      {
+        "id": "hydrokinesis",
+        "name": "控水",
+        "description": "回合开始时，可以选择消耗1MP，为一名角色附加层数为2、强度为1的【脱水】（DEF-10×强度，回合结束受到30×强度点法术伤害），或者层数为2、强度为1的【浸没】（ATK-10×强度，MP回复-1×强度）；两种效果无法同时存在"
+      },
+      {
+        "id": "aqua_torment",
+        "name": "水之刑",
+        "description": "回合开始时，可选择消耗1MP，为一名陷入【脱水】或【浸没】的角色附加层数为1、强度为d4的【窒息】（HP上限减少30×强度，且无法摸牌和行动；可消耗50×强度点HP清空该状态层数），并清空【脱水】与【浸没】层数"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": null,
+    "designer": "大冰 feat. 冰块"
+  },
+  {
+    "id": "fu_ying",
+    "name": "符楹",
+    "panelType": "平衡型",
+    "species": "人",
+    "tags": [
+      "输出",
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "lumin_twinborn",
+        "name": "光暗双生",
+        "description": "符楹可以选择弃一张牌，转换自身的形态（初始为<光明>形态）；\n<光明>形态：DEF永久+10，攻击时回复自身5%最大HP，且施加层数为2的【光】状态；\n<暗影>形态：ATK永久+10，攻击时额外造成目标最大HP5%点法术伤害，且施加层数为2的【暗】状态；\n【光】和【暗】状态会相互覆盖"
+      }
+    ],
+    "skills": [
+      {
+        "id": "solar_blaze",
+        "name": "阳炎",
+        "description": "<光明>指定至多3名角色，对其造成40点法术伤害，每命中一名角色回复生命40点，且自身获得层数为1的【凝光】（无法受到伤害，免疫一切负面状态）；若目标持有【暗】状态，回复效果翻倍\nCD: 3"
+      },
+      {
+        "id": "lunar_frost",
+        "name": "阴凝",
+        "description": "<暗影>指定1名角色，对其造成100点法术伤害，自身获得层数为1的【堕暗】（ATK+10，攻击时额外造成目标5%最大HP点法术伤害）；若目标持有【光】状态，造成伤害翻倍，且CD-1\nCD: 3"
+      }
+    ],
+    "quote": null,
+    "belonging": "禾川",
+    "designer": "冰块"
+  },
+  {
+    "id": "engine_4",
+    "name": "EnGine-4",
+    "panelType": "挑战型",
+    "species": "机械",
+    "tags": [
+      "输出",
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "mass_energy_conversion",
+        "name": "<04>质能转换",
+        "description": "没有行动点，行动时不消耗行动点，转而消耗24×道具卡张数点HP，不可无效化；造成大于等于64/124/244伤害后回复14%/24%/34%已损失生命值。若本回合未造成伤害，则下一个摸牌阶段时额外摸2张牌或从场上除自己外生命值最高的玩家手中抽1张牌。"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": "纳冉洛",
+    "designer": "希尔"
+  },
+  {
+    "id": "lancelot",
+    "name": "兰斯洛特",
+    "panelType": "挑战型",
+    "species": "人",
+    "tags": [
+      "输出"
+    ],
+    "traits": [
+      {
+        "id": "tit_for_tat",
+        "name": "针锋相对",
+        "description": "受到攻击时，立刻使用相同大小骰子与攻击者<对决>，对决胜利则立刻使用相差点数反击，反之下次<对决>时点数+1，点数累加直至下一次<对决>胜利\n（<对决>：投掷骰子比较点数大小）"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": "帕托斯塔",
+    "designer": "希尔"
+  },
+  {
+    "id": "zhu_yecheng",
+    "name": "祝烨诚",
+    "panelType": "平衡型",
+    "species": "人",
+    "tags": [
+      "输出",
+      "削弱"
+    ],
+    "traits": [
+      {
+        "id": "icy_aura",
+        "name": "凛息",
+        "description": "攻击时，为目标附加层数为1、强度为2的【霜冻】；使用<秘法>/<霜寒】>卡牌时，每张卡牌使MP消耗-1，并使目标【霜冻】层数+1、强度+1"
+      }
+    ],
+    "skills": [
+      {
+        "id": "frost_shatter",
+        "name": "裁冰裂霜",
+        "description": "指定至多2名角色，对其造成75点物理伤害并附加层数为1、强度为10的【游离】；若其持有层数为X、强度为Y的【霜冻】，则该伤害增加10XY；若其持有层数为Z的【冰封】，则该伤害增加30Z  CD：2"
+      }
+    ],
+    "quote": null,
+    "belonging": null,
+    "designer": "光追"
+  },
+  {
+    "id": "lan_wence",
+    "name": "蓝文策",
+    "panelType": "平衡型",
+    "species": "人",
+    "tags": [
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "pouch_snatch",
+        "name": "探囊取物",
+        "description": "选定攻击对象后，随机抽取其一张道具卡并展示，并选择是否附加在你的行动上，附加道具不消耗行动点；若不使用，则返还至对应玩家手中"
+      }
+    ],
+    "skills": [
+      {
+        "id": "three_sages_return",
+        "name": "三仙归洞",
+        "description": "指定1名角色，令其执行以下两个选项之一：1.随机弃掉2张牌，回复2MP；2.失去2MP，摸2张牌  CD：3"
+      }
+    ],
+    "quote": null,
+    "belonging": "禾川",
+    "designer": "冰块 feat.光追"
+  },
+  {
+    "id": "defen_5",
+    "name": "DeFen-5",
+    "panelType": "挑战型",
+    "species": "机械",
+    "tags": [
+      "生存"
+    ],
+    "traits": [
+      {
+        "id": "force_field_simulation",
+        "name": "<15>力场模拟",
+        "description": "没有生命值；受到攻击、特质和技能伤害时转而减少相当于伤害值2%向下取整的防御，防御小于等于0时阵亡；每回合出牌阶段时可以选择弃1张牌并使防御永久+3。"
+      }
+    ],
+    "skills": [],
+    "quote": null,
+    "belonging": "纳冉洛",
+    "designer": "希尔"
+  },
+  {
+    "id": "su_yong",
+    "name": "苏永",
+    "panelType": "平衡型",
+    "species": "人",
+    "tags": [
+      "输出",
+      "生存",
+      "控制"
+    ],
+    "traits": [
+      {
+        "id": "pentachroma",
+        "name": "五采",
+        "description": "攻击时按照使用的道具卡数量，以<素、玄、赤、青、芒>的顺序附加攻击特效，前两种特效会无效化对应标签的道具卡\n<素>75点物理伤害；无效化<锋锐>卡牌\n<玄>层数为1、强度为2的【霜冻】；无效化<秘法>卡牌\n<赤>层数为1、强度为2的【灼炎】；无效化<魔能>卡牌\n<青>回复80点生命；无效化<生机>卡牌\n<芒>获得60点护盾；无效化<铁御>卡牌"
+      }
+    ],
+    "skills": [
+      {
+        "id": "pinnacle",
+        "name": "点睛",
+        "description": "下次攻击时使用的前两个攻击特效增加额外效果\n<素>层数为1、强度为3的【重伤】\n<玄>层数为1、强度为5的【脆弱】\n<赤>层数为1、强度为5的【游离】\n<青>自身获得层数为2、强度为1的【迅捷】\n<芒>自身获得【屏障】"
+      }
+    ],
+    "quote": null,
+    "belonging": "禾川",
+    "designer": "希尔"
+  },
+  {
+    "id": "kalaka",
+    "name": "卡拉卡",
+    "panelType": "防御型",
+    "species": "羊",
+    "tags": [
+      "辅助"
+    ],
+    "traits": [
+      {
+        "id": "fellowship_ward",
+        "name": "友情防守",
+        "description": "队友成为行动 / 技能的目标时，该行动 / 技能消耗mp+1，自身回复1mp；\nmp回满时，立刻消耗所有mp清除友方单位负面效果，并使友方单位回复1mp；\nmp用光时，选择1名敌方单位使其mp-1。"
+      }
+    ],
+    "skills": [
+      {
+        "id": "wooden_ram",
+        "name": "木头羊",
+        "description": "立刻获得X点mp，回合外可发动   CD：X"
+      }
+    ],
+    "quote": null,
+    "belonging": null,
+    "designer": "尾号"
+  }
+]

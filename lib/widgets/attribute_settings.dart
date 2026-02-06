@@ -644,7 +644,7 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
                     String hiddenStatusName = newHiddenStatusNameController.text;
                     int hiddenStatusValue = int.tryParse(newHiddenStatusIntensityController.text) ?? 0;
                     int hiddenStatusLayer = int.tryParse(newHiddenStatusLayerController.text) ?? 0;
-                    statusControllers[hiddenStatusName] = [
+                    hiddenStatusControllers[hiddenStatusName] = [
                       TextEditingController(text: hiddenStatusValue.toString()),
                       TextEditingController(text: hiddenStatusLayer.toString()),
                     ];

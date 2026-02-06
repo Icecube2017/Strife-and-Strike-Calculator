@@ -34,6 +34,8 @@ dependencies:
   path_provider: ^2.1.5
   shared_preferences: ^2.2.2
   lpinyin: ^2.0.3
+  json_annotation: ^4.10.0
+  material_design_icons_flutter: ^7.0.7296
   flutter:
     sdk: flutter
 
@@ -42,6 +44,8 @@ dependencies:
   cupertino_icons: ^1.0.8
 
 dev_dependencies:
+  json_serializable: ^6.12.0
+  build_runner: ^2.10.4
   flutter_test:
     sdk: flutter
 
@@ -78,6 +82,7 @@ flutter:
     - assets/status.json
     - assets/tag.json
     - assets/skill_deck.json
+    - assets/search_page/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -1,0 +1,497 @@
+[
+  {
+    "id": "benevolence",
+    "name": "仁慈",
+    "description": "单次造成伤害≥100时你可以将伤害-100%，并选择回复最大生命值的20%或者抽取两张牌",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "phase_transition",
+    "name": "相转移",
+    "description": "将本回合受到的所有物理/法术/真实伤害以物理伤害形式转移给目标",
+    "availableTiming": "回合外",
+    "cd": 7,
+    "cost": 2,
+    "comments": null
+  },
+  {
+    "id": "heaven_delivery",
+    "name": "天国邮递员",
+    "description": "使自己和指定角色可以在下一轮多摸1张牌",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "purification",
+    "name": "净化",
+    "description": "清除一名角色的状态效果",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "blood_thirst",
+    "name": "嗜血",
+    "description": "回复相当于造成伤害50%的生命值",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "stellar",
+    "name": "外星人",
+    "description": "使一名角色获得层数为1的【星牢】",
+    "availableTiming": null,
+    "cd": 5,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "intimidation",
+    "name": "恐吓",
+    "description": "受到攻击伤害时进行1d6判定，d6=3/6时受到伤害-50%",
+    "availableTiming": "回合外",
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "threshold",
+    "name": "阈限",
+    "description": "受到单次物理/法术伤害≥250时，消耗100点生命值防止此伤害",
+    "availableTiming": "回合外",
+    "cd": 4,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "reinforcement",
+    "name": "强化",
+    "description": "此回合发动的第一张道具牌效果翻倍<强化>",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "chase",
+    "name": "追击",
+    "description": "攻击造成伤害后若目标HP≤300，则进入额外回合，额外回合内攻击目标只能为该玩家",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "reticence",
+    "name": "沉默",
+    "description": "有技能发动时，无效化该技能",
+    "availableTiming": "任意",
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "finale_hope",
+    "name": "最后的希望",
+    "description": "修改一次骰点结果",
+    "availableTiming": "任意",
+    "cd": 10,
+    "cost": 2,
+    "comments": null
+  },
+  {
+    "id": "devotion",
+    "name": "奉献",
+    "description": "消耗100n点生命值并使另一角色回复100n点生命值，n≥2时摸n-1张牌",
+    "availableTiming": null,
+    "cd": 4,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "barrier",
+    "name": "屏障",
+    "description": "获得150点护盾并获得【屏障】效果",
+    "availableTiming": null,
+    "cd": 4,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "laser",
+    "name": "镭射",
+    "description": "对一名角色造成60点物理伤害，并附加强度为5、层数为1的【脆弱】",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "undying",
+    "name": "不死",
+    "description": "HP≤0时可发动，回复至200HP并获得持续1轮的400点护盾，不受游离影响",
+    "availableTiming": "回合外",
+    "cd": 10,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "kill_ceasing",
+    "name": "止杀",
+    "description": "若另一名角色本轮内造成伤害≥200点，偷取其2张手牌并使其【脱力】层数+1",
+    "availableTiming": "回合外",
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "psionia",
+    "name": "灵能注入",
+    "description": "消耗75点生命值，本次攻击骰点变为d8",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "inversion",
+    "name": "镜像",
+    "description": "使一名角色获得层数为3的【镜映】，若效果持续期间受伤害≥300，该效果结束",
+    "availableTiming": null,
+    "cd": 10,
+    "cost": 1,
+    "comments": null
+  },
+  {
+    "id": "fission",
+    "name": "分裂",
+    "description": "本次攻击伤害-20%，选择一名玩家造成等同于本次攻击伤害值的伤害",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "burn_out",
+    "name": "透支",
+    "description": "自身获得强度为5、层数为1的【透支】（ATK+5*，DEF-5*）",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "trading",
+    "name": "交易",
+    "description": "与一名角色交换2张手牌，对方交换的牌可选择由自己或对方指定",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "mizar",
+    "name": "开阳",
+    "description": "从弃牌堆中取1张牌加入手牌",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "lunar",
+    "name": "太阴",
+    "description": "随机弃掉目标的1张手牌",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "perusing",
+    "name": "博览",
+    "description": "复制指定一张手牌与牌堆内总数大于1的道具卡",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "anti_gravity",
+    "name": "反重力",
+    "description": "下一轮及之后的行动顺序反转",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "singularity",
+    "name": "奇点",
+    "description": "使一名角色损失300点HP",
+    "availableTiming": null,
+    "cd": 8,
+    "cost": 2,
+    "comments": null
+  },
+  {
+    "id": "soul_rancor",
+    "name": "魂怨",
+    "description": "选择任意目标造成50点追加伤害，共计四次",
+    "availableTiming": null,
+    "cd": 5,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "flash_shade",
+    "name": "瞬影",
+    "description": "获得一个额外个人回合",
+    "availableTiming": null,
+    "cd": 6,
+    "cost": 1,
+    "comments": null
+  },
+  {
+    "id": "corroded",
+    "name": "侵蚀",
+    "description": "使一名角色获得强度为3、层数为2的【侵蚀】（ATK-10*）",
+    "availableTiming": null,
+    "cd": 9,
+    "cost": 1,
+    "comments": null
+  },
+  {
+    "id": "karma_reversal",
+    "name": "逆转乾坤",
+    "description": "使一名角色与自身交换生命值，手牌，行动点",
+    "availableTiming": null,
+    "cd": 10,
+    "cost": 2,
+    "comments": null
+  },
+  {
+    "id": "velocity",
+    "name": "极速",
+    "description": "本回合手牌消耗MP-3，下回合手牌消耗MP+3",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "last_stand",
+    "name": "背水一战",
+    "description": "本次攻击骰点两次并取其和，下次受到攻击时，攻击者也获得该效果",
+    "availableTiming": null,
+    "cd": 4,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "airstrike",
+    "name": "空袭",
+    "description": "随机一名玩家受到100点伤害，若该玩家为自身或友方单位，则其摸2张牌",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "dream_dicination",
+    "name": "相梦",
+    "description": "使一名角色获得1轮【梦境】，期间偷取其20ATK与10DEF",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "deconstruction",
+    "name": "异镜解构",
+    "description": "将1MP视为任意一张除刷新外的当前卡组的道具卡打出，但不能使用其他道具卡",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "ice_splinter",
+    "name": "冰芒",
+    "description": "指定1名角色，对其造成80点法术伤害，并使其【霜冻】强度+3、层数+1",
+    "availableTiming": null,
+    "cd": 1,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "data_transmit",
+    "name": "数据传输",
+    "description": "可以复制场上出现过的技能并在某一时间点使用，CD与复制的技能的CD相同，每个技能上限一次",
+    "availableTiming": null,
+    "cd": null,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "nebula",
+    "name": "氤氲",
+    "description": "指定1名角色，为其附加强度为1、层数为2的【氤氲】",
+    "availableTiming": null,
+    "cd": 4,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "crimson_inferno",
+    "name": "赤焱炼狱",
+    "description": "指定至多3名角色，为其附加强度为5、层数为1的【灼炎】",
+    "availableTiming": null,
+    "cd": 1,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "sealed_flame_135_seconds",
+    "name": "封焰的135秒",
+    "description": "场上【灼炎】总层数≥6时，攻击时引爆所有【灼炎】，对所有持有【灼炎】的非友方角色造成本次攻击伤害*1.5点真实伤害并清空【灼炎】层数",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "dream_weaver",
+    "name": "造梦者",
+    "description": "消耗1/3/5个<梦>印记，效果如下：\n1)本次攻击增加100点法术伤害并使一名角色获得1R【梦境】\n3)本次攻击附加任意一张道具卡\n5)自身ATK+30，DEF+30，持续2R，且为全体非友方角色附加层数为1的【梦境】",
+    "availableTiming": null,
+    "cd": null,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "massacre",
+    "name": "屠杀",
+    "description": "造成伤害≥250时，HP+100，ATK+5并获得一个额外个人回合；当回合再次触发技能时，不获得额外个人回合",
+    "availableTiming": null,
+    "cd": 0,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "dream_keeper",
+    "name": "护梦者",
+    "description": "指定1名角色，为其附加强度为2、层数为1的【虚弱】和强度为1、层数为1的【迟缓】",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "emphemeral",
+    "name": "须臾",
+    "description": "指定1名角色，将其持有的一个状态的强度变为强度*层数，且层数变为1",
+    "availableTiming": null,
+    "cd": null,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "abyssal_whirl",
+    "name": "谜渊漩涡",
+    "description": "强制一次攻击的目标为自己，自身至多受到200伤害，溢出的每50点伤害可转化为1点<暗能>",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "apocalyptic_court",
+    "name": "天启之庭",
+    "description": "为场上至多3名角色附加强度为d4、层数为2的【伊甸园】（清空并免疫一切负面效果，ATK+3*强度，且下次受到伤害时，伤害-25%）",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "seventh_frost",
+    "name": "八寒之七",
+    "description": "攻击前使用，消耗50XHP选定目标身上的一个延时状态转变为X层【润化】。",
+    "availableTiming": null,
+    "cd": null,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "dream_grasp",
+    "name": "入梦之手",
+    "description": "指定至多3个角色，其余角色立即被拖入梦境，获得1R【梦境】",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "sacrifice",
+    "name": "牺牲",
+    "description": "献祭所有<光灵>，每只<光灵>使自己atk+5， def+5，持续2R；技能结束后，损失250hp",
+    "availableTiming": null,
+    "cd": 5,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "soul_tremor",
+    "name": "灵魂震荡",
+    "description": "目标每使用一张道具牌，将额外消耗1MP；若目标的MP低于2点，则禁止其行动；上述效果持续1R",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "deicide",
+    "name": "斩神",
+    "description": "扣除自身当前HP的20%，并赋予自身最大血量的10%的护盾(均向上取整)；血量≥300时，本回合攻击时ATK+10；HP<300时，本回合骰点必定为最大值，并视为原始点数，无法修改",
+    "availableTiming": null,
+    "cd": null,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "icy_oblivion_135_bars",
+    "name": "冰灭的135小节",
+    "description": "选择X名角色（X≤3），消耗100X点HP，对其施加1R【冰封】；场上每存在1R【霜冻】，消耗的HP就减少50点",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "sacrificial_love",
+    "name": "奉献之爱",
+    "description": "全场获得50护盾。友方角色可以额外获得50护盾",
+    "availableTiming": null,
+    "cd": 2,
+    "cost": null,
+    "comments": null
+  },
+  {
+    "id": "requiem",
+    "name": "安魂乐章",
+    "description": "指定一名陷入【梦境】的玩家，其获得如下效果：下两回合攻击目标指定为卿别，且每次受到的伤害增加75点",
+    "availableTiming": null,
+    "cd": 3,
+    "cost": null,
+    "comments": null
+  }
+]
