@@ -111,7 +111,7 @@ class IDsZHCN { static const Map<String, String> ids = {
   "ting_xinyu": "亭歆雨",
   "bai_xie": "白谢",
   "shen_shuhua": "沈姝华",
-  "turbach": "图尔巴赫",
+  "turbach": "翠灵",
   "zephyr": "湍云",
   "refre_3": "ReFre-3",
   "lor": "洛尔",

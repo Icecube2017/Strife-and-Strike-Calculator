@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // import 'package:sns_calculator/core.dart';
 import 'package:sns_calculator/game.dart';
+import 'package:sns_calculator/core.dart';
 
 class AttributeSettingsDialog extends StatefulWidget {
   final Character character;
@@ -36,12 +37,20 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
   // 用于新增技能/状态的临时控制器
   late TextEditingController newSkillNameController;
   late TextEditingController newSkillCooldownController;
+
   late TextEditingController newStatusNameController;
   late TextEditingController newStatusIntensityController;
   late TextEditingController newStatusLayerController;
+  late TextEditingController newStatusLayerFractionController;
+  late TextEditingController newStatusIntDataController;
+  late TextEditingController newStatusStrDataController;
+
   late TextEditingController newHiddenStatusNameController;
   late TextEditingController newHiddenStatusIntensityController;
   late TextEditingController newHiddenStatusLayerController;
+  late TextEditingController newHiddenStatusLayerFractionController;
+  late TextEditingController newHiddenStatusIntDataController;
+  late TextEditingController newHiddenStatusStrDataController;
 
   @override
   void initState() {
@@ -69,8 +78,11 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
     statusControllers = {};
     widget.character.status.forEach((key, value) {
       statusControllers[key] = [
-        TextEditingController(text: value[0].toString()),
-        TextEditingController(text: value[1].toString()),
+        TextEditingController(text: value.intensity.toString()),
+        TextEditingController(text: value.layer.toString()),
+        TextEditingController(text: value.layerFraction.toString()),
+        TextEditingController(text: value.intData.toString()),
+        TextEditingController(text: value.strData),
       ];
     });
 
@@ -78,20 +90,31 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
     hiddenStatusControllers = {};
     widget.character.hiddenStatus.forEach((key, value) {
       hiddenStatusControllers[key] = [
-        TextEditingController(text: value[0].toString()),
-        TextEditingController(text: value[1].toString()),
+        TextEditingController(text: value.intensity.toString()),
+        TextEditingController(text: value.layer.toString()),
+        TextEditingController(text: value.layerFraction.toString()),
+        TextEditingController(text: value.intData.toString()),
+        TextEditingController(text: value.strData),
       ];
     });
     
     // 初始化新增项的控制器
     newSkillNameController = TextEditingController();
     newSkillCooldownController = TextEditingController();
+
     newStatusNameController = TextEditingController();
     newStatusIntensityController = TextEditingController();
     newStatusLayerController = TextEditingController();
+    newStatusLayerFractionController = TextEditingController();
+    newStatusIntDataController = TextEditingController();
+    newStatusStrDataController = TextEditingController();
+
     newHiddenStatusNameController = TextEditingController();
     newHiddenStatusIntensityController = TextEditingController();
     newHiddenStatusLayerController = TextEditingController();
+    newHiddenStatusLayerFractionController = TextEditingController();
+    newHiddenStatusIntDataController = TextEditingController();
+    newHiddenStatusStrDataController = TextEditingController();
   }
 
   @override
@@ -118,12 +141,20 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
     
     newSkillNameController.dispose();
     newSkillCooldownController.dispose();
+
     newStatusNameController.dispose();
     newStatusIntensityController.dispose();
     newStatusLayerController.dispose();
+    newStatusLayerFractionController.dispose();
+    newStatusIntDataController.dispose();
+    newStatusStrDataController.dispose();
+
     newHiddenStatusNameController.dispose();
     newHiddenStatusIntensityController.dispose();
     newHiddenStatusLayerController.dispose();
+    newHiddenStatusLayerFractionController.dispose();
+    newHiddenStatusIntDataController.dispose();
+    newHiddenStatusStrDataController.dispose();
 
     super.dispose();
   }
@@ -152,23 +183,27 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
       // 保存状态
       widget.character.status.clear();
       statusControllers.forEach((key, controllers) {
-        widget.character.status[key] = [
-          int.parse(controllers[0].text),
-          int.parse(controllers[1].text),
-          GameManager().game.playerCount,
-          0
-        ];
+        widget.character.status[key] = CharacterStatus(
+          name: key,
+          intensity: int.parse(controllers[0].text),
+          layer: int.parse(controllers[1].text),
+          layerFraction: int.parse(controllers[2].text),
+          intData: int.parse(controllers[3].text),
+          strData: controllers[4].text,
+        );
       });
 
       // 保存隐藏状态
       widget.character.hiddenStatus.clear();
       hiddenStatusControllers.forEach((key, controllers) {
-        widget.character.hiddenStatus[key] = [
-          int.parse(controllers[0].text),
-          int.parse(controllers[1].text),
-          GameManager().game.playerCount,
-          0
-        ];
+        widget.character.hiddenStatus[key] = CharacterStatus(
+          name: key,
+          intensity: int.parse(controllers[0].text),
+          layer: int.parse(controllers[1].text),
+          layerFraction: int.parse(controllers[2].text),
+          intData: int.parse(controllers[3].text),
+          strData: controllers[4].text,
+        );
       });
 
       widget.onSave();
@@ -374,6 +409,9 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
                   setState(() {
                     controllers[0].dispose();
                     controllers[1].dispose();
+                    controllers[2].dispose();
+                    controllers[3].dispose();
+                    controllers[4].dispose();
                     statusControllers.remove(statusName);
                   });
                 },
@@ -405,6 +443,42 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
                   ),
                 ),
               ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: controllers[2],
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: '分数层数',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: controllers[3],
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: '整数数据',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: controllers[4],
+                  keyboardType: TextInputType.text,
+                  decoration: const InputDecoration(
+                    labelText: '字符串数据',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  ),
+                ),
+              )
             ],
           ),
         ],
@@ -428,6 +502,9 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
                   setState(() {
                     controllers[0].dispose();
                     controllers[1].dispose();
+                    controllers[2].dispose();
+                    controllers[3].dispose();
+                    controllers[4].dispose();
                     hiddenStatusControllers.remove(statusName);
                   });
                 },
@@ -454,6 +531,42 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
                   keyboardType: TextInputType.number,
                   decoration: const InputDecoration(
                     labelText: '层数',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  )
+                )
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: controllers[2],
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: '分数层数',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  )
+                )
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: controllers[3],
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: '整数数据',
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  )
+                )
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: TextField(
+                  controller: controllers[4],
+                  keyboardType: TextInputType.text,
+                  decoration: const InputDecoration(
+                    labelText: '字符串数据',
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   )
@@ -558,6 +671,33 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
                   border: OutlineInputBorder(),
                 ),
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: newStatusLayerFractionController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: '状态分数层数',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: newStatusIntDataController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: '整数数据',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: newStatusStrDataController,
+                keyboardType: TextInputType.text,
+                decoration: const InputDecoration(
+                  labelText: '字符串数据',
+                  border: OutlineInputBorder(),
+                ),
+              ),
             ],
           ),
           actions: [
@@ -569,18 +709,30 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
               onPressed: () {
                 if (newStatusNameController.text.isNotEmpty &&
                     newStatusIntensityController.text.isNotEmpty &&
-                    newStatusLayerController.text.isNotEmpty) {
+                    newStatusLayerController.text.isNotEmpty &&
+                    newStatusLayerFractionController.text.isNotEmpty &&
+                    newStatusIntDataController.text.isNotEmpty &&
+                    newStatusStrDataController.text.isNotEmpty) {
                   setState(() {
                     String statusName = newStatusNameController.text;
                     int statusValue = int.tryParse(newStatusIntensityController.text) ?? 0;
                     int statusDuration = int.tryParse(newStatusLayerController.text) ?? 0;
+                    int statusDurationFraction = int.tryParse(newStatusLayerFractionController.text) ?? 0;
+                    int statusIntData = int.tryParse(newStatusIntDataController.text) ?? 0;
+                    String statusStrData = newStatusStrDataController.text;
                     statusControllers[statusName] = [
                       TextEditingController(text: statusValue.toString()),
                       TextEditingController(text: statusDuration.toString()),
+                      TextEditingController(text: statusDurationFraction.toString()),
+                      TextEditingController(text: statusIntData.toString()),
+                      TextEditingController(text: statusStrData),
                     ];
                     newStatusNameController.clear();
                     newStatusIntensityController.clear();
                     newStatusLayerController.clear();
+                    newStatusLayerFractionController.clear();
+                    newStatusIntDataController.clear();
+                    newStatusStrDataController.clear();
                   });
                   Navigator.of(context).pop();
                 }
@@ -628,6 +780,33 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
                   border: OutlineInputBorder(),
                 ),
               ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: newHiddenStatusLayerFractionController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: '状态分数层数',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: newHiddenStatusIntDataController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: '整数数据',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: newHiddenStatusStrDataController,
+                keyboardType: TextInputType.text,
+                decoration: const InputDecoration(
+                  labelText: '字符串数据',
+                  border: OutlineInputBorder(),
+                ),
+              ),
             ],
           ),
           actions: [
@@ -639,18 +818,30 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
               onPressed: () {
                 if (newHiddenStatusNameController.text.isNotEmpty &&
                     newHiddenStatusIntensityController.text.isNotEmpty &&
-                    newHiddenStatusLayerController.text.isNotEmpty) {
+                    newHiddenStatusLayerController.text.isNotEmpty &&
+                    newHiddenStatusLayerFractionController.text.isNotEmpty &&
+                    newHiddenStatusIntDataController.text.isNotEmpty &&
+                    newHiddenStatusStrDataController.text.isNotEmpty) {
                   setState(() {
                     String hiddenStatusName = newHiddenStatusNameController.text;
                     int hiddenStatusValue = int.tryParse(newHiddenStatusIntensityController.text) ?? 0;
                     int hiddenStatusLayer = int.tryParse(newHiddenStatusLayerController.text) ?? 0;
+                    int hiddenStatusLayerFraction = int.tryParse(newHiddenStatusLayerFractionController.text) ?? 0;
+                    int hiddenStatusIntData = int.tryParse(newHiddenStatusIntDataController.text) ?? 0;
+                    String hiddenStatusStrData = newHiddenStatusStrDataController.text;
                     hiddenStatusControllers[hiddenStatusName] = [
                       TextEditingController(text: hiddenStatusValue.toString()),
                       TextEditingController(text: hiddenStatusLayer.toString()),
+                      TextEditingController(text: hiddenStatusLayerFraction.toString()),
+                      TextEditingController(text: hiddenStatusIntData.toString()),
+                      TextEditingController(text: hiddenStatusStrData),
                     ];
                     newHiddenStatusNameController.clear();
                     newHiddenStatusIntensityController.clear();
                     newHiddenStatusLayerController.clear();
+                    newHiddenStatusLayerFractionController.clear();
+                    newHiddenStatusIntDataController.clear();
+                    newHiddenStatusStrDataController.clear();
                   });
                   Navigator.of(context).pop();
                 }

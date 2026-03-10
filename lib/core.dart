@@ -190,3 +190,65 @@ class GameTurn {
     return 'GameTurn(round: $round, turn: $turn, extra: $extra)';
   }
 }
+
+// 角色状态
+class CharacterStatus {
+  final String name;
+  int intensity;
+  int layer;
+  int layerFraction;
+  int intData;
+  String strData;
+
+  CharacterStatus({
+    required this.name,
+    required this.intensity,
+    required this.layer,
+    required this.layerFraction,
+    required this.intData,
+    required this.strData,
+  });
+
+  factory CharacterStatus.fromJson(Map<String, dynamic> json) {
+    return CharacterStatus(
+      name: json['name'] ?? '',
+      intensity: json['intensity'] ?? 0,
+      layer: json['layer'] ?? 0,
+      layerFraction: json['layerFraction'] ?? 0,
+      intData: json['intData'] ?? 0,
+      strData: json['strData'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'intensity': intensity,
+      'layer': layer,
+      'layerFraction': layerFraction,
+      'intData': intData,
+      'strData': strData,
+    };
+  }
+}
+
+enum StatusData {
+  intensity,
+  layer,
+  layerFraction,
+  intData,
+  strData,
+}
+
+// 角色技能
+class CharacterSkill { 
+  final String name;
+  int cooldown;
+  bool isAble;
+
+  CharacterSkill({
+    required this.name,
+    required this.cooldown,
+    required this.isAble,
+  });
+}

@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'dart:ui_web';
+// import 'dart:ui_web';
 import 'package:flutter/material.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:provider/provider.dart';
@@ -160,8 +160,8 @@ String _serializeGameState() {
       'cureReceivedTurn' : character.cureReceivedTurn,
       'cureDealtTurn': character.cureDealtTurn,
       'isDead': character.isDead,
-      'status': character.status,
-      'hiddenStatus': character.hiddenStatus,
+      'status': character.status.map((k, v) => MapEntry(k, v.toJson())),
+      'hiddenStatus': character.hiddenStatus.map((k, v) => MapEntry(k, v.toJson())),
       'skill': character.skill,
       'skillStatus': character.skillStatus,
     };
@@ -257,8 +257,28 @@ void _restoreGameState(String stateJson) {
     character.cureReceivedTurn = playerData['cureReceivedTurn'];
     character.cureDealtTurn = playerData['cureDealtTurn'];
     character.isDead = playerData['isDead'];
-    character.status = Map<String, List<dynamic>>.from(playerData['status']);
-    character.hiddenStatus = Map<String, List<dynamic>>.from(playerData['hiddenStatus']);
+    // 恢复状态：将 Map<String, dynamic> 转为 Map<String, CharacterStatus>
+    character.status = {};
+    if (playerData['status'] is Map) {
+      (playerData['status'] as Map).forEach((k, v) {
+        try {
+          character.status[k.toString()] = CharacterStatus.fromJson(Map<String, dynamic>.from(v));
+        } catch (e) {
+          //
+        }
+      });
+    }
+
+    character.hiddenStatus = {};
+    if (playerData['hiddenStatus'] is Map) {
+      (playerData['hiddenStatus'] as Map).forEach((k, v) {
+        try {
+          character.hiddenStatus[k.toString()] = CharacterStatus.fromJson(Map<String, dynamic>.from(v));
+        } catch (e) {
+          //
+        }
+      });
+    }
     character.skill = Map<String, int>.from(playerData['skill']);
     character.skillStatus = Map<String, int>.from(playerData['skillStatus']);
     
@@ -270,7 +290,6 @@ void _restoreGameState(String stateJson) {
       tableData.add({"column1":playerId});
     }
   }
-
 
   game.refresh();
   } catch (e) {
@@ -797,8 +816,8 @@ void _restoreGameState(String stateJson) {
                       int movePoint = character.movePoint;
                       int maxMovePoint = character.maxMove;
                       int cardCount = character.cardCount;
-                      Map<String, List<dynamic>> status = character.status;
-                      Map<String, List<dynamic>> hiddenStatus = character.hiddenStatus;
+                      Map<String, CharacterStatus> status = character.status;
+                      Map<String, CharacterStatus> hiddenStatus = character.hiddenStatus;
                       Map<String, int> skill = character.skill;
                       Color teamColor = (game.getPlayerTeam(roleName) != null) ? _getTeamColor(game.getPlayerTeam(roleName)) : Colors.blue;
 
@@ -899,14 +918,14 @@ void _restoreGameState(String stateJson) {
                                           List<Widget> pills = [];
 
                                           status.forEach((k, v) {
-                                            final int layers = (v.isNotEmpty) ? (v[0] as int) : 0;
-                                            final dynamic intensity = (v.length > 1) ? v[1] : '';
-                                            pills.add(_buildStatusPill(k, intensity, layers.toString(), smallItemW, hidden: false));
+                                            final int layers = v.layer;
+                                            final int intensity = v.intensity;
+                                            pills.add(_buildStatusPill(k, layers, intensity.toString(), smallItemW, hidden: false));
                                           });
                                           hiddenStatus.forEach((k, v) {
-                                            final int layers = (v.isNotEmpty) ? (v[0] as int) : 0;
-                                            final dynamic intensity = (v.length > 1) ? v[1] : '';
-                                            pills.add(_buildStatusPill(k, intensity, layers.toString(), smallItemW, hidden: true));
+                                            final int layers = v.layer;
+                                            final int intensity = v.intensity;
+                                            pills.add(_buildStatusPill(k, layers, intensity.toString(), smallItemW, hidden: true));
                                           });
 
                                           return Wrap(

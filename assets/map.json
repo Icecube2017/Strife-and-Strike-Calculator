@@ -111,7 +111,7 @@
     "ting_xinyu": "亭歆雨",
     "bai_xie": "白谢",
     "shen_shuhua": "沈姝华",
-    "turbach": "图尔巴赫",
+    "turbach": "翠灵",
     "zephyr": "湍云",
     "refre_3": "ReFre-3",
     "lor": "洛尔",
@@ -121,6 +121,7 @@
     "lancelot": "兰斯洛特",
     "zhu_yecheng": "祝烨诚",
     "lan_wence": "蓝文策",
+    "defen_5": "DeFen-5",
 
     "self_encouragement": "自勉",
     "tireless_observer": "不倦的观测者",
@@ -195,7 +196,11 @@
     "thermal_recovery": "<0C>热能回收",
     "smoldering_rage": "不断燃烧的愤怒",
     "chaotic_strikes": "毫无章法的进攻",
+    "hydromancy": "控水",
+    "water_torture": "水之刑",
     "mass_energy_conversion": "<04>质能转换",
+    "icy_stillness": "凛息",
+    "force_field_simulation": "<15>力场模拟",
 
     "benevolence": "仁慈",
     "phase_transition": "相转移",
