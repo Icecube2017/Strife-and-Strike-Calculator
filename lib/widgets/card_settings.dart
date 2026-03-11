@@ -285,10 +285,10 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
               ),
               SizedBox(height: 16),
             ]
-            else if(widget.cardName == '混乱力场')...[
+            else if (widget.cardName == '混乱力场')...[
               Text('混乱点数', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              ...game.gameSequence.map((playerId) {
+              SizedBox(height: 8),              
+              ..._ascensionPoints.keys.map((playerId) {
               final player = game.players[playerId]!;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

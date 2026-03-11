@@ -1542,6 +1542,18 @@ class Game extends ChangeNotifier{
     }
     // 行动可用
     if (actionAble) {
+      // 行动点减少
+      if (source == langMap!['engine_4']) {
+        damagePlayer(source, source, 24 * cost, DamageType.lost);
+      }
+      else {
+        addAttribute(source, AttributeType.movepoint, -cost);
+      }
+
+      // 行动次数减少
+      sourceChara.actionTime--;
+
+      // 使用道具
       for (int i = 0; i < cards.length; i++) {
         Map<String, dynamic> cardData = cardSettings[i].toJson();
         castCard(source, [target], cards[i], cardData);
@@ -2624,11 +2636,11 @@ class Game extends ChangeNotifier{
         if (targetChara.hasHiddenStatus('dream')) {
           traitAble = false;
         }
-        List<GameRecord> actionRecords =  _recordProvider!.getFilteredRecords(type: RecordType.action, source: source,
+        /*List<GameRecord> actionRecords =  _recordProvider!.getFilteredRecords(type: RecordType.action, source: source,
           target: target, startTurn: getPreviousGameTurn(), endTurn: getGameTurn());
         if (actionRecords.isEmpty) {
           traitAble = false;
-        }
+        }*/
       }
     }
     // 云津【云系祝乐】
@@ -3207,7 +3219,10 @@ class Game extends ChangeNotifier{
       else if (trait == langMap!['hema_slash']) {
         addAttribute(source, AttributeType.card, -1);
         sourceChara.actionTime++;
-        addHiddenStatus(source, 'hema', 0, 0);    
+        addHiddenStatus(source, 'hema', 0, 0);
+        if (sourceChara.actionTime == 1) {
+          addAttribute(source, AttributeType.attack, 15);
+        }
       }
       // 恋慕【勿忘我】
       else if (trait == langMap!['dont_forget_me']) {
@@ -5213,10 +5228,10 @@ class Game extends ChangeNotifier{
       }
     }
 
-    // 行动次数增加
+    // 行动次数恢复
     bool actionAble = true;
     if (actionAble) {
-      currentChara.actionTime++;
+      currentChara.actionTime = 1;
     }    
 
     refresh();

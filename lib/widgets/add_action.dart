@@ -6,7 +6,7 @@ import 'package:sns_calculator/game.dart';
 import 'package:sns_calculator/assets.dart';
 import 'package:sns_calculator/core.dart';
 import 'package:sns_calculator/settings.dart';
-import 'package:sns_calculator/logger.dart';
+//import 'package:sns_calculator/logger.dart';
 import 'package:sns_calculator/widgets/attack_effect_settings.dart';
 import 'package:sns_calculator/widgets/card_settings.dart';
 import 'package:lpinyin/lpinyin.dart';
@@ -357,7 +357,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                                           else if (langMap != null && name == langMap!['aurora_concussion']) {
                                             AuroraConcussionSetting setting = AuroraConcussionSetting();
                                             for (var chara in game.players.values) {
-                                              if (game.isEnemy(_source!, chara.id) && !chara.isDead) {
+                                              if (game.isEnemy(_source!, chara.id) && !chara.isDead && chara.id != 'empty') {
                                                 setting.auroraPoints[chara.id] = 1;
                                               }
                                             }
@@ -3143,9 +3143,9 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 // 岚【血灵斩】
                 else if (_selectedTrait == langMap!['hema_slash']) {
                   game.castTrait(_source!, [_source!], langMap!['hema_slash']);
-                  if (_sourcePlayer!.hasHiddenStatus('hema') && _sourcePlayer!.actionTime == 1){
+                  /*if (_sourcePlayer!.hasHiddenStatus('hema') && _sourcePlayer!.actionTime == 1){
                     game.addAttribute(_source!, AttributeType.attack, 15);
-                  }
+                  }*/
                 }
                 // 卿别【夜魇游吟】
                 else if (_selectedTrait == langMap!['nightmare_refrain']) {

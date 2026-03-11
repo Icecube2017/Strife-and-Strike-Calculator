@@ -59,7 +59,19 @@ class _LoggerPageState extends State<LoggerPage> {
   Future<void> _viewLogFile(FileInfo fileInfo) async {
     try {
       final content = await fileInfo.file.readAsString();
-      final jsonList = jsonDecode(content) as List<dynamic>;
+      
+      // 验证 JSON 格式
+      List<dynamic> jsonList;
+      try {
+        jsonList = jsonDecode(content) as List<dynamic>;
+      } catch (e) {
+        // JSON 格式错误，显示错误提示
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('日志文件格式错误，无法读取: $e')),
+        );
+        return;
+      }
 
       if (!mounted) return;
 
@@ -146,7 +158,7 @@ class _LoggerPageState extends State<LoggerPage> {
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('读取日志文件失败: $e')),
+        SnackBar(content: Text('读取日志文件失败: $e'))
       );
     }
   }

@@ -287,7 +287,7 @@ void _restoreGameState(String stateJson) {
 
   if (tableData.isEmpty){
     for(var playerId in game.gameSequence) {
-      tableData.add({"column1":playerId});
+      tableData.add(<String, dynamic>{"column1":playerId});
     }
   }
 
@@ -381,23 +381,20 @@ void _restoreGameState(String stateJson) {
   void _processLoadedSaveData(Map<String, dynamic> result) {
     try {
       final currentHistoryIndex = result['currentHistoryIndex'] as int;
-      final history = List<String>.from(result['history'] as List);
-      
-      
+      final history = List<String>.from(result['history'] as List);            
       final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
       historyProvider.setHistory(history, currentHistoryIndex);
-      
-      
+            
       // 恢复当前游戏状态
       if (currentHistoryIndex >= 0 && currentHistoryIndex < history.length) {
         String currentState = history[currentHistoryIndex];
         _restoreGameState(currentState);      
         
         // 重新构建表格数据
-        tableData.clear();
+        /*tableData.clear();
         for (var playerId in game.gameSequence) {
           tableData.add({"column1": playerId});
-        }
+        }*/
         
         setState(() {
           _autoLoadingInProgress = false;
@@ -1091,7 +1088,7 @@ void _restoreGameState(String stateJson) {
                                             int regenTurn = regenerateTypeData?[characterData?[name][1]][3] ?? 0;
                                             Character character = Character(name, health, attack, defence, movePoint, maxMove, moveRegen, regenType, regenTurn);
                                             game.addPlayer(character);
-                                            tableData.add({'column1': name});
+                                            tableData.add(<String, dynamic>{'column1': name});
                                           });
                                           Navigator.of(ctx).pop();
                                         },
@@ -1368,6 +1365,8 @@ void _restoreGameState(String stateJson) {
     tableData.clear();
     game.refresh();
     recordProvider.clearRecords();
+    final gameLogger = Provider.of<GameLogger>(context, listen: false);
+    gameLogger.clearLogs();
     _saveCurrentStateToHistory(); // 此处仍然存在问题：清空后添加角色，删除角色再回退会导致报错
   }
 
