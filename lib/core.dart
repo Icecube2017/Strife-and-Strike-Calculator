@@ -39,6 +39,15 @@ enum DamageType{
   revive,
 }
 
+// 伤害来源
+enum DamageSource{
+  action,
+  skill,
+  trait,
+  status,
+  scene
+}
+
 // 骰子类型
 enum DiceType{
   action,
@@ -109,6 +118,14 @@ enum StatusTag {
 
   final String statusTag;
   const StatusTag(this.statusTag);
+}
+
+// 状态效果变化
+enum StatusChange { 
+  add,  
+  increase,
+  decrease,
+  remove
 }
 
 // 游戏状态标记

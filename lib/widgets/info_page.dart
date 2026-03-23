@@ -1088,7 +1088,8 @@ void _restoreGameState(String stateJson) {
                                             int regenTurn = regenerateTypeData?[characterData?[name][1]][3] ?? 0;
                                             Character character = Character(name, health, attack, defence, movePoint, maxMove, moveRegen, regenType, regenTurn);
                                             game.addPlayer(character);
-                                            tableData.add(<String, dynamic>{'column1': name});
+                                            Map<String, dynamic> columnData = {'column1': name};
+                                            tableData.add(columnData);
                                           });
                                           Navigator.of(ctx).pop();
                                         },

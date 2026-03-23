@@ -37,8 +37,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
   String? _selectedTrait;
 
   // 玩家数据
-  Character? _sourcePlayer;
-  Character? _targetPlayer;
+  //Character? _sourcePlayer;
+  //Character? _targetPlayer;
 
   // 技能额外目标列表
   final List<String> _skillTargetList = [];
@@ -91,6 +91,10 @@ class _AddActionDialogState extends State<AddActionDialog> {
   // 祝烨明【八寒之七】
   int _seventhFrostPoint = 1;
   String? _seventhFrostStatus;
+  // 蓝文策【三仙归洞】
+  int _threeImmortalsChoice = 0;
+  // 卡拉卡【木头羊】
+  int _timberSheepPoint = 1;
 
   // 特质设置
   // 幸运壁垒
@@ -152,6 +156,13 @@ class _AddActionDialogState extends State<AddActionDialog> {
   int _waterTorturePoint = 1;
   // <04>质能转换
   int _massEnergyChoice = 0;
+  // 针锋相对
+  int _titForTatSourcePoint = 1;
+  int _titForTatTargetPoint = 1;
+  // 探囊取物
+  int _pluckingPouchChoice = 0;
+  // 气象万千
+  int _weathersUnfoldChoice = 0;
 
   // 日志系统
   static final Logger _logger = Logger();
@@ -1294,7 +1305,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 if(_selectedSkill != null) ...[
                   Text('技能设置', style: TextStyle(fontWeight: FontWeight.bold)),
                   SizedBox(height: 8),
-                  if(_selectedSkill == langMap!['benevolence']) ... [
+                  if (_selectedSkill == langMap!['benevolence']) ... [
                     Text('仁慈', style: TextStyle(fontWeight: FontWeight.bold)),
                     DropdownButtonFormField(
                       initialValue: _benevolenceChoice,
@@ -1475,6 +1486,40 @@ class _AddActionDialogState extends State<AddActionDialog> {
                         });
                       }
                     )
+                  ] else if (_selectedSkill == langMap!['three_immortals_return']) ... [
+                    Text('三仙归洞', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      initialValue: _threeImmortalsChoice,
+                      hint: Text('请选择三仙归洞效果'),
+                      items: [
+                        DropdownMenuItem(value: 0, child: Text('回MP随机弃牌')),
+                        DropdownMenuItem(value: 1, child: Text('消耗MP摸牌')),
+                      ], 
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _threeImmortalsChoice = newValue ?? 0;
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16)
+                  ] else if (_selectedSkill == langMap!['timber_sheep']) ...[
+                    Text('奉献', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      initialValue: _timberSheepPoint,
+                      hint: Text('请选择奉献点数'),
+                      items: List.generate(3, (index) => DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                        )).toList(),                              
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _timberSheepPoint = newValue ?? 1;
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16)
                   ] 
                 ]
               ]
@@ -2205,6 +2250,75 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       isExpanded: true,
                     ),
                     SizedBox(height: 16),
+                  ] else if (_selectedTrait == langMap!['tit_for_tat']) ...[ 
+                    Text('针锋相对', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('自身点数', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      initialValue:_titForTatSourcePoint,
+                      hint: Text('请选择针锋相对点数'),
+                      items: List.generate(10, (index) => DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                        )).toList(), 
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _titForTatSourcePoint = newValue ?? 1;
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),
+                    Text('目标点数', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      initialValue:_titForTatTargetPoint,
+                      hint: Text('请选择针锋相对点数'),
+                      items: List.generate(10, (index) => DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                        )).toList(), 
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _titForTatTargetPoint = newValue ?? 1;
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                  ] else if (_selectedTrait == langMap!['plucking_pouch']) ...[ 
+                    Text('探囊取物', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      initialValue: _pluckingPouchChoice,
+                      hint: Text('请选择探囊取物选项'),
+                      items:  [
+                        DropdownMenuItem(value: 0, child: Text('使用卡牌')),
+                        DropdownMenuItem(value: 1, child: Text('不使用卡牌')),
+                      ], 
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _pluckingPouchChoice = newValue ?? 1; 
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),
+                  ] else if (_selectedTrait == langMap!['weathers_unfold']) ...[ 
+                    Text('气象万千', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      initialValue: _weathersUnfoldChoice,
+                      hint: Text('请选择气象万千选项'),
+                      items:  [
+                        DropdownMenuItem(value: 0, child: Text('获得风')),
+                        DropdownMenuItem(value: 1, child: Text('获得云')),
+                        DropdownMenuItem(value: 2, child: Text('对敌方附加')),
+                        DropdownMenuItem(value: 3, child: Text('对自身附加')),
+                      ], 
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _weathersUnfoldChoice = newValue ?? 1; 
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16),
                   ] 
                 ]
               ]
@@ -2223,8 +2337,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
         ElevatedButton(
           onPressed: () {
             final cardSettingsManager = Provider.of<CardSettingsManager>(context, listen: false);
-            _sourcePlayer = game.players[_source];
-            _targetPlayer = game.players[_target];
+            // _sourcePlayer = game.players[_source];
+            // _targetPlayer = game.players[_target];
             if (_actionType == '行动') {
               String pointText = _pointController.text;
               if (pointText.isNotEmpty) {
@@ -3009,27 +3123,35 @@ class _AddActionDialogState extends State<AddActionDialog> {
             else if (_actionType == '技能') {
               // 技能可用
               bool skillAble = true;
-              if (skillAble) {
-                
+              if (skillAble) {                
                 // 相转移 天国邮递员 净化 外星人 追击 沉默 镭射 止杀 镜像 分裂 交易 太阴 奇点 侵蚀 逆转乾坤 空袭 
-                // 氤氲 安魂乐章 冰芒 护梦者 谜渊漩涡 灵魂震荡 补给
+                // 氤氲 安魂乐章 冰芒 护梦者 谜渊漩涡 灵魂震荡 补给 邪能侵袭
                 if ({langMap!['phase_transition'], langMap!['heaven_delivery'], langMap!['purification'], 
                   langMap!['stellar'], langMap!['chase'], langMap!['reticence'], langMap!['laser'], 
                   langMap!['kill_ceasing'], langMap!['inversion'], langMap!['fission'], langMap!['trading'], langMap!['lunar'], 
                   langMap!['singularity'], langMap!['corrosion'], langMap!['karma_reversal'], langMap!['airstrike'], 
                   langMap!['nebula_field'], langMap!['requiem'], langMap!['ice_splinter'], langMap!['dream_keeper'],
-                  langMap!['abyssal_whirl'], langMap!['soul_tremor'], langMap!['replenishment']
+                  langMap!['abyssal_whirl'], langMap!['soul_tremor'], langMap!['replenishment'], langMap!['chaos_incursion']
                   }.contains(_selectedSkill)) {
                   game.castSkill(_source!, [_target!], _selectedSkill!, {});
                 }
-                // 嗜血 阈限 强化 屏障 不死 灵能注入 分裂 透支 开阳 博览 反重力 瞬影 极速 屠杀 异镜解构 封焰的135秒 牺牲 斩神 最后的希望
+                // 嗜血 阈限 强化 屏障 不死 灵能注入 分裂 透支 开阳 博览 反重力 瞬影 极速 最后的希望
+                // 屠杀 异镜解构 封焰的135秒 牺牲 斩神 点睛
                 else if ({langMap!['blood_thirst'], langMap!['threshold'], langMap!['reinforcement'], 
                   langMap!['barrier'], langMap!['undying'], langMap!['psionia'], langMap!['overdraw'], 
                   langMap!['mizar'], langMap!['perusing'], langMap!['anti_gravity'], langMap!['flash_shade'], 
-                  langMap!['velocity'], langMap!['massacre'], langMap!['deconstruction'],
-                  langMap!['sealed_flame_135_seconds'], langMap!['sacrifice'], langMap!['deicide'], langMap!['finale_hope']
+                  langMap!['velocity'], langMap!['finale_hope'],
+                  langMap!['massacre'], langMap!['deconstruction'], langMap!['sealed_flame_135_seconds'], 
+                  langMap!['sacrifice'], langMap!['deicide'], langMap!['kindle_eye']                  
                   }.contains(_selectedSkill)) {
                   game.castSkill(_source!, [_source!], _selectedSkill!, {});
+                }
+                // 赤焱炼狱 入梦之手 冰灭的135小节 裁冰裂霜 秩序结界
+                else if ({langMap!['crimson_inferno'], langMap!['dream_grasp'], langMap!['icy_oblivion_135_bars'],
+                  langMap!['frost_shatter'], langMap!['order_aegis']
+                  }.contains(_selectedSkill)) {
+                  final targets = {if (_target != null) _target!, ..._skillTargetList}.toList();
+                  game.castSkill(_source!, targets, _selectedSkill!);
                 }
                 // 仁慈
                 else if (_selectedSkill == langMap!['benevolence']) {
@@ -3064,11 +3186,6 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   }
                   game.castSkill(_source!, soulTargets, _selectedSkill!);
                 }
-                // 炎焕【赤焱炼狱】
-                else if (_selectedSkill == langMap!['crimson_inferno']) {
-                  final targets = [if (_target != null) _target!, ..._skillTargetList];
-                  game.castSkill(_source!, targets, _selectedSkill!);
-                }
                 // 斯威芬【造梦者】
                 else if (_selectedSkill == langMap!['dream_weaver']) {
                   game.castSkill(_source!, [_source!], _selectedSkill!, {'point': _dreamWeaverChoice});
@@ -3078,34 +3195,27 @@ class _AddActionDialogState extends State<AddActionDialog> {
                   game.castSkill(_source!, [_target!], _selectedSkill!, {'status': _emphemeralStatus});
                 }
                 // 科亚特尔【天启之庭】
-                if (_selectedSkill == langMap!['apocalyptic_court']) {
+                else if (_selectedSkill == langMap!['apocalyptic_court']) {
                   final targets = [if (_target != null) _target!, ..._skillTargetList];
                   game.castSkill(_source!, targets, _selectedSkill!, {'point':_apocalypticPoint});
                   game.throwDice(_source!, _source!, _apocalypticPoint, DiceType.skill);
                 }
                 // 祝烨明【八寒之七】
-                if (_selectedSkill == langMap!['seventh_frost']) {
+                else if (_selectedSkill == langMap!['seventh_frost']) {
                   game.castSkill(_source!, [_target!], _selectedSkill!, {'point': _seventhFrostPoint, 'status': _seventhFrostStatus});
                 }
-                // 方塔索【入梦之手】
-                if (_selectedSkill == langMap!['dream_grasp']) {
-                  final targets = [if (_target != null) _target!, ..._skillTargetList];
-                  game.castSkill(_source!, targets, _selectedSkill!);
-                }
-                // 白谢【冰灭的135小节】
-                if (_selectedSkill == langMap!['icy_oblivion_135_bars']) {
-                  final targets = [if (_target != null) _target!, ..._skillTargetList];
-                  game.castSkill(_source!, targets, _selectedSkill!);
-                }
                 // 沈姝华【奉献之爱】
-                if (_selectedSkill == langMap!['sacrificial_love']) {
+                else if (_selectedSkill == langMap!['sacrificial_love']) {
                   final targets = [...game.players.keys.where((chara) => chara != 'empty' && !game.players[chara]!.isDead)];
                   game.castSkill(_source!, targets, _selectedSkill!);
                 }
-                // 祝烨诚【裁冰裂霜】
-                if (_selectedSkill == langMap!['frost_shatter']) {
-                  final targets = [if (_target != null) _target!, ..._skillTargetList];
-                  game.castSkill(_source!, targets, _selectedSkill!);
+                // 蓝文策【三仙归洞】
+                else if (_selectedSkill == langMap!['three_immortals_return']) {                  
+                  game.castSkill(_source!, [_target!], _selectedSkill!, {'type': _threeImmortalsChoice});
+                }
+                // 卡拉卡【木头羊】
+                else if (_selectedSkill == langMap!['timber_sheep']) {
+                  game.castSkill(_source!, [_target!], _selectedSkill!, {'point': _timberSheepPoint});
                 }
               }
             }
@@ -3270,6 +3380,10 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 else if (_selectedTrait == langMap!['water_torture']) {
                   game.castTrait(_source!, [_target!], langMap!['water_torture'], {'type': _waterTortureChoice, 'point': _waterTorturePoint});
                 }
+                // 符楹【光暗双生】
+                else if (_selectedTrait == langMap!['lumen_umbra_gemini']) {
+                  game.castTrait(_source!, [_source!], langMap!['lumen_umbra_gemini'], {'type': 0});
+                }
                 // EnGine-4【<04>质能转换】
                 else if (_selectedTrait == langMap!['mass_energy_conversion']) {
                   if (_massEnergyChoice == 0) {
@@ -3285,6 +3399,32 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     }
                     game.castTrait(_source!, [maxHpChara], langMap!['mass_energy_conversion'], {'type': 3});
                   }
+                }
+                // 兰斯洛特【针锋相对】
+                else if (_selectedTrait == langMap!['tit_for_tat']) {
+                  game.castTrait(_source!, [_target!], langMap!['tit_for_tat'], {'sourcePoint': _titForTatSourcePoint, 
+                  'targetPoint': _titForTatTargetPoint});
+                }
+                // 蓝文策【探囊取物】
+                else if (_selectedTrait == langMap!['plucking_pouch']) {
+                  game.castTrait(_source!, [_target!], langMap!['plucking_pouch'], {'type': _pluckingPouchChoice});
+                }
+                // DeFen-5 【<15>力场模拟】
+                else if (_selectedTrait == langMap!['force_field_simulation']) { 
+                  game.castTrait(_source!, [_target!], langMap!['force_field_simulation']);
+                }
+                // 卡拉卡【友情防守】
+                else if (_selectedTrait == langMap!['buddy_block']) {
+                  game.castTrait(_source!, [_target!], langMap!['buddy_block'], {'type': 2});
+                }
+                // 观风【气象万千】
+                else if (_selectedTrait == langMap!['weathers_unfold']) {
+                  if ({0, 1, 3}.contains(_weathersUnfoldChoice)) {
+                    game.castTrait(_source!, [_source!], langMap!['weathers_unfold'], {'type': _weathersUnfoldChoice});
+                  }
+                  else {
+                    game.castTrait(_source!, [_target!], langMap!['weathers_unfold'], {'type': _weathersUnfoldChoice});
+                  }                  
                 }
               }
             }

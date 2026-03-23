@@ -275,6 +275,7 @@ class StatusRecord extends GameRecord {
   final String name;
   final List<int> paramsOld;
   final List<int> paramsNew;
+  final StatusChange changeType;
   final String tag;
 
   StatusRecord({
@@ -283,6 +284,7 @@ class StatusRecord extends GameRecord {
     required this.name,
     required this.paramsOld,
     required this.paramsNew,
+    required this.changeType,
     required this.tag,
     required super.turn,
   }) : super(type: RecordType.status);
@@ -296,6 +298,7 @@ class StatusRecord extends GameRecord {
       'name': name,
       'paramsOld': paramsOld,
       'paramsNew': paramsNew,
+      'changeType': changeType.name,
       'tag': tag,
       'round': turn.round,
       'turn': turn.turn,
@@ -310,6 +313,7 @@ class StatusRecord extends GameRecord {
       name: json['name'],
       paramsOld: List<int>.from(json['paramsOld']), 
       paramsNew: List<int>.from(json['paramsNew']), 
+      changeType: StatusChange.values.firstWhere((e) => e.name == json['changeType']),
       tag: json['tag'],
       turn: GameTurn(
         round: json['round'],
@@ -407,8 +411,8 @@ class RecordProvider with ChangeNotifier {
     addRecord(HealRecord(source: source, target: target, heal: heal, healType: healType, tag: tag, turn: turn));
   }
 
-  void addStatusRecord(GameTurn turn, String source, String target, String name, List<int> paramsOld, List<int> paramsNew, String tag) {
-    addRecord(StatusRecord(source: source, target: target, name: name, paramsOld: paramsOld, paramsNew: paramsNew, tag: tag, turn: turn));
+  void addStatusRecord(GameTurn turn, String source, String target, String name, List<int> paramsOld, List<int> paramsNew, StatusChange changeType, String tag) {
+    addRecord(StatusRecord(source: source, target: target, name: name, paramsOld: paramsOld, paramsNew: paramsNew, changeType: changeType, tag: tag, turn: turn));
   }
 
   void addAttributeRecord(GameTurn turn, String source, String target, String name, int valueOld, int valueNew, String tag) {
