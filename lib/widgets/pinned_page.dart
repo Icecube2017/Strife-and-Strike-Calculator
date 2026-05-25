@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:sns_calculator/assets.dart';
+import 'package:sns_calculator/core.dart';
+//import 'package:sns_calculator/assets.dart';
 
 enum PinnedType {
   character,
@@ -53,10 +54,10 @@ class PinnedProvider with ChangeNotifier {
   // 私有方法：获取实体的唯一标识
   String _getItemKey(dynamic item) {
     // 按不同实体类返回唯一key
-    if (item is CharacterInfo) return item.id;
-    if (item is CardInfo) return item.id;
-    if (item is SkillInfo) return item.id;
-    if (item is StatusInfo) return item.id;
+    if (item is CharacterId) return item.id;
+    if (item is CardId) return item.id;
+    if (item is SkillId) return item.id;
+    if (item is StatusId) return item.id;
     return item.toString();
   }
 }

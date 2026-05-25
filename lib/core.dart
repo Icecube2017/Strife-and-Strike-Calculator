@@ -26,7 +26,8 @@ enum AttributeType{
   dmgdealt,
   dmgreceived,
   curdealt,
-  curreceived
+  curreceived,
+  actiontime
 }
 
 // 伤害类型
@@ -53,41 +54,18 @@ enum DiceType{
   action,
   card,
   skill,
-  trait
+  trait,
+  status
 }
 
-// 模板
-enum PanelType {
-  defensive('防御型'),
-  supportive('支援型'),
-  balanced('平衡型'),
-  challenging('挑战型'),
-  brutal('暴龙天'),
-  vital('生命型');
-
-
-  final String panelTypeId;
-  const PanelType(this.panelTypeId);
-}
-
-// 标签
-enum Tag{
-  sharp('锋锐'),
-  protect('铁御'),
-  vital('生机'),
-  destiny('命运'),
-  mystique('秘法'),
-  phantom('幻相'),
-  magic('魔能'),
-  weird('诡术'),
-  disorder('失序'),
-  sense('感知'),
-  heat('灼热'),
-  chill('霜寒');
-
-  final String tagId;
-
-  const Tag(this.tagId);
+// 卡牌事件类型
+enum CardEventType {
+  play,
+  draw,
+  discard,
+  gain,
+  grab,
+  give,
 }
 
 // 攻击特效
@@ -209,7 +187,7 @@ class GameTurn {
 }
 
 // 角色状态
-class CharacterStatus {
+class CharaStatus {
   final String name;
   int intensity;
   int layer;
@@ -217,7 +195,7 @@ class CharacterStatus {
   int intData;
   String strData;
 
-  CharacterStatus({
+  CharaStatus({
     required this.name,
     required this.intensity,
     required this.layer,
@@ -226,8 +204,8 @@ class CharacterStatus {
     required this.strData,
   });
 
-  factory CharacterStatus.fromJson(Map<String, dynamic> json) {
-    return CharacterStatus(
+  factory CharaStatus.fromJson(Map<String, dynamic> json) {
+    return CharaStatus(
       name: json['name'] ?? '',
       intensity: json['intensity'] ?? 0,
       layer: json['layer'] ?? 0,
@@ -258,14 +236,1113 @@ enum StatusData {
 }
 
 // 角色技能
-class CharacterSkill { 
+class CharaSkill { 
   final String name;
   int cooldown;
   bool isAble;
 
-  CharacterSkill({
+  CharaSkill({
     required this.name,
     required this.cooldown,
     required this.isAble,
   });
+
+  factory CharaSkill.fromJson(Map<String, dynamic> json) {
+    return CharaSkill(
+      name: json['name'] ?? '',
+      cooldown: json['cooldown'] ?? 0,
+      isAble: json['isAble'] ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'cooldown': cooldown,
+      'isAble': isAble,
+    };
+  }
 }
+
+// 角色特质
+class CharaTrait { 
+  final String name;
+  int castCount;
+  int maxCast;
+  bool isAble;
+
+  CharaTrait({
+    required this.name,
+    this.castCount = 0,
+    required this.maxCast,
+    required this.isAble,
+  });
+
+  factory CharaTrait.fromJson(Map<String, dynamic> json) {
+    return CharaTrait(
+      name: json['name'] ?? '',
+      castCount: json['castCount'] ?? 0,
+      maxCast: json['maxCast'] ?? 0,
+      isAble: json['isAble'] ?? true,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'castCount': castCount,
+      'maxCast': maxCast,
+      'isAble': isAble,
+    };
+  }
+}
+
+// 角色名称
+enum CharacterId {
+  empty("empty"),
+  chinro("chinro"),
+  neko("neko"),
+  yun("yun"),
+  starduster("starduster"),
+  darkstar("darkstar"),
+  fangHan("fang_han"),
+  pigeon("pigeon"),
+  windflutter("windflutter"),
+  loveless("loveless"),
+  k97("k97"),
+  andrenin("andrenin"),
+  valedictus("valedictus"),
+  flowwind("flowwind"),
+  drMin("dr_min"),
+  nepst("nepst"),
+  starcondon("starcondon"),
+  shigure("shigure"),
+  tussiu("tussiu"),
+  gentou("gentou"),
+  cimme("cimme"),
+  gaoMiao("gao_miao"),
+  froth("froth"),
+  sumoggu("sumoggu"),
+  clouddamp("clouddamp"),
+  kiyu("kiyu"),
+  tangJingyan("tang_jingyan"),
+  enkan("enkan"),
+  fanQiu("fan_qiu"),
+  sweven("sweven"),
+  ember("ember"),
+  yuMengde("yu_mengde"),
+  mrNice("mr_nice"),
+  ye("ye"),
+  nyxumbra("nyxumbra"),
+  quetzalcoatl("quetzalcoatl"),
+  mondrian("mondrian"),
+  apophis("apophis"),
+  dimpsy("dimpsy"),
+  zhuYeming("zhu_yeming"),
+  phantos("phantos"),
+  longYuche("long_yuche"),
+  erisMake("eris_make"),
+  seiwaku("seiwaku"),
+  tangYade("tang_yade"),
+  leiGang("lei_gang"),
+  luFeng("lu_feng"),
+  anShanding("an_shanding"),
+  yanRuoqing("yan_ruoqing"),
+  tingXinyu("ting_xinyu"),
+  baiXie("bai_xie"),
+  shenShuhua("shen_shuhua"),
+  turbach("turbach"),
+  zephyr("zephyr"),
+  refre3("refre_3"),
+  lor("lor"),
+  fuYing("fu_ying"),
+  ophelia("ophelia"),
+  engine4("engine_4"),
+  lancelot("lancelot"),
+  zhuYecheng("zhu_yecheng"),
+  lanWence("lan_wence"),
+  defen5("defen_5"),
+  ranXu("ran_xu"),
+  karak("karak"),
+  viento("viento"),
+  steelshell("steelshell"),
+  antithesis("antithesis"),
+  towerGuardian("tower_guardian"),
+  emberBlade("ember_blade"),
+  daybreak("daybreak"),
+  othello("othello"),
+  stonehoof("stonehoof"),
+  ennoia("ennoia"),
+  moonseek("moonseek"),
+  siKu("si_ku"),
+  pi123("pi_123"),
+  lanWenxi("lan_wenxi");  
+
+  final String id;
+
+  const CharacterId(this.id);
+}
+
+// 卡牌名称
+enum CardId {
+  empty("empty"),
+  endCrystal("end_crystal"),
+  heroLegend("hero_legend"),
+  woodSword("wood_sword"),
+  dreamShelter("dream_shelter"),
+  shield("shield"),
+  ascensionStair("ascension_stair"),
+  criticalStrike("critical_strike"),
+  curing("curing"),
+  regenerating("regenerating"),
+  strengthSpell("strength_spell"),
+  strengthSpellIi("strength_spell_ii"),
+  hexastal("hexastal"),
+  octastal("octastal"),
+  decastal("decastal"),
+  chaoticDrill("chaotic_drill"),
+  fragment("fragment"),
+  refreshment("refreshment"),
+  auroraConcussion("aurora_concussion"),
+  mace("mace"),
+  redstone("redstone"),
+  nanoPermeation("nano_permeation"),
+  filching("filching"),
+  declaration("declaration"),
+  pyrotheum("pyrotheum"),
+  passingGaze("passing_gaze"),
+  cryotheum("cryotheum"),
+  hologram("hologram"),
+  corruptPendant("corrupt_pendant"),
+  heartLocket("heart_locket"),
+  amethyst("amethyst"),
+  bow("bow"),
+  track("track"),
+  penetrate("penetrate"),
+  endHalberd("end_halberd"),
+  slownessSpell("slowness_spell"),
+  swiftSpell("swift_spell"),
+  invisibilitySpell("invisibility_spell"),
+  arrow("arrow"),
+  rapier("rapier"),
+  arcticHeart("arctic_heart"),
+  cloverBlessing("clover_blessing"),
+  floverWish("flover_wish"),
+  highCap("high_cap"),
+  homology("homology"),
+  aetherShroud("aether_shroud"),
+  echoGlimpse("echo_glimpse"),
+  crimsonSwoop("crimson_swoop"),
+  violentViolet("violent_violet"),
+  gloryRoad("glory_road"),
+  flameSpear("flame_spear"),
+  frostShield("frost_shield"),
+  damoclesSword("damocles_sword"),
+  sisyphusStone("sisyphus_stone"),
+  pandoraBox("pandora_box"),
+  apolloArrow("apollo_arrow"),
+  edenGarden("eden_garden"),
+  babelTower("babel_tower"),
+  rest("rest"),
+  ripplingWater("rippling_water"),
+  highEnergyCan("high_energy_can");
+
+  final String id;
+
+  const CardId(this.id);
+}
+
+// 技能名称
+enum SkillId {
+  empty("empty"),
+  benevolence("benevolence"),
+  phaseTransition("phase_transition"),
+  heavenDelivery("heaven_delivery"),
+  purification("purification"),
+  bloodThirst("blood_thirst"),
+  stellar("stellar"),
+  intimidation("intimidation"),
+  threshold("threshold"),
+  reinforcement("reinforcement"),
+  chase("chase"),
+  reticence("reticence"),
+  finaleHope("finale_hope"),
+  devotion("devotion"),
+  barrier("barrier"),
+  laser("laser"),
+  undying("undying"),
+  killCeasing("kill_ceasing"),
+  psionia("psionia"),
+  inversion("inversion"),
+  fission("fission"),
+  overdraw("overdraw"),
+  instigation("instigation"),
+  trading("trading"),
+  mizar("mizar"),
+  lunar("lunar"),
+  perusing("perusing"),
+  antiGravity("anti_gravity"),
+  singularity("singularity"),
+  soulRancor("soul_rancor"),
+  flashShade("flash_shade"),
+  corrosion("corrosion"),
+  karmaReversal("karma_reversal"),
+  velocity("velocity"),
+  lastStand("last_stand"),
+  airstrike("airstrike"),
+  massacre("massacre"),
+  nebulaField("nebula_field"),
+  deconstruction("deconstruction"),
+  iceSplinter("ice_splinter"),
+  requiem("requiem"),
+  dataTransmit("data_transmit"),
+  crimsonInferno("crimson_inferno"),
+  dreamWeaver("dream_weaver"),
+  sealedFlame135Seconds("sealed_flame_135_seconds"),
+  dreamKeeper("dream_keeper"),
+  giveAndTake("give_and_take"),
+  eternity("eternity"),
+  abyssalWhirl("abyssal_whirl"),
+  apocalypticCourt("apocalyptic_court"),
+  seventhFrost("seventh_frost"),
+  dreamGrasp("dream_grasp"),
+  sacrifice("sacrifice"),
+  soulTremor("soul_tremor"),
+  deicide("deicide"),
+  replenishment("replenishment"),
+  icyOblivion135Bars("icy_oblivion_135_bars"),
+  sacrificialLove("sacrificial_love"),
+  orderAegis("order_aegis"),
+  chaosIncursion("chaos_incursion"),
+  frostShatter("frost_shatter"),
+  threeImmortalsReturn("three_immortals_return"),
+  kindleEye("kindle_eye"),
+  timberSheep("timber_sheep"),
+  shieldDance("shield_dance"),
+  ragePilot("rage_pilot"),
+  unwaveringGuard("unwavering_guard"),
+  spareMove("spare_move"),
+  anabasis("anabasis"),
+  veritasNonFalsitas("veritas_non_falsitas");
+
+  final String id;
+
+  const SkillId(this.id);
+}
+
+// 特质名称
+enum TraitId {  
+  empty("empty"),
+  selfEncouragement("self_encouragement"),
+  tirelessObserver("tireless_observer"),
+  distinctRoad("distinct_road"),
+  duskVoid("dusk_void"),
+  luckyShield("lucky_shield"),
+  resolution("resolution"),
+  radiantBlast("radiant_blast"),
+  escaping("escaping"),
+  renouncing("renouncing"),
+  demonicAvatar("demonic_avatar"),
+  hemaSlash("hema_slash"),
+  dontForgetMe("dont_forget_me"),
+  binary("binary"),
+  rondo("rondo"),
+  nightmareRefrain("nightmare_refrain"),
+  grandProphecy("grand_prophecy"),
+  mapping("mapping"),
+  spectralization("spectralization"),
+  littleSpook("little_spook"),
+  yearning("yearning"),
+  blessing("blessing"),
+  arcticSeal("arctic_seal"),
+  icyBlood("icy_blood"),
+  transit("transit"),
+  eclipse("eclipse"),
+  ghostFerry("ghost_ferry"),
+  uponTheClouds("upon_the_clouds"),
+  gamblersMentality("gamblers_mentality"),
+  deftTouch("deft_touch"),
+  annihilativeCycle("annihilative_cycle"),
+  imDrunk("im_drunk"),
+  decree("decree"),
+  celestialJoy("celestial_joy"),
+  discerning("discerning"),
+  lingeringLight("lingering_light"),
+  radiantFullness("radiant_fullness"),
+  cardioBlaze("cardio_blaze"),
+  ranger("ranger"),
+  precision("precision"),
+  craftingOfDreams("crafting_of_dreams"),
+  conflagrationAvatar("conflagration_avatar"),
+  guardianOfDreams("guardian_of_dreams"),
+  introductoryGift("introductory_gift"),
+  imposingFavor("imposing_favor"),
+  ephemeral("ephemeral"),
+  darkDissolution("dark_dissolution"),
+  devouringLock("devouring_lock"),
+  artificialEden("artificial_eden"),
+  balanceOfLightAndShadow("balance_of_light_and_shadow"),
+  tabooLore("taboo_lore"),
+  ruinousShade("ruinous_shade"),
+  endlessNight("endless_night"),
+  lotusFlame("lotus_flame"),
+  iceFireFusion("ice_fire_fusion"),
+  cryoFissuring("cryo_fissuring"),
+  astralProjection("astral_projection"),
+  radiance("radiance"),
+  soulBurning("soul_burning"),
+  mentalDisruption("mental_disruption"),
+  collectiveUtopia("collective_utopia"),
+  utopiaOfClarity("utopia_of_clarity"),
+  utopiaOfResolve("utopia_of_resolve"),
+  utopiaOfCelerity("utopia_of_celerity"),
+  utopiaOfConcord("utopia_of_concord"),
+  utopiaOfUpspring("utopia_of_upspring"),
+  aurelysium("aurelysium"),
+  glacialCircle("glacial_circle"),
+  innocentLove("innocent_love"),
+  lifeBreath("life_breath"),
+  earthBreak("earth_break"),
+  holdBreath("hold_breath"),
+  gunShy("gun_shy"),
+  defensiveProtocol("defensive_protocol"),
+  thermalRecovery("thermal_recovery"),
+  smolderingRage("smoldering_rage"),
+  chaoticStrikes("chaotic_strikes"),
+  hydromancy("hydromancy"),
+  waterTorture("water_torture"),
+  lumenUmbraGemini("lumen_umbra_gemini"),
+  massEnergyConversion("mass_energy_conversion"),
+  titForTat("tit_for_tat"),
+  icyStillness("icy_stillness"),
+  pluckingPouch("plucking_pouch"),
+  forceFieldSimulation("force_field_simulation"),
+  iridescentHue("iridescent_hue"),
+  buddyBlock("buddy_block"),
+  weathersUnfold("weathers_unfold"),
+  shieldBash("shield_bash"),
+  iceAndFire("ice_and_fire"),
+  tideBeacon("tide_beacon"),
+  lightfallBlade("lightfall_blade"),
+  landsGraceSwordsSoul("lands_grace_swords_soul"),
+  unquestioningTrust("unquestioning_trust"),
+  reversi("reversi"),
+  boingSpell("boing_spell"),
+  primordialHorologe("primordial_horologe"),
+  mentalSorcery("mental_sorcery"),
+  danshari("danshari"),
+  essenceOverIllusion("essence_over_illusion"),
+  binaryDyad("binary_dyad"),
+  lossGainEquilibrium("loss_gain_equilibrium");
+
+  final String id;
+
+  const TraitId(this.id);
+}
+
+enum StatusId {
+  empty("empty"),
+  strength("strength"),
+  regeneration("regeneration"),
+  exhausted("exhausted"),
+  flaming("flaming"),
+  frost("frost"),
+  dissociated("dissociated"),
+  confusion("confusion"),
+  stellarCage("stellar_cage"),
+  fragility("fragility"),
+  nebula("nebula"),
+  mirror("mirror"),
+  burnOut("burn_out"),
+  dreaming("dreaming"),
+  gugu("gugu"),
+  frozen("frozen"),
+  dodge("dodge"),
+  soulFlare("soul_flare"),
+  slowness("slowness"),
+  swift("swift"),
+  fractured("fractured"),
+  nausea("nausea"),
+  weakness("weakness"),
+  infernoFire("inferno_fire"),
+  tigrisDilemma("tigris_dilemma"),
+  lumenFlare("lumen_flare"),
+  erodeGelid("erode_gelid"),
+  teroxis("teroxis"),
+  grind("grind"),
+  oculusVeil("oculus_veil"),
+  distant("distant"),
+  moisturize("moisturize"),
+  corroded("corroded"),
+  cold("cold"),
+  tear("tear"),
+  wounded("wounded"),
+  unbalanced("unbalanced"),
+  uneasiness("uneasiness"),
+  impassioned("impassioned"),
+  charge("charge"),
+  silence("silence"),
+  drowsy("drowsy"),
+  dreamCrafting("dream_crafting"),
+  dreamGuarding("dream_guarding"),
+  gift("gift"),
+  constraint("constraint"),
+  sanctify("sanctify"),
+  eden("eden"),
+  nightmare("nightmare"),
+  prey("prey"),
+  poised("poised"),
+  dehydration("dehydration"),
+  submerged("submerged"),
+  asphyxia("asphyxia"),
+  luminance("luminance"),
+  tenebrae("tenebrae"),
+  swordHeart("sword_heart"),
+  shelter("shelter");
+
+  final String id;
+
+  const StatusId(this.id);
+}
+
+enum TagId {
+  empty("empty"),
+  sharp("sharp"),
+  protect("protect"),
+  vital("vital"),
+  destiny("destiny"),
+  mystique("mystique"),
+  phantom("phantom"),
+  magic("magic"),
+  weird("weird"),
+  disorder("disorder"),
+  sense("sense"),
+  heat("heat"),
+  chill("chill");
+
+  final String id;
+
+  const TagId(this.id);
+}
+
+// 模板
+enum PanelType {
+  empty(0, 0, 0),
+  defensive(1350, 65, 65),
+  supportive(1350, 80, 50),
+  balanced(1350, 95, 35),
+  challenging(1350, 105, 25),
+  brutal(1200, 125, 20),
+  vital(1600, 75, 45),
+  defen5(0, 105, 25);
+
+  final int maxHealth;
+  final int attack;
+  final int defence;
+
+  const PanelType(this.maxHealth, this.attack, this.defence);
+}
+
+// 种族（行动点回复）
+enum RegenType {
+  empty(0, 0, 0, 0),
+  human(5, 2, 0, 1),
+  feline(6, 2, 0, 1), 
+  humanFeline(6, 2, 0, 1),
+  gryphon(4, 3, 0, 1),
+  humanGryphon(5, 3, 0, 1),
+  dragon(6, 3, 0, 1),
+  halfDragon(5, 5, 0, 2),
+  columba(4, 2, 0, 1),
+  muridae(3, 3, 0, 1),
+  caprinae(3, 1, 0, 1),
+  machina(10, 10, 0, 5),
+  currus(5, 1, 1, 1),
+  experiment(4, 2, 0, 2),
+  program(4, 0, 2, 1),
+  lemures(30, -1, 4, 1),
+  oni(5, 0, 3, 1),
+  anima(20, 1, 4, 2),
+  pseudosacra(10, 10, 0, 3),
+  elf(8, 2, 0, 1),  
+  froth(7, 4, 0, 1),
+  nyxumbra(8, 6, 0, 2),
+  tinXingyu(5, 0, 2, 1),
+  valedictus(8, 2, 0, 1),
+  engine4(100, 0, 5, 1),
+  ennoia(9, 1, 0, 1);
+
+  final int maxMove;
+  final int moveRegen;
+  final int regenType;
+  final int regenTurn;
+
+  const RegenType(this.maxMove, this.moveRegen, this.regenType, this.regenTurn);
+}
+
+class CharacterType {
+  final PanelType panelType;
+  final RegenType regenType;
+
+  CharacterType({
+    required this.panelType,
+    required this.regenType,
+  });
+}
+
+Map<String, CharacterType> characterToPanel = {
+  CharacterId.empty.id: CharacterType(panelType: PanelType.empty, regenType: RegenType.empty),
+  CharacterId.chinro.id: CharacterType(panelType: PanelType.vital, regenType: RegenType.human),
+  CharacterId.neko.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.yun.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.humanGryphon),
+  CharacterId.starduster.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.humanFeline),
+  CharacterId.darkstar.id: CharacterType(panelType: PanelType.brutal, regenType: RegenType.humanFeline),
+  CharacterId.fangHan.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.pigeon.id: CharacterType(panelType: PanelType.defensive, regenType: RegenType.columba),
+  CharacterId.windflutter.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.loveless.id: CharacterType(panelType: PanelType.brutal, regenType: RegenType.experiment),
+  CharacterId.k97.id: CharacterType(panelType: PanelType.defensive, regenType: RegenType.machina),
+  CharacterId.andrenin.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.feline),
+  CharacterId.valedictus.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.valedictus),
+  CharacterId.flowwind.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.feline),
+  CharacterId.drMin.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.nepst.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.lemures),
+  CharacterId.starcondon.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.humanFeline),
+  CharacterId.shigure.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.tussiu.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.gentou.id: CharacterType(panelType: PanelType.vital, regenType: RegenType.oni),
+  CharacterId.cimme.id: CharacterType(panelType: PanelType.brutal, regenType: RegenType.program),
+  CharacterId.gaoMiao.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.froth.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.froth),
+  CharacterId.sumoggu.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.clouddamp.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.human),
+  CharacterId.kiyu.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.muridae),
+  CharacterId.tangJingyan.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.enkan.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.fanQiu.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.human),
+  CharacterId.sweven.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.dragon),
+  CharacterId.ember.id: CharacterType(panelType: PanelType.brutal, regenType: RegenType.human),
+  CharacterId.yuMengde.id: CharacterType(panelType: PanelType.vital, regenType: RegenType.human),
+  CharacterId.mrNice.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.ye.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.nyxumbra.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.nyxumbra),
+  CharacterId.quetzalcoatl.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.pseudosacra),
+  CharacterId.mondrian.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.apophis.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.dimpsy.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.zhuYeming.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.halfDragon),
+  CharacterId.phantos.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.longYuche.id: CharacterType(panelType: PanelType.vital, regenType: RegenType.human),
+  CharacterId.erisMake.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.human),
+  CharacterId.seiwaku.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.feline),
+  CharacterId.tangYade.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.leiGang.id: CharacterType(panelType: PanelType.brutal, regenType: RegenType.human),
+  CharacterId.luFeng.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.anShanding.id: CharacterType(panelType: PanelType.defensive, regenType: RegenType.human),
+  CharacterId.yanRuoqing.id: CharacterType(panelType: PanelType.vital, regenType: RegenType.human),
+  CharacterId.tingXinyu.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.tinXingyu),
+  CharacterId.baiXie.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.shenShuhua.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.elf),
+  CharacterId.turbach.id: CharacterType(panelType: PanelType.vital, regenType: RegenType.elf),
+  CharacterId.zephyr.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.refre3.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.machina),
+  CharacterId.lor.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.ophelia.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.fuYing.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.engine4.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.engine4),
+  CharacterId.lancelot.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.zhuYecheng.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.lanWence.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.defen5.id: CharacterType(panelType: PanelType.defen5, regenType: RegenType.machina),
+  CharacterId.ranXu.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.karak.id: CharacterType(panelType: PanelType.defensive, regenType: RegenType.caprinae),
+  CharacterId.viento.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.human),
+  CharacterId.steelshell.id: CharacterType(panelType: PanelType.defensive, regenType: RegenType.human),
+  CharacterId.antithesis.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.elf),
+  CharacterId.towerGuardian.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.human),
+  CharacterId.emberBlade.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.daybreak.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.human),
+  CharacterId.othello.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.stonehoof.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.caprinae),
+  CharacterId.ennoia.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.ennoia),
+  CharacterId.moonseek.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.siKu.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
+  CharacterId.pi123.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.machina),
+  CharacterId.lanWenxi.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+};
+
+class SkillType {  
+  final int cooldown;
+  final bool isExclusive;
+
+  SkillType({
+    required this.cooldown,
+    required this.isExclusive,
+  });
+}
+
+Map<String, SkillType> skillToType = {  
+  SkillId.benevolence.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.phaseTransition.id: SkillType(cooldown: 7, isExclusive: false),
+  SkillId.heavenDelivery.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.purification.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.bloodThirst.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.stellar.id: SkillType(cooldown: 5, isExclusive: false),
+  //SkillId.intimidation.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.threshold.id: SkillType(cooldown: 4, isExclusive: false),
+  SkillId.reinforcement.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.chase.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.reticence.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.finaleHope.id: SkillType(cooldown: 10, isExclusive: false),
+  SkillId.devotion.id: SkillType(cooldown: 4, isExclusive: false),
+  SkillId.barrier.id: SkillType(cooldown: 4, isExclusive: false),
+  SkillId.laser.id: SkillType(cooldown: 2, isExclusive: false),
+  SkillId.undying.id: SkillType(cooldown: 10, isExclusive: false),
+  SkillId.killCeasing.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.psionia.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.inversion.id: SkillType(cooldown: 10, isExclusive: false),
+  SkillId.fission.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.overdraw.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.trading.id: SkillType(cooldown: 2, isExclusive: false),
+  SkillId.mizar.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.lunar.id: SkillType(cooldown: 2, isExclusive: false),
+  SkillId.perusing.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.antiGravity.id: SkillType(cooldown: 4, isExclusive: false),
+  SkillId.singularity.id: SkillType(cooldown: 8, isExclusive: false),
+  SkillId.soulRancor.id: SkillType(cooldown: 5, isExclusive: false),
+  SkillId.flashShade.id: SkillType(cooldown: 6, isExclusive: false),
+  SkillId.corrosion.id: SkillType(cooldown: 9, isExclusive: false),
+  SkillId.karmaReversal.id: SkillType(cooldown: 10, isExclusive: false),
+  SkillId.velocity.id: SkillType(cooldown: 4, isExclusive: false),
+  SkillId.lastStand.id: SkillType(cooldown: 5, isExclusive: false),
+  SkillId.airstrike.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.massacre.id: SkillType(cooldown: 0, isExclusive: true),
+  SkillId.nebulaField.id: SkillType(cooldown: 4, isExclusive: true),
+  SkillId.requiem.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.deconstruction.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.iceSplinter.id: SkillType(cooldown: 2, isExclusive: true),
+  SkillId.dataTransmit.id: SkillType(cooldown: -1, isExclusive: true),
+  SkillId.crimsonInferno.id: SkillType(cooldown: 2, isExclusive: true),
+  SkillId.dreamWeaver.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.sealedFlame135Seconds.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.dreamKeeper.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.giveAndTake.id: SkillType(cooldown: 4, isExclusive: true),
+  SkillId.eternity.id: SkillType(cooldown: 1, isExclusive: true),
+  SkillId.abyssalWhirl.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.apocalypticCourt.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.seventhFrost.id: SkillType(cooldown: 2, isExclusive: true),
+  SkillId.dreamGrasp.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.sacrifice.id: SkillType(cooldown: 5, isExclusive: true),
+  SkillId.soulTremor.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.deicide.id: SkillType(cooldown: 2, isExclusive: true),
+  SkillId.icyOblivion135Bars.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.replenishment.id: SkillType(cooldown: 2, isExclusive: true),
+  SkillId.sacrificialLove.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.orderAegis.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.chaosIncursion.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.frostShatter.id: SkillType(cooldown: 2, isExclusive: true),
+  SkillId.threeImmortalsReturn.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.kindleEye.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.timberSheep.id: SkillType(cooldown: -1, isExclusive: true),
+  SkillId.ragePilot.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.unwaveringGuard.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.anabasis.id: SkillType(cooldown: 1, isExclusive: true),
+  SkillId.veritasNonFalsitas.id: SkillType(cooldown: 1, isExclusive: true),
+};
+
+List<String> skillDeck = skillToType.keys.where((e) => skillToType[e]!.isExclusive == false).toList();
+
+Map<String, List<String>> possessingSkills = {
+  CharacterId.darkstar.id: [SkillId.massacre.id],
+  CharacterId.loveless.id: [SkillId.nebulaField.id],
+  CharacterId.valedictus.id: [SkillId.requiem.id],
+  CharacterId.drMin.id: [SkillId.deconstruction.id],
+  CharacterId.shigure.id: [SkillId.iceSplinter.id],
+  CharacterId.cimme.id: [SkillId.dataTransmit.id],
+  CharacterId.enkan.id: [SkillId.crimsonInferno.id],
+  CharacterId.sweven.id: [SkillId.dreamWeaver.id],
+  CharacterId.ember.id: [SkillId.sealedFlame135Seconds.id],
+  CharacterId.yuMengde.id: [SkillId.dreamKeeper.id],
+  CharacterId.mrNice.id: [SkillId.giveAndTake.id],
+  CharacterId.ye.id: [SkillId.eternity.id],
+  CharacterId.nyxumbra.id: [SkillId.abyssalWhirl.id],
+  CharacterId.quetzalcoatl.id: [SkillId.apocalypticCourt.id],
+  CharacterId.zhuYeming.id: [SkillId.seventhFrost.id],
+  CharacterId.phantos.id: [SkillId.dreamGrasp.id],
+  CharacterId.longYuche.id: [SkillId.sacrifice.id],
+  CharacterId.erisMake.id: [SkillId.soulRancor.id],
+  CharacterId.leiGang.id: [SkillId.deicide.id],
+  CharacterId.yanRuoqing.id: [SkillId.replenishment.id],
+  CharacterId.baiXie.id: [SkillId.icyOblivion135Bars.id],
+  CharacterId.shenShuhua.id: [SkillId.sacrificialLove.id],
+  CharacterId.fuYing.id: [SkillId.orderAegis.id, SkillId.chaosIncursion.id],
+  CharacterId.zhuYecheng.id: [SkillId.frostShatter.id],
+  CharacterId.lanWence.id: [SkillId.threeImmortalsReturn.id],
+  CharacterId.ranXu.id: [SkillId.kindleEye.id],
+  CharacterId.karak.id: [SkillId.timberSheep.id],
+  CharacterId.towerGuardian.id: [SkillId.ragePilot.id],
+  CharacterId.daybreak.id: [SkillId.unwaveringGuard.id],
+  CharacterId.othello.id: [SkillId.spareMove.id],
+  CharacterId.ennoia.id: [SkillId.anabasis.id],
+  CharacterId.lanWenxi.id: [SkillId.veritasNonFalsitas.id],
+};
+
+class TraitType {  
+  final int useCount;
+  final bool isInitiative;
+
+  TraitType({
+    required this.useCount,
+    required this.isInitiative,
+  });
+}
+
+Map<String, TraitType> traitToType = {
+  TraitId.selfEncouragement.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.tirelessObserver.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.distinctRoad.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.duskVoid.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.luckyShield.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.resolution.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.radiantBlast.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.escaping.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.renouncing.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.demonicAvatar.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.hemaSlash.id: TraitType(useCount: 1, isInitiative: true),
+  TraitId.dontForgetMe.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.binary.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.rondo.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.nightmareRefrain.id: TraitType(useCount: 1, isInitiative: true),
+  TraitId.grandProphecy.id: TraitType(useCount: 1, isInitiative: true),
+  TraitId.mapping.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.spectralization.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.littleSpook.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.yearning.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.blessing.id: TraitType(useCount: 2, isInitiative: true),
+  TraitId.arcticSeal.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.icyBlood.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.transit.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.eclipse.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.ghostFerry.id: TraitType(useCount: 1, isInitiative: true),
+  TraitId.uponTheClouds.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.gamblersMentality.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.deftTouch.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.annihilativeCycle.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.imDrunk.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.decree.id: TraitType(useCount: 2, isInitiative: true),
+  TraitId.celestialJoy.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.discerning.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.lingeringLight.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.radiantFullness.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.cardioBlaze.id: TraitType(useCount: 1, isInitiative: true),
+  TraitId.ranger.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.precision.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.craftingOfDreams.id: TraitType(useCount: 2, isInitiative: true),
+  TraitId.conflagrationAvatar.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.guardianOfDreams.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.introductoryGift.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.imposingFavor.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.ephemeral.id: TraitType(useCount: 1, isInitiative: true),
+  TraitId.darkDissolution.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.devouringLock.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.artificialEden.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.balanceOfLightAndShadow.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.tabooLore.id: TraitType(useCount: 2, isInitiative: true),
+  TraitId.ruinousShade.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.endlessNight.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.lotusFlame.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.iceFireFusion.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.cryoFissuring.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.astralProjection.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.radiance.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.soulBurning.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.mentalDisruption.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.collectiveUtopia.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.utopiaOfClarity.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.utopiaOfResolve.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.utopiaOfCelerity.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.utopiaOfConcord.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.utopiaOfUpspring.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.aurelysium.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.glacialCircle.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.innocentLove.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.lifeBreath.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.earthBreak.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.holdBreath.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.gunShy.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.defensiveProtocol.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.thermalRecovery.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.smolderingRage.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.chaoticStrikes.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.hydromancy.id: TraitType(useCount: 1, isInitiative: true),
+  TraitId.waterTorture.id: TraitType(useCount: 1, isInitiative: true),
+  TraitId.lumenUmbraGemini.id: TraitType(useCount: 1, isInitiative: true),
+  TraitId.massEnergyConversion.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.titForTat.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.icyStillness.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.pluckingPouch.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.forceFieldSimulation.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.iridescentHue.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.buddyBlock.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.weathersUnfold.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.shieldBash.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.iceAndFire.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.tideBeacon.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.lightfallBlade.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.landsGraceSwordsSoul.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.unquestioningTrust.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.reversi.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.boingSpell.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.primordialHorologe.id: TraitType(useCount: 2, isInitiative: true),
+  TraitId.mentalSorcery.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.danshari.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.essenceOverIllusion.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.binaryDyad.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.lossGainEquilibrium.id: TraitType(useCount: -1, isInitiative: false),
+};
+
+List<String> traitDeck = traitToType.keys.where((e) => traitToType[e]!.isInitiative == true).toList();
+
+Map<String, List<String>> possessingTraits = {
+  CharacterId.chinro.id: [TraitId.selfEncouragement.id],
+  CharacterId.neko.id: [TraitId.tirelessObserver.id, TraitId.distinctRoad.id],
+  CharacterId.yun.id: [TraitId.duskVoid.id],
+  CharacterId.starduster.id: [TraitId.luckyShield.id],
+  CharacterId.darkstar.id: [TraitId.resolution.id],
+  CharacterId.fangHan.id: [TraitId.radiantBlast.id],
+  CharacterId.pigeon.id: [TraitId.escaping.id, TraitId.renouncing.id],
+  CharacterId.windflutter.id: [TraitId.demonicAvatar.id, TraitId.hemaSlash.id],
+  CharacterId.loveless.id: [TraitId.dontForgetMe.id],
+  CharacterId.k97.id: [TraitId.binary.id],
+  CharacterId.andrenin.id: [TraitId.rondo.id],
+  CharacterId.valedictus.id: [TraitId.nightmareRefrain.id],
+  CharacterId.flowwind.id: [TraitId.grandProphecy.id],
+  CharacterId.drMin.id: [TraitId.mapping.id],
+  CharacterId.nepst.id: [TraitId.spectralization.id, TraitId.littleSpook.id],
+  CharacterId.starcondon.id: [TraitId.yearning.id, TraitId.blessing.id],
+  CharacterId.shigure.id: [TraitId.arcticSeal.id, TraitId.icyBlood.id],
+  CharacterId.tussiu.id: [TraitId.transit.id, TraitId.eclipse.id],
+  CharacterId.gentou.id: [TraitId.ghostFerry.id],
+  CharacterId.cimme.id: [TraitId.uponTheClouds.id],
+  CharacterId.gaoMiao.id: [TraitId.gamblersMentality.id, TraitId.deftTouch.id],
+  CharacterId.froth.id: [TraitId.annihilativeCycle.id],
+  CharacterId.sumoggu.id: [TraitId.imDrunk.id, TraitId.decree.id],
+  CharacterId.clouddamp.id: [TraitId.celestialJoy.id],
+  CharacterId.kiyu.id: [TraitId.discerning.id],
+  CharacterId.tangJingyan.id: [TraitId.lingeringLight.id, TraitId.radiantFullness.id],
+  CharacterId.enkan.id: [TraitId.cardioBlaze.id],
+  CharacterId.fanQiu.id: [TraitId.ranger.id, TraitId.precision.id],
+  CharacterId.sweven.id: [TraitId.craftingOfDreams.id],
+  CharacterId.ember.id: [TraitId.conflagrationAvatar.id],
+  CharacterId.yuMengde.id: [TraitId.guardianOfDreams.id],  
+  CharacterId.mrNice.id: [TraitId.introductoryGift.id, TraitId.imposingFavor.id],
+  CharacterId.ye.id: [TraitId.ephemeral.id],
+  CharacterId.nyxumbra.id: [TraitId.darkDissolution.id, TraitId.devouringLock.id],
+  CharacterId.quetzalcoatl.id: [TraitId.artificialEden.id, TraitId.balanceOfLightAndShadow.id],
+  CharacterId.mondrian.id: [TraitId.tabooLore.id],
+  CharacterId.apophis.id: [TraitId.ruinousShade.id, TraitId.endlessNight.id],
+  CharacterId.dimpsy.id: [TraitId.lotusFlame.id, TraitId.iceFireFusion.id],
+  CharacterId.zhuYeming.id: [TraitId.cryoFissuring.id],
+  CharacterId.phantos.id: [TraitId.astralProjection.id],
+  CharacterId.longYuche.id: [TraitId.radiance.id, TraitId.soulBurning.id],
+  CharacterId.erisMake.id: [TraitId.mentalDisruption.id],
+  CharacterId.starcondon.id: [TraitId.collectiveUtopia.id],
+  CharacterId.tangYade.id: [TraitId.utopiaOfClarity.id],
+  CharacterId.leiGang.id: [TraitId.utopiaOfResolve.id],
+  CharacterId.luFeng.id: [TraitId.utopiaOfCelerity.id],
+  CharacterId.anShanding.id: [TraitId.utopiaOfUpspring.id],
+  CharacterId.yanRuoqing.id: [TraitId.utopiaOfConcord.id],
+  CharacterId.tingXinyu.id: [TraitId.aurelysium.id],
+  CharacterId.baiXie.id: [TraitId.glacialCircle.id],
+  CharacterId.shenShuhua.id: [TraitId.innocentLove.id],
+  CharacterId.turbach.id: [TraitId.lifeBreath.id, TraitId.earthBreak.id],
+  CharacterId.zephyr.id: [TraitId.holdBreath.id, TraitId.gunShy.id],
+  CharacterId.refre3.id: [TraitId.defensiveProtocol.id, TraitId.thermalRecovery.id],
+  CharacterId.lor.id: [TraitId.smolderingRage.id, TraitId.chaoticStrikes.id],
+  CharacterId.ophelia.id: [TraitId.hydromancy.id, TraitId.waterTorture.id],
+  CharacterId.fuYing.id: [TraitId.lumenUmbraGemini.id],
+  CharacterId.engine4.id: [TraitId.massEnergyConversion.id],
+  CharacterId.lancelot.id: [TraitId.titForTat.id],
+  CharacterId.zhuYecheng.id: [TraitId.icyStillness.id],
+  CharacterId.lanWence.id: [TraitId.pluckingPouch.id],
+  CharacterId.defen5.id: [TraitId.forceFieldSimulation.id],
+  CharacterId.ranXu.id: [TraitId.iridescentHue.id],
+  CharacterId.karak.id: [TraitId.buddyBlock.id],
+  CharacterId.viento.id: [TraitId.weathersUnfold.id],
+  CharacterId.antithesis.id: [TraitId.iceAndFire.id],
+  CharacterId.towerGuardian.id: [TraitId.tideBeacon.id],
+  CharacterId.emberBlade.id: [TraitId.lightfallBlade.id, TraitId.landsGraceSwordsSoul.id],
+  CharacterId.daybreak.id: [TraitId.unquestioningTrust.id],
+  CharacterId.othello.id: [TraitId.reversi.id],
+  CharacterId.stonehoof.id: [TraitId.boingSpell.id],
+  CharacterId.ennoia.id: [TraitId.primordialHorologe.id],
+  CharacterId.moonseek.id: [TraitId.mentalSorcery.id],
+  CharacterId.siKu.id: [TraitId.danshari.id, TraitId.essenceOverIllusion.id],
+  CharacterId.pi123.id: [TraitId.binaryDyad.id],
+  CharacterId.lanWenxi.id: [TraitId.lossGainEquilibrium.id],
+};
+
+enum BuffType {
+  positive,
+  negative,
+  neutral
+}
+
+class StatusType {
+  final BuffType buffType;
+  final bool hasIntensity;
+  final bool hasLayer;
+  final bool decayOverTurn;
+  final bool canOverlay;
+
+  StatusType({
+    required this.buffType,
+    required this.hasIntensity,
+    required this.hasLayer,
+    required this.decayOverTurn,
+    required this.canOverlay,
+  });
+}
+
+Map<String, StatusType> statusToType = {
+  StatusId.strength.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.regeneration.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.exhausted.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.flaming.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.frost.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.dissociated.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.confusion.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.stellarCage.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.fragility.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.nebula.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.mirror.id: StatusType(buffType: BuffType.neutral, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.burnOut.id: StatusType(buffType: BuffType.neutral, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.dreaming.id: StatusType(buffType: BuffType.neutral, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.gugu.id: StatusType(buffType: BuffType.neutral, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.frozen.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.dodge.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.soulFlare.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: true),
+  StatusId.slowness.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.swift.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.fractured.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.nausea.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.weakness.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.infernoFire.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.tigrisDilemma.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.lumenFlare.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.erodeGelid.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.teroxis.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.grind.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.oculusVeil.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.distant.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.moisturize.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.corroded.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.tear.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.wounded.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.unbalanced.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.uneasiness.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.impassioned.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.charge.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.silence.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.drowsy.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.dreamCrafting.id: StatusType(buffType: BuffType.neutral, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.dreamGuarding.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.gift.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.constraint.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.sanctify.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.eden.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.nightmare.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.prey.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.poised.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.dehydration.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.submerged.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.asphyxia.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.luminance.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.tenebrae.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.swordHeart.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.shelter.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: true),
+};
+
+Map<String, List<String>> cardTags = {
+  CardId.apolloArrow.id: [TagId.sharp.id],
+  CardId.octastal.id: [TagId.destiny.id],
+  CardId.babelTower.id: [TagId.weird.id],
+  CardId.rapier.id: [TagId.sharp.id],
+  CardId.filching.id: [TagId.weird.id],
+  CardId.damoclesSword.id: [TagId.magic.id],
+  CardId.woodSword.id: [TagId.sharp.id],
+  CardId.slownessSpell.id: [TagId.mystique.id],
+  CardId.corruptPendant.id: [TagId.magic.id, TagId.vital.id],
+  CardId.violentViolet.id: [TagId.sharp.id],
+  CardId.bow.id: [TagId.magic.id],
+  CardId.highCap.id: [TagId.weird.id],
+  CardId.highEnergyCan.id: [TagId.sense.id],
+  CardId.heroLegend.id: [TagId.sharp.id, TagId.vital.id],
+  CardId.passingGaze.id: [TagId.magic.id, TagId.vital.id],
+  CardId.cryotheum.id: [TagId.mystique.id, TagId.chill.id],
+  CardId.redstone.id: [TagId.mystique.id],
+  CardId.heartLocket.id: [TagId.protect.id],
+  CardId.regenerating.id: [TagId.vital.id],
+  CardId.chaoticDrill.id: [TagId.weird.id],
+  CardId.ascensionStair.id: [TagId.magic.id, TagId.disorder.id],
+  CardId.arcticHeart.id: [TagId.phantom.id],
+  CardId.auroraConcussion.id: [TagId.magic.id],
+  CardId.dreamShelter.id: [TagId.protect.id, TagId.vital.id],
+  CardId.arrow.id: [TagId.sharp.id],
+  CardId.mace.id: [TagId.sharp.id],
+  CardId.track.id: [TagId.magic.id],
+  CardId.crimsonSwoop.id: [TagId.sharp.id],
+  CardId.echoGlimpse.id: [TagId.weird.id],
+  CardId.hexastal.id: [TagId.destiny.id],
+  CardId.strengthSpell.id: [TagId.mystique.id],
+  CardId.strengthSpellIi.id: [TagId.mystique.id],
+  CardId.nanoPermeation.id: [TagId.sharp.id],
+  CardId.pandoraBox.id: [TagId.magic.id, TagId.disorder.id],
+  CardId.endCrystal.id: [TagId.magic.id],
+  CardId.hologram.id: [TagId.weird.id, TagId.phantom.id],
+  CardId.gloryRoad.id: [TagId.sharp.id],
+  CardId.penetrate.id: [TagId.sharp.id],
+  CardId.cloverBlessing.id: [TagId.destiny.id],
+  CardId.decastal.id: [TagId.destiny.id],
+  CardId.refreshment.id: [TagId.weird.id],
+  CardId.ripplingWater.id: [TagId.mystique.id],
+  CardId.curing.id: [TagId.vital.id],
+  CardId.floverWish.id: [TagId.destiny.id],
+  CardId.aetherShroud.id: [TagId.weird.id],
+  CardId.homology.id: [TagId.mystique.id],
+  CardId.criticalStrike.id: [TagId.sharp.id],
+  CardId.sisyphusStone.id: [TagId.weird.id],
+  CardId.rest.id: [TagId.sense.id],
+  CardId.swiftSpell.id: [TagId.mystique.id],
+  CardId.pyrotheum.id: [TagId.mystique.id, TagId.heat.id],
+  CardId.edenGarden.id: [TagId.mystique.id],
+  CardId.fragment.id: [TagId.sharp.id, TagId.phantom.id],
+  CardId.invisibilitySpell.id: [TagId.mystique.id],
+  CardId.flameSpear.id: [TagId.heat.id],
+  CardId.frostShield.id: [TagId.chill.id],
+  CardId.shield.id: [TagId.protect.id],
+  CardId.declaration.id: [TagId.weird.id],
+  CardId.amethyst.id: [TagId.sharp.id, TagId.disorder.id],
+  CardId.endHalberd.id: [TagId.sharp.id],
+};
+
+List<List<String>> mirrorCards = [
+  [
+    CardId.pyrotheum.id,
+    CardId.heroLegend.id,
+    CardId.woodSword.id,
+    CardId.rapier.id,
+    CardId.slownessSpell.id,
+    CardId.violentViolet.id,
+    CardId.flameSpear.id,
+  ],
+  [
+    CardId.cryotheum.id,
+    CardId.dreamShelter.id,
+    CardId.shield.id,
+    CardId.heartLocket.id,
+    CardId.swiftSpell.id,
+    CardId.crimsonSwoop.id,
+    CardId.frostShield.id
+  ]
+];

@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:sns_calculator/assets.dart';
+//import 'package:sns_calculator/assets.dart';
+import 'package:sns_calculator/core.dart';
+import 'package:sns_calculator/localized_ids.dart';
 
 class SkillRollingDialog extends StatefulWidget {
   const SkillRollingDialog({super.key});
@@ -33,8 +35,10 @@ class _SkillRollingDialogState extends State<SkillRollingDialog> {
   }
 
   void _resetPoolFromAssets() {
-    final assets = Provider.of<AssetsManager>(context, listen: false);
-    final Set<String> deck = assets.skillDeckData;
+    //final assets = Provider.of<AssetsManager>(context, listen: false);
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    final String localeStr = localeProvider.getLocaleNameWithCountry().toLowerCase();
+    final Set<String> deck = skillDeck.map((e) => LocalizedIDs.labelFor(e, localeStr)).toSet();
     setState(() {
       _pool = deck.toList(growable: true);
       _showTemporaryMessage('已重置抽取池，共 ${_pool.length} 项');

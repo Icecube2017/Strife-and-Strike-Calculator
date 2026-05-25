@@ -2,6 +2,7 @@ import 'package:english_words/english_words.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:sns_calculator/history.dart';
+import 'package:sns_calculator/localized_ids.dart';
 import 'package:sns_calculator/logger.dart';
 import 'package:sns_calculator/settings.dart';
 import 'package:sns_calculator/record.dart';
@@ -16,7 +17,6 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final AssetsManager assets = AssetsManager();
   await assets.loadData();
-  
   final gameLogger = GameLogger();
   await gameLogger.initialize();
   
@@ -38,6 +38,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => GameLogger()),
         ChangeNotifierProvider(create: (context) => RecordProvider()),
         ChangeNotifierProvider(create: (context) => CardSettingsManager()),
+        ChangeNotifierProvider(create: (context) => LocaleProvider(Locale('zh', 'CN'))),
       ],
       child: MaterialApp(
         title: 'Namer App',

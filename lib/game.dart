@@ -1,15 +1,15 @@
 import 'dart:math';
-
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
+import 'package:sns_calculator/core.dart';
+//import 'package:sns_calculator/assets.dart';
+import 'package:sns_calculator/record.dart';
 import 'package:sns_calculator/history.dart';
 import 'package:sns_calculator/logger.dart';
 import 'package:sns_calculator/settings.dart';
-import 'dart:convert';
-import 'assets.dart';
-import 'core.dart';
-import 'record.dart';
 
 // 全局状态效果
 class GlobalCountdown{
@@ -36,14 +36,86 @@ class Character{
   damageReceivedTurn = 0, damageDealtTurn = 0;
   int cureReceivedTotal = 0, cureDealtTotal = 0, cureReceivedRound = 0, cureDealtRound = 0,
   cureReceivedTurn = 0, cureDealtTurn = 0;
-  bool isDead = false;
-  //Map<String, List<dynamic>> status = {}, hiddenStatus = {};
-  Map<String, CharacterStatus> status = {}, hiddenStatus = {};
-  Map<String, int> skill = {}, skillStatus = {};
+  bool isDead = false;  
+  Map<String, CharaStatus> status = {}, hiddenStatus = {};
+  //Map<String, int> skill = {}, skillStatus = {};
+  Map<String, CharaSkill> skill = {};
+  Map<String, CharaTrait> trait = {};
 
   Character(this.id, this.maxHealth, this.attack, this.defence, this.movePoint, 
   this.maxMove, this.moveRegen, this.regenType, this.regenTurn){
     health = maxHealth;
+    
+    if (possessingSkills.containsKey(id)) {
+      for (var sk in possessingSkills[id]!) {
+        addSkillData(sk, cooldown: 0, isAble: true);
+      }
+    }
+    if (possessingTraits.containsKey(id)) {
+      for (var tr in possessingTraits[id]!) {
+        addTraitData(tr, castCount: 0, maxCast: traitToType[tr]!.useCount, isAble: true);
+      }
+    }
+
+    if (id == CharacterId.ennoia.id) {
+      addHiddenStatusData('ennoia', intensity: 0, layer: -1);
+    }
+  }
+
+  bool hasSkill(String sk){ 
+    return skill.keys.contains(sk);
+  }
+
+  void addSkillData(String sk, {int cooldown = -1, bool isAble = true}) { 
+    if (!skill.containsKey(sk)) {
+      skill[sk] = CharaSkill(
+        name: sk,
+        cooldown: cooldown,
+        isAble: isAble,
+      );
+    }
+  }
+
+  void setSkillData(String sk, {int cooldown = -1, bool isAble = true}) { 
+    if (skill.containsKey(sk)) {
+      skill[sk] = CharaSkill(
+        name: sk,
+        cooldown: cooldown == -1 ? skill[sk]!.cooldown : cooldown,
+        isAble: isAble,
+      );
+    }
+  }
+
+  bool hasTrait(String tr){ 
+    return trait.keys.contains(tr);
+  }
+
+  void addTraitData(String tr, {int castCount = -1, int maxCast = -1, bool isAble = true}) { 
+    if (!trait.containsKey(tr)) {
+      trait[tr] = CharaTrait(
+        name: tr,
+        castCount: castCount,
+        maxCast: maxCast,
+        isAble: isAble,
+      );
+      if (tr == TraitId.escaping.id) {
+        addHiddenStatusData('gugu', intensity: 0, layer: -1);
+      }
+      else if (tr == TraitId.primordialHorologe.id) {
+        addHiddenStatusData('horologe', intensity: 0, layer: -1);
+      }
+    }
+  }
+
+  void setTraitData(String tr, {int castCount = -1, int maxCast = -1, bool isAble = true}) { 
+    if (trait.containsKey(tr)) {
+      trait[tr] = CharaTrait(
+        name: tr,
+        castCount: castCount == -1 ? trait[tr]!.castCount : castCount,
+        maxCast: maxCast == -1 ? trait[tr]!.maxCast : maxCast,
+        isAble: isAble,
+      );
+    }
   }
 
   bool hasStatus(String stat){
@@ -90,9 +162,22 @@ class Character{
     } 
   }
 
+  void addStatusData(String stat, {int intensity = -1, int layer = -1, int layerFraction = -1, int intData = -1, String strData = ''}) { 
+    if (!status.containsKey(stat)) {
+      status[stat] = CharaStatus(
+        name: stat,
+        intensity: intensity,
+        layer: layer,
+        layerFraction: layerFraction,
+        intData: intData,
+        strData: strData,
+      );
+    }
+  }
+
   void setStatusData(String stat, {int intensity = -1, int layer = -1, int layerFraction = -1, int intData = -1, String strData = ''}) {
     if (status.containsKey(stat)) {
-      status[stat] = CharacterStatus(
+      status[stat] = CharaStatus(
         name: stat,
         intensity: intensity == -1 ? status[stat]!.intensity : intensity,
         layer: layer == -1 ? status[stat]!.layer : layer,
@@ -105,12 +190,12 @@ class Character{
 
   void increaseStatusData(String stat, {int intensity = 0, int layer = 0, int layerFraction = 0, int intData = 0}) {
     if (status.containsKey(stat)) {
-      status[stat] = CharacterStatus(
+      status[stat] = CharaStatus(
         name: stat,
         intensity: status[stat]!.intensity + intensity < 0 ? status[stat]!.intensity : status[stat]!.intensity + intensity,
         layer: status[stat]!.layer + layer < 0 ? status[stat]!.layer : status[stat]!.layer + layer,
         layerFraction: status[stat]!.layerFraction + layerFraction < 0 ? status[stat]!.layerFraction : status[stat]!.layerFraction + layerFraction,
-        intData: status[stat]!.intData + intData < 0 ? status[stat]!.intData : status[stat]!.intData + intData,
+        intData: status[stat]!.intData + intData,
         strData: status[stat]!.strData,
       );
     }
@@ -161,9 +246,22 @@ class Character{
     }
   }
 
+  void addHiddenStatusData(String stat, {int intensity = -1, int layer = -1, int layerFraction = -1, int intData = -1, String strData = ''}) { 
+    if (!hiddenStatus.containsKey(stat)) {
+      hiddenStatus[stat] = CharaStatus(
+        name: stat,
+        intensity: intensity,
+        layer: layer,
+        layerFraction: layerFraction,
+        intData: intData,
+        strData: strData,
+      );
+    }
+  }
+
   void setHiddenStatusData(String stat, {int intensity = -1, int layer = -1, int layerFraction = -1, int intData = -1, String strData = ''}) {
     if (hiddenStatus.containsKey(stat)) {
-      hiddenStatus[stat] = CharacterStatus(
+      hiddenStatus[stat] = CharaStatus(
         name: stat,
         intensity: intensity == -1 ? hiddenStatus[stat]!.intensity : intensity,
         layer: layer == -1 ? hiddenStatus[stat]!.layer : layer,
@@ -176,13 +274,13 @@ class Character{
 
   void increaseHiddenStatusData(String stat, {int intensity = 0, int layer = 0, int layerFraction = 0, int intData = 0}) { 
     if (hiddenStatus.containsKey(stat)) {
-      hiddenStatus[stat] = CharacterStatus(
+      hiddenStatus[stat] = CharaStatus(
         name: stat,
         intensity: hiddenStatus[stat]!.intensity + intensity < 0 ? hiddenStatus[stat]!.intensity : hiddenStatus[stat]!.intensity + intensity,
         //layer: hiddenStatus[stat]!.layer + layer < 0 ? hiddenStatus[stat]!.layer : hiddenStatus[stat]!.layer + layer,
         layer: hiddenStatus[stat]!.layer + layer,
         layerFraction: hiddenStatus[stat]!.layerFraction + layerFraction < 0 ? hiddenStatus[stat]!.layerFraction : hiddenStatus[stat]!.layerFraction + layerFraction,
-        intData: hiddenStatus[stat]!.intData + intData < 0 ? hiddenStatus[stat]!.intData : hiddenStatus[stat]!.intData + intData,
+        intData: hiddenStatus[stat]!.intData + intData,
         strData: hiddenStatus[stat]!.strData,
       );
     }
@@ -204,11 +302,11 @@ class Game extends ChangeNotifier{
   GlobalCountdown countdown = GlobalCountdown();
   final Logger _logger = Logger(printer: PrettyPrinter(), output: MultiOutput([ConsoleOutput()]));
 
-  final AssetsManager assets = AssetsManager();
+  /*final AssetsManager assets = AssetsManager();
   Map<String, dynamic>? langMap;
   Map<String, dynamic>? skillCooldown;
   Map<String, dynamic>? statusInfo;
-  Map<String, dynamic>? tagData;
+  Map<String, dynamic>? tagData;*/
 
   RecordProvider? _recordProvider;
   HistoryProvider? _historyProvider;
@@ -216,23 +314,23 @@ class Game extends ChangeNotifier{
 
   Game(this.id, this.gameType){
     players['empty'] = emptyCharacter;
-    _initializeAssets();
+    //_initializeAssets();
   }
 
-  Future<void> _initializeAssets() async {
+  /*Future<void> _initializeAssets() async {
     // await assets.loadData();
-    langMap = assets.langMap;
+    langMap = assets.langMap; // Updated to use assets.langMap directly
     skillCooldown = assets.skillData;
     statusInfo = assets.statusData;
     tagData = assets.tagData;
-  }
+  }*/
 
-  // 设置RecordProvider
+  // 设置行动记录
   void setRecordProvider(RecordProvider recordProvider){
     _recordProvider = recordProvider;
   }
 
-  // 设置HistoryProvider
+  // 设置历史记录
   void setHistoryProvider(HistoryProvider historyProvider){
     _historyProvider = historyProvider;
   }
@@ -246,7 +344,7 @@ class Game extends ChangeNotifier{
   }
 
   GameTurn getPreviousGameTurn() {
-    return gameTurnList.length > 2 ? gameTurnList[gameTurnList.length - 2] : getGameTurn();
+    return gameTurnList.length >= 2 ? gameTurnList[gameTurnList.length - 2] : getGameTurn();
   }
 
   GameTurn getStartGameTurn(int round) {
@@ -266,21 +364,31 @@ class Game extends ChangeNotifier{
     playerDiedCount = 0;
     turn = 0;
     round = 1;
+    extra = 0;
     teamCount = 0;
-    gameTurnList.clear();
+    gameTurnList = [GameTurn(round: 1, turn: 0, extra: 0)];
     countdown = GlobalCountdown();
     gameState = GameState.waiting;
     players['empty'] = emptyCharacter;
+    refresh();
   }
 
+  void addPlayer(Character character) {
+    if (players.containsKey(character.id)){
+      return;
+    }
 
-  void addPlayer(Character character){
     players[character.id] = character;
     gameSequence.add(character.id);
     playerCount++;
+    refresh();
   }
 
-  void removePlayer(Character character){
+  void removePlayer(Character character) {
+    if (!players.containsKey(character.id)){
+      return;
+    }
+
     players.remove(character.id);
     gameSequence.remove(character.id);
     // 从所有队伍中移除该玩家
@@ -288,6 +396,7 @@ class Game extends ChangeNotifier{
       entry.value.remove(character.id);
     }
     playerCount--;
+    refresh();
   }
 
   bool isCharacterInGame(String charaId){ 
@@ -295,23 +404,33 @@ class Game extends ChangeNotifier{
     return !players[charaId]!.isDead;
   }
 
-  /// 添加一个队伍并返回队伍 id
+  // 添加一个队伍并返回队伍 id
   int addTeam(){
     teamCount += 1;
-    teams[teamCount] = <String>{};
-    return teamCount;
+
+    List<int> teamIds = teams.keys.toList();
+    teamIds.sort();
+    int teamId = teamCount;
+    for (int i = 0; i < teamIds.length; i++) {
+      if (teamIds[i] != i + 1) {
+        teamId = i + 1;
+        break;
+      }
+    }
+
+    teams[teamId] = <String>{};
+    return teamId;
   }
 
-  /// 删除指定队伍
+  // 删除指定队伍
   void removeTeam(int teamId){
     if (teams.containsKey(teamId)){
       teams.remove(teamId);
-      // 更新计数（保持为现有队伍数量）
       teamCount = teams.length;
     }
   }
 
-  /// 将玩家加入队伍
+  // 将玩家加入队伍
   void addPlayerToTeam(int teamId, String playerId){
     if (!players.containsKey(playerId)) return;
     // 从其它队伍移除
@@ -319,17 +438,17 @@ class Game extends ChangeNotifier{
       entry.value.remove(playerId);
     }
     teams.putIfAbsent(teamId, () => <String>{});
-    teams[teamId]!.add(playerId);
+    teams[teamId]!.add(playerId); // Added player to team
   }
 
-  /// 从队伍移除玩家
+  // 从队伍移除玩家
   void removePlayerFromTeam(int teamId, String playerId){
     if (teams.containsKey(teamId)){
       teams[teamId]!.remove(playerId);
     }
   }
 
-  /// 获取某玩家所在队伍 id（若未在队伍则返回 null）
+  // 获取玩家所在队伍id
   int? getPlayerTeam(String playerId){
     for (var e in teams.entries){
       if (e.value.contains(playerId)) return e.key;
@@ -337,7 +456,7 @@ class Game extends ChangeNotifier{
     return null;
   }
 
-  /// 判断两个玩家是否是队友
+  // 判断两个玩家是否是队友
   bool isTeammate (String source, String target) { 
     return source != target && getPlayerTeam(source) == getPlayerTeam(target) && gameType == GameType.team && source != 'empty' && target != 'empty';
   }
@@ -347,7 +466,7 @@ class Game extends ChangeNotifier{
     return source != target && (gameType == GameType.single || (getPlayerTeam(source) != getPlayerTeam(target) && gameType == GameType.team)) && source != 'empty' && target != 'empty';
   }
 
-  /// 切换游戏类型
+  // 切换游戏类型
   void toggleGameType(){
     var types = GameType.values;
     int idx = types.indexOf(gameType);
@@ -372,8 +491,12 @@ class Game extends ChangeNotifier{
     else if(type == AttributeType.armor){
       chara.armor += attValue;
       // 沈姝华【纯洁之爱】
-      if (isCharacterInGame(langMap!['shen_shuhua']) && chara.armor == 0) {
-        castTrait(langMap!['shen_shuhua'], [langMap!['shen_shuhua']], langMap!['innocent_love'], {'type': 1});
+      if (isCharacterInGame(CharacterId.shenShuhua.id) && chara.armor == 0) {
+        castTrait(CharacterId.shenShuhua.id, [CharacterId.shenShuhua.id], TraitId.innocentLove.id, {'type': 1});
+      }
+      // K97【二进制噪声】
+      if (chara.hasTrait(TraitId.binary.id)) {
+        castTrait(charaId, [charaId], TraitId.binary.id, {'type': 2, 'armor': chara.armor, 'attValue': attValue});
       }
     }
     else if(type == AttributeType.movepoint){
@@ -381,31 +504,111 @@ class Game extends ChangeNotifier{
       attValue = chara.movePoint + attValue < 0 ? -chara.movePoint : attValue;
       chara.movePoint += attValue;
       // 云津【云系祝乐】
-      if (charaId == langMap!['clouddamp']) {
-        castTrait(charaId, [charaId], langMap!['celestial_joy'], {'type': 2, 'movepoint': -attValue});
+      if (charaId == CharacterId.clouddamp.id) {
+        castTrait(charaId, [charaId], TraitId.celestialJoy.id, {'type': 2, 'movepoint': -attValue});
       }
       // 卡拉卡【友情防守】
-      if (charaId == langMap!['karak'] && chara.movePoint == chara.maxMove) {
-        castTrait(charaId, [charaId], langMap!['buddy_block'], {'type': 1});
+      if (charaId == CharacterId.karak.id && chara.movePoint == chara.maxMove) {
+        castTrait(charaId, [charaId], TraitId.buddyBlock.id, {'type': 1});
       }
     }
     else if(type == AttributeType.maxmove){
       chara.maxMove += attValue;
     }
     else if(type == AttributeType.card){
-      attValue = chara.cardCount + attValue < 0 ? -chara.cardCount : attValue; 
+      attValue = chara.cardCount + attValue < 0 ? -chara.cardCount : attValue;
       chara.cardCount += attValue;
+      // 蓝文曦【盈亏相济】
+      if (chara.hasTrait(TraitId.lossGainEquilibrium.id)) {
+        castTrait(charaId, [charaId], TraitId.lossGainEquilibrium.id, {'type': 0, 'count': attValue});
+        castTrait(charaId, [charaId], TraitId.lossGainEquilibrium.id, {'type': 1, 'count': attValue});
+      }
     }
     else if(type == AttributeType.maxcard){chara.maxCard += attValue;}
     else if(type == AttributeType.dmgdealt) {chara.damageDealtTotal += attValue; chara.damageDealtRound += attValue; chara.damageDealtTurn += attValue;}
     else if(type == AttributeType.dmgreceived) {chara.damageReceivedTotal += attValue; chara.damageReceivedRound += attValue; chara.damageReceivedTurn += attValue;}
     else if(type == AttributeType.curdealt) {chara.cureDealtTotal += attValue; chara.cureDealtRound += attValue; chara.cureDealtTurn += attValue;}
     else if(type == AttributeType.curreceived) {chara.cureReceivedTotal += attValue; chara.cureReceivedRound += attValue; chara.cureReceivedTurn += attValue;}
+    else if(type == AttributeType.actiontime) {chara.actionTime += attValue;}
     if ({AttributeType.armor, AttributeType.attack, AttributeType.defence, AttributeType.movepoint, AttributeType.card, 
     AttributeType.maxhp, AttributeType.maxmove, AttributeType.maxcard}.contains(type)) {
       _gameLogger!.addAttributeLog(getGameTurn(), charaId, type.name, attValue);
     }    
-    refresh();
+  }
+
+  void modifySkillCooldown(String source, String target, String skill, int cooldown) {
+    Character targetChara = players[target]!;
+    bool isImmune = false;
+
+    if (!isImmune) {
+      if (targetChara.hasSkill(skill)) {
+        int modifiedCooldown = targetChara.skill[skill]!.cooldown + cooldown < 0 ? 0 : targetChara.skill[skill]!.cooldown + cooldown;
+        targetChara.setSkillData(skill, cooldown: modifiedCooldown);
+      }
+      else {
+        targetChara.skill[skill] = CharaSkill(name: skill, cooldown: cooldown, isAble: true);
+      }
+    }
+  }
+
+  void modifyTraitCastCount(String source, String target, String trait, int castCount) {
+    Character targetChara = players[target]!;
+    bool isImmune = false;
+
+    if (!isImmune) {
+      if (targetChara.hasTrait(trait)) {
+        int modifiedCastCount = targetChara.trait[trait]!.castCount + castCount < 0 ? 0 : targetChara.trait[trait]!.castCount + castCount;
+        targetChara.setTraitData(trait, castCount: modifiedCastCount);
+      }
+      else {
+        targetChara.trait[trait] = CharaTrait(name: trait, maxCast: traitToType[trait]!.useCount, isAble: true);
+      }
+    }
+  }
+
+  void modifyCardCount(String source, String target, int count, CardEventType type) { 
+    Character sourceChara = players[source]!;
+    Character targetChara = players[target]!;
+    int modifiedCount = count;
+    bool isImmune = false;
+
+    if ({CardEventType.discard, CardEventType.grab}.contains(type)) {
+      modifiedCount = targetChara.cardCount - modifiedCount < 0 ? targetChara.cardCount : modifiedCount;
+      // 向月【心灵魔术】
+      if (targetChara.hasHiddenStatus('sorcery')) {
+        modifiedCount = targetChara.cardCount - modifiedCount - 2 < 0 ? targetChara.cardCount - 2 : modifiedCount;
+      }
+    }
+    if ({CardEventType.play, CardEventType.give}.contains(type)) {
+      modifiedCount = sourceChara.cardCount - modifiedCount < 0 ? sourceChara.cardCount : modifiedCount;
+      // 向月【心灵魔术】
+      if (sourceChara.hasHiddenStatus('sorcery')) {
+        modifiedCount = sourceChara.cardCount - modifiedCount - 2 < 0 ? sourceChara.cardCount - 2 : modifiedCount;
+      }
+    }
+
+    if (!isImmune) { 
+      if (type == CardEventType.draw) {
+        addAttribute(source, AttributeType.card, modifiedCount);
+      }
+      else if (type == CardEventType.discard) {
+        addAttribute(target, AttributeType.card, -modifiedCount);
+      }
+      else if (type == CardEventType.play) {
+        addAttribute(source, AttributeType.card, -modifiedCount);
+      }
+      else if (type == CardEventType.gain) {
+        addAttribute(source, AttributeType.card, modifiedCount);
+      }
+      else if (type == CardEventType.grab) {
+        addAttribute(source, AttributeType.card, modifiedCount);
+        addAttribute(target, AttributeType.card, -modifiedCount);
+      }
+      else if (type == CardEventType.give) {
+        addAttribute(source, AttributeType.card, -modifiedCount);
+        addAttribute(target, AttributeType.card, modifiedCount);
+      }
+    }
   }
 
   void addStatus(String source, String target, String status, int intensity, int layer){
@@ -413,57 +616,49 @@ class Game extends ChangeNotifier{
     bool isImmune = false;
     int previousIntensity = targetChara.getStatusIntData(status, StatusData.intensity);
     int previousLayer = targetChara.getStatusIntData(status, StatusData.layer);
-    if (targetChara.hasStatus(langMap!['gugu'])) {
+    if (targetChara.hasStatus(StatusId.gugu.id)) {
       isImmune = true;
     }
     if (targetChara.hasHiddenStatus('babel')){
       isImmune = true;
     }
-    if ((targetChara.hasStatus(langMap!['eden']) || targetChara.hasStatus(langMap!['luminance'])) 
-      && statusInfo![status][0] == 1) {
+    if ((targetChara.hasStatus(StatusId.eden.id) || targetChara.hasStatus(StatusId.luminance.id)) 
+      && statusToType[status]!.buffType == BuffType.negative) {
       isImmune = true;
     }
     // 科亚特尔【拟造“伊甸园”】
-    if (targetChara.hasStatus(langMap!['sanctify']) && statusInfo![status][0] == 1) {
+    if (targetChara.hasStatus(StatusId.sanctify.id) && statusToType[status]!.buffType == BuffType.negative) {
       isImmune = true;
-      modifyStatusLayer(target, target, langMap!['sanctify'], -1);
-      if (targetChara.getStatusIntData(langMap!['sanctify'], StatusData.layer) == 0) {
-        removeStatus(target, target, langMap!['sanctify']);
+      modifyStatusLayer(target, target, StatusId.sanctify.id, -1);
+      if (targetChara.getStatusIntData(StatusId.sanctify.id, StatusData.layer) == 0) {
+        removeStatus(target, target, StatusId.sanctify.id);
       }
     }
     // 茵竹【自勉】
-    if (target == langMap!['chinro'] && status == langMap!['dissociated']) {
+    if (targetChara.hasTrait(TraitId.selfEncouragement.id)) {
       List<bool> isImmuneRef = [isImmune];
-      castTrait(target, [target], langMap!['self_encouragement'], {'type': 1, 'isImmuneRef': isImmuneRef});
+      castTrait(target, [target], TraitId.selfEncouragement.id, {'type': 1, 'status': status, 'isImmuneRef': isImmuneRef});
       isImmune = isImmuneRef[0];
     }
     // 时雨【寒冰血脉】
-    if (target == langMap!['shigure'] && {langMap!['frozen'], langMap!['frost']}.contains(status)){
+    if (targetChara.hasTrait(TraitId.icyBlood.id) && {StatusId.frozen.id, StatusId.frost.id}.contains(status)){
       List<bool> isImmuneRef = [isImmune];
-      castTrait(target, [target], langMap!['icy_blood'], {'type': 0, 'isImmuneRef': isImmuneRef});
+      castTrait(target, [target], TraitId.icyBlood.id, {'type': 0, 'isImmuneRef': isImmuneRef});
       isImmune = isImmuneRef[0];
     }
     // 红烬【烈焰之体】
-    if (target == langMap!['ember'] && {langMap!['frozen'], langMap!['frost']}.contains(status)){
+    if (target == CharacterId.ember.id && {StatusId.frozen.id, StatusId.frost.id}.contains(status)){
       List<bool> isImmuneRef = [isImmune];
-      castTrait(target, [target], langMap!['conflagration_avatar'], {'type': 0, 'isImmuneRef': isImmuneRef});
+      castTrait(target, [target], TraitId.conflagrationAvatar.id, {'type': 0, 'isImmuneRef': isImmuneRef});
       isImmune = isImmuneRef[0];
     }
     // 阿波菲斯【毁灭暗影】
-    if (target == langMap!['apophis'] && status == langMap!['nightmare']) {
+    if (target == CharacterId.apophis.id && status == StatusId.nightmare.id) {
       isImmune = true;
     }
     if (!isImmune) {
       if (targetChara.hasStatus(status)) {
-        /*if (status == langMap!['teroxis']) {
-          if (targetChara.getStatusIntData(status, StatusData.intensity) + intensity <= 5) {
-            modifyStatusIntensity(source, target, status, intensity, log: false);
-          }
-          else {
-            modifyStatusIntensity(source, target, status, 5 - targetChara.getStatusIntData(status, StatusData.intensity), log: false);            
-          }   
-        }*/
-        if (status == langMap!['soul_flare']) {
+        if (status == StatusId.soulFlare.id) {
           modifyStatusIntensity(source, target, status, intensity, log: false);
         }
         else {
@@ -474,92 +669,91 @@ class Game extends ChangeNotifier{
         }        
       }
       else {
-        targetChara.status[status] = CharacterStatus(name: status, intensity: 0, layer: 0, layerFraction: playerCount, intData: 0, strData: '');
+        targetChara.status[status] = CharaStatus(name: status, intensity: 0, layer: 0, layerFraction: playerCount, intData: 0, strData: '');
         modifyStatusLayer(source, target, status, layer, log: false);
         modifyStatusIntensity(source, target, status, intensity, log: false);
-        if (status == langMap!['exhausted']) {
+        if (status == StatusId.exhausted.id) {
           targetChara.setStatusData(status, intData: targetChara.attack ~/ 2);
           addAttribute(target, AttributeType.attack, -targetChara.getStatusIntData(status, StatusData.intData));
         }
-        else if (status == langMap!['lumen_flare']) {
+        else if (status == StatusId.lumenFlare.id) {
           addAttribute(target, AttributeType.attack, 5);
         }
-        else if (status == langMap!['erode_gelid']) {
+        else if (status == StatusId.erodeGelid.id) {
           addAttribute(target, AttributeType.defence, 5);
         }
-        else if (status == langMap!['mirror']) {
+        else if (status == StatusId.mirror.id) {
           targetChara.setStatusData(status, intData: targetChara.attack * 1024 + targetChara.defence);
           addAttribute(target, AttributeType.attack, targetChara.getStatusIntData(status, StatusData.intData) % 1024 - targetChara.attack);
           addAttribute(target, AttributeType.defence, (targetChara.getStatusIntData(status, StatusData.intData) ~/ 1024) - targetChara.defence);
         } 
-        else if (status == langMap!['eden']) {
+        else if (status == StatusId.eden.id) {
           addHiddenStatus(target, 'apocalypse', 0, -1);
           List<String> statusList = targetChara.status.keys.toList();
           for (String stat in statusList) {
-            if (statusInfo![stat][0] == 1) {
+            if (statusToType[stat]!.buffType == BuffType.negative) {
               removeStatus(target, target, stat);
             }
           }
         }
-        else if (status == langMap!['luminance']) {
+        else if (status == StatusId.luminance.id) {
           List<String> statusList = targetChara.status.keys.toList();
           for (String stat in statusList) {
-            if (statusInfo![stat][0] == 1) {
+            if (statusToType[stat]!.buffType == BuffType.negative) {
               removeStatus(target, target, stat);
             }
           }
         }
-        else if (status == langMap!['tenebrae']) {
+        else if (status == StatusId.tenebrae.id) {
           addAttribute(target, AttributeType.attack, 10);
         }
-        else if (status == langMap!['sword_heart']) {
+        else if (status == StatusId.swordHeart.id) {
           List<String> statusList = targetChara.status.keys.toList();
           for (String stat in statusList) {
-            if (statusInfo![stat][0] == 1) {
+            if (statusToType[stat]!.buffType == BuffType.negative) {
               removeStatus(target, target, stat);
             }
           }
         }
 
         // 冰火相融
-        if (targetChara.hasStatus(langMap!['frost']) && targetChara.hasStatus(langMap!['flaming'])) {
-          int frostIntensity = targetChara.getStatusIntData(langMap!['frost'], StatusData.intensity);
-          int flamingIntensity = targetChara.getStatusIntData(langMap!['flaming'], StatusData.intensity);
+        if (targetChara.hasStatus(StatusId.frost.id) && targetChara.hasStatus(StatusId.flaming.id)) {
+          int frostIntensity = targetChara.getStatusIntData(StatusId.frost.id, StatusData.intensity);
+          int flamingIntensity = targetChara.getStatusIntData(StatusId.flaming.id, StatusData.intensity);
           if (frostIntensity > flamingIntensity) {
-            removeStatus(target, target, langMap!['flaming']);
-            modifyStatusIntensity(target, target, langMap!['frost'], -flamingIntensity);
+            removeStatus(target, target, StatusId.flaming.id);
+            modifyStatusIntensity(target, target, StatusId.frost.id, -flamingIntensity);
           }
           else if (flamingIntensity > frostIntensity) {
-            removeStatus(target, target, langMap!['frost']);
-            modifyStatusIntensity(target, target, langMap!['flaming'], -frostIntensity);
+            removeStatus(target, target, StatusId.frost.id);
+            modifyStatusIntensity(target, target, StatusId.flaming.id, -frostIntensity);
           }
           else {
-            removeStatus(target, target, langMap!['frost']);
-            removeStatus(target, target, langMap!['flaming']);
+            removeStatus(target, target, StatusId.frost.id);
+            removeStatus(target, target, StatusId.flaming.id);
           }
         }
-        if (targetChara.hasStatus(langMap!['frozen']) && targetChara.hasStatus(langMap!['inferno_fire'])) {
-          int frozenLayer = targetChara.getStatusIntData(langMap!['frozen'], StatusData.layer);
-          int infernoFireLayer = targetChara.getStatusIntData(langMap!['inferno_fire'], StatusData.layer);
+        if (targetChara.hasStatus(StatusId.frozen.id) && targetChara.hasStatus(StatusId.infernoFire.id)) {
+          int frozenLayer = targetChara.getStatusIntData(StatusId.frozen.id, StatusData.layer);
+          int infernoFireLayer = targetChara.getStatusIntData(StatusId.infernoFire.id, StatusData.layer);
           if (frozenLayer > infernoFireLayer) {
-            removeStatus(target, target, langMap!['inferno_fire']);
-            modifyStatusLayer(target, target, langMap!['frozen'], -infernoFireLayer);
+            removeStatus(target, target, StatusId.infernoFire.id);
+            modifyStatusLayer(target, target, StatusId.frozen.id, -infernoFireLayer);
           }
           else if (infernoFireLayer > frozenLayer) {
-            removeStatus(target,target, langMap!['frozen']);
-            modifyStatusLayer(target, target, langMap!['inferno_fire'], -frozenLayer);
+            removeStatus(target,target, StatusId.frozen.id);
+            modifyStatusLayer(target, target, StatusId.infernoFire.id, -frozenLayer);
           }
           else {
-            removeStatus(target, target, langMap!['frozen']);
-            removeStatus(target, target, langMap!['inferno_fire']);
+            removeStatus(target, target, StatusId.frozen.id);
+            removeStatus(target, target, StatusId.infernoFire.id);
           }
         }
       }
       _recordProvider!.addStatusRecord(getGameTurn(), source, target, status, [previousIntensity, previousLayer], 
         [targetChara.getStatusIntData(status, StatusData.intensity), targetChara.getStatusIntData(status, StatusData.layer)], StatusChange.add,'');
       _gameLogger!.addStatusLog(getGameTurn(), target, status, targetChara.getStatusIntData(status, StatusData.intensity), targetChara.getStatusIntData(status, StatusData.layer));
-    }
-    refresh();
+    }    
   }
 
   void removeStatus(String source, String target, String status){ 
@@ -572,43 +766,42 @@ class Game extends ChangeNotifier{
     modifyStatusIntensity(source, target, status, -targetChara.getStatusIntData(status, StatusData.intensity), log: false);
     modifyStatusLayer(source, target, status, -targetChara.getStatusIntData(status, StatusData.layer), log: false);
   
-    if (status == langMap!['exhausted']) {
-      addAttribute(target, AttributeType.attack, targetChara.getStatusIntData(langMap!['exhausted'], StatusData.intData));
+    if (status == StatusId.exhausted.id) {
+      addAttribute(target, AttributeType.attack, targetChara.getStatusIntData(StatusId.exhausted.id, StatusData.intData));
     }
-    else if (status == langMap!['lumen_flare']) {
+    else if (status == StatusId.lumenFlare.id) {
       addAttribute(target, AttributeType.attack, -5);
     }
-    else if (status == langMap!['erode_gelid']) {
+    else if (status == StatusId.erodeGelid.id) {
       addAttribute(target, AttributeType.defence, -5);
     }
-    else if (status == langMap!['mirror']) {
-      addAttribute(target, AttributeType.attack, (targetChara.getStatusIntData(langMap!['mirror'], StatusData.intData) ~/ 1024) - targetChara.attack);
-      addAttribute(target, AttributeType.defence, targetChara.getStatusIntData(langMap!['mirror'], StatusData.intData) % 1024 - targetChara.defence);
+    else if (status == StatusId.mirror.id) {
+      addAttribute(target, AttributeType.attack, (targetChara.getStatusIntData(StatusId.mirror.id, StatusData.intData) ~/ 1024) - targetChara.attack);
+      addAttribute(target, AttributeType.defence, targetChara.getStatusIntData(StatusId.mirror.id, StatusData.intData) % 1024 - targetChara.defence);
     }
-    else if (status == langMap!['dreaming']) {
-      if (isCharacterInGame(langMap!['valedictus'])) {
-        castTrait(langMap!['valedictus'], [target], langMap!['nightmare_refrain'], {'type': 3});
+    else if (status == StatusId.dreaming.id) {
+      if (isCharacterInGame(CharacterId.valedictus.id)) {
+        castTrait(CharacterId.valedictus.id, [target], TraitId.nightmareRefrain.id, {'type': 3});
       }
     }
-    else if (status == langMap!['frozen']) {
+    else if (status == StatusId.frozen.id) {
       // 祝烨明【八裂】
-      if (isCharacterInGame(langMap!['zhu_yeming'])) {
-        castTrait(langMap!['zhu_yeming'], [target], langMap!['cryo_fissuring'], {'type': 1});
+      if (isCharacterInGame(CharacterId.zhuYeming.id)) {
+        (CharacterId.zhuYeming.id, [target], TraitId.cryoFissuring.id, {'type': 1});
       }
       // 白谢【极寒环域】
-      if (isCharacterInGame(langMap!['bai_xie'])) {
-        castTrait(langMap!['bai_xie'], [target], langMap!['glacial_circle'], {'type': 2});
+      if (isCharacterInGame(CharacterId.baiXie.id)) {
+        castTrait(CharacterId.baiXie.id, [target], TraitId.glacialCircle.id, {'type': 2});
       }
     }
-    else if (status == langMap!['tenebrae']) {
+    else if (status == StatusId.tenebrae.id) {
       addAttribute(target, AttributeType.attack, -10);
     }
 
     _recordProvider!.addStatusRecord(getGameTurn(), source, target, status, 
       [previousIntensity, previousLayer], [0, 0], StatusChange.remove, '');
     targetChara.status.remove(status);
-    _gameLogger!.addStatusLog(getGameTurn(), target, status, 0, 0);
-    refresh();
+    _gameLogger!.addStatusLog(getGameTurn(), target, status, 0, 0);    
   }
 
   // 更改状态层数
@@ -626,9 +819,9 @@ class Game extends ChangeNotifier{
       modifiedLayer = -targetChara.getStatusIntData(status, StatusData.layer);    
     }
     // 石蹄【蹦蹦咒语】
-    if (target == langMap!['stonehoof'] && status == langMap!['swift'] && layer > 0) {
+    if (target == CharacterId.stonehoof.id && status == StatusId.swift.id && layer > 0) {
       List<int> layerRef = [modifiedLayer];
-      castTrait(target, [target], langMap!['boing_spell'], {'type':  2, 'layerRef': layerRef});
+      castTrait(target, [target], TraitId.boingSpell.id, {'type':  2, 'layerRef': layerRef});
       modifiedLayer = layerRef[0];
     }
 
@@ -636,8 +829,8 @@ class Game extends ChangeNotifier{
 
     // 特质结算
     // ReFre-3【<06>自卫协议】
-    if (target == langMap!['refre_3'] && isEnemy(source, target)) {
-      castTrait(target, [source], langMap!['defensive_protocol']);
+    if (target == CharacterId.refre3.id && isEnemy(source, target)) {
+      castTrait(target, [source], TraitId.defensiveProtocol.id);
     }
 
     // 记录状态
@@ -664,58 +857,58 @@ class Game extends ChangeNotifier{
     if (targetChara.getStatusIntData(status, StatusData.intensity) + intensity < 0) {
       modifiedIntensity = -targetChara.getStatusIntData(status, StatusData.intensity);    
     }
-    if (status == langMap!['dissociated'] && targetChara.getStatusIntData(langMap!['dissociated'], StatusData.intensity) 
+    if (status == StatusId.dissociated.id && targetChara.getStatusIntData(StatusId.dissociated.id, StatusData.intensity) 
       + intensity > 10) {
-      modifiedIntensity = 10 - targetChara.getStatusIntData(langMap!['dissociated'], StatusData.intensity);
+      modifiedIntensity = 10 - targetChara.getStatusIntData(StatusId.dissociated.id, StatusData.intensity);
     }
-    else if (status == langMap!['teroxis'] && targetChara.getStatusIntData(langMap!['teroxis'], StatusData.intensity) 
+    else if (status == StatusId.teroxis.id && targetChara.getStatusIntData(StatusId.teroxis.id, StatusData.intensity) 
       + intensity > 5) {
-      modifiedIntensity = 5 - targetChara.getStatusIntData(langMap!['teroxis'], StatusData.intensity);
+      modifiedIntensity = 5 - targetChara.getStatusIntData(StatusId.teroxis.id, StatusData.intensity);
     }
 
     // 修改角色属性
-    if (status == langMap!['frost']) {
+    if (status == StatusId.frost.id) {
       addAttribute(target, AttributeType.attack, -4 * modifiedIntensity);
     }
-    else if (status == langMap!['strength']) {
+    else if (status == StatusId.strength.id) {
       addAttribute(target, AttributeType.attack, 5 * modifiedIntensity);
     }
-    else if (status == langMap!['teroxis']) {
+    else if (status == StatusId.teroxis.id) {
       addAttribute(target, AttributeType.attack, 5 * modifiedIntensity);
     }
-    else if (status == langMap!['grind']) {
+    else if (status == StatusId.grind.id) {
       addAttribute(target, AttributeType.maxmove, -modifiedIntensity);
       if (targetChara.movePoint > targetChara.maxMove) {
         addAttribute(target, AttributeType.movepoint, targetChara.maxMove - targetChara.movePoint);
       }
     }
-    else if (status == langMap!['fragility']) {
+    else if (status == StatusId.fragility.id) {
       addAttribute(target, AttributeType.defence, -5 * modifiedIntensity);
     }
-    else if (status == langMap!['burn_out']) {
+    else if (status == StatusId.burnOut.id) {
       addAttribute(target, AttributeType.attack, 5 * modifiedIntensity);
       addAttribute(target, AttributeType.defence, -5 * modifiedIntensity);
     }
-    else if (status == langMap!['corroded']) {
+    else if (status == StatusId.corroded.id) {
       addAttribute(target, AttributeType.attack, -10 * modifiedIntensity);
     }
-    else if (status == langMap!['weakness']) {
+    else if (status == StatusId.weakness.id) {
       addAttribute(target, AttributeType.attack, -5 * modifiedIntensity);
     }
-    else if (status == langMap!['drowsy']) {
+    else if (status == StatusId.drowsy.id) {
       addAttribute(target, AttributeType.attack, -5 * modifiedIntensity);
       addAttribute(target, AttributeType.defence, -5 * modifiedIntensity);
     }
-    else if (status == langMap!['eden']) {
+    else if (status == StatusId.eden.id) {
       addAttribute(target, AttributeType.attack, 3 * modifiedIntensity);
     }
-    else if (status == langMap!['dehydration']) {
+    else if (status == StatusId.dehydration.id) {
       addAttribute(target, AttributeType.defence, -10 * modifiedIntensity);
     }
-    else if (status == langMap!['submerged']) {
+    else if (status == StatusId.submerged.id) {
       addAttribute(target, AttributeType.attack, -10 * modifiedIntensity);
     }
-    else if (status == langMap!['asphyxia']) {
+    else if (status == StatusId.asphyxia.id) {
       addAttribute(target, AttributeType.maxhp, -30 * modifiedIntensity);
       if (targetChara.health > targetChara.maxHealth) {
         damagePlayer('empty', targetChara.id, targetChara.health - targetChara.maxHealth, DamageType.lost);
@@ -726,8 +919,8 @@ class Game extends ChangeNotifier{
 
     // 特质结算
     // ReFre-3【<06>自卫协议】
-    if (target == langMap!['refre_3'] && isEnemy(source, target)) {
-      castTrait(target, [source], langMap!['defensive_protocol']);
+    if (target == CharacterId.refre3.id && isEnemy(source, target)) {
+      castTrait(target, [source], TraitId.defensiveProtocol.id);
     }
 
     // 记录状态
@@ -773,25 +966,21 @@ class Game extends ChangeNotifier{
         }
         else if ({'damageplus', 'hero_legend', 'dream_shelter', 'clover', 'flover', 'annihilate', 'alcohol', 'celestial', 
           'dreaming', 'forbidden','shade', 'night', 'collective', 'destiny', 'rage', 'costminus', 'protocol', 
-          'color_white', 'color_black', 'color_red', 'color_green', 'color_yellow', 'white_piece', 'black_piece'}.contains(status)){          
-          //chara.increaseHiddenStatusData(status, intensity: intensity);
+          'color_white', 'color_black', 'color_red', 'color_green', 'color_yellow', 'white_piece', 'black_piece',
+          'ranger'}.contains(status)){          
           modifyHiddenStatusIntensity(charaId, status, intensity);
         }
-        else {
-          //chara.increaseHiddenStatusData(status, layer: layer);
+        else {          
           modifyHiddenStatusLayer(charaId, status, layer);
+          if ({'dice_size'}.contains(status) && intensity > chara.getHiddenStatusIntData(status, StatusData.intensity)) {
+            modifyHiddenStatusIntensity(charaId, status, intensity - chara.getHiddenStatusIntData(status, StatusData.intensity));
+          }
         }
       }
       else {
-        chara.hiddenStatus[status] = CharacterStatus(name: status, intensity: 0, layer: 0, layerFraction: playerCount, intData: 0, strData: '');
+        chara.hiddenStatus[status] = CharaStatus(name: status, intensity: 0, layer: 0, layerFraction: playerCount, intData: 0, strData: '');
         modifyHiddenStatusLayer(charaId, status, layer);
         modifyHiddenStatusIntensity(charaId, status, intensity);
-        /*if (status == 'yearning_atk') {
-          addAttribute(charaId, AttributeType.attack, intensity);
-        }
-        else if (status == 'yearning_def') {
-          addAttribute(charaId, AttributeType.defence, intensity);
-        }*/
         if (status == 'air_lock') {
           chara.maxCard = 3;
         }
@@ -803,13 +992,6 @@ class Game extends ChangeNotifier{
           addAttribute(charaId, AttributeType.attack, 30);
           addAttribute(charaId, AttributeType.defence, 30);
         }
-        /*else if (status == 'dark') {
-          addAttribute(charaId, AttributeType.attack, 2 * intensity);
-        }
-        else if (status == 'sacrifice') {
-          addAttribute(charaId, AttributeType.attack, 5 * intensity);
-          addAttribute(charaId, AttributeType.defence, 5 * intensity);
-        }*/
         else if (status == 'slayer') {
           addAttribute(charaId, AttributeType.attack, 10);
         }
@@ -824,9 +1006,14 @@ class Game extends ChangeNotifier{
             addAttribute(charaId, AttributeType.defence, -5);
           }
         }
+        else if (status == 'ranger_atk') {
+          addAttribute(charaId, AttributeType.attack, 10);
+        }
+        else if (status == 'ranger_def') {
+          addAttribute(charaId, AttributeType.defence, 10);
+        }
       }
-    }
-    refresh();
+    }    
   }
 
   // 移除隐藏状态
@@ -848,12 +1035,6 @@ class Game extends ChangeNotifier{
     else if (status == 'hema') {
       addAttribute(charaId, AttributeType.attack, -15);
     }
-    /*else if (status == 'yearning_atk') {
-      addAttribute(charaId, AttributeType.attack, -chara.getHiddenStatusIntData(status, StatusData.intensity));
-    }
-    else if (status == 'yearning_def') {
-      addAttribute(charaId, AttributeType.defence, -chara.getHiddenStatusIntData(status, StatusData.intensity));
-    }*/
     else if (status == 'touched') {
       countdown.deftTouchSkill = '';
       countdown.deftTouchTarget = '';
@@ -872,17 +1053,20 @@ class Game extends ChangeNotifier{
       addAttribute(charaId, AttributeType.attack, -30);
       addAttribute(charaId, AttributeType.defence, -30);
     }
-    /*else if (status == 'sacrifice') {
-      addAttribute(charaId, AttributeType.attack, -5 * chara.getHiddenStatusIntData(status, StatusData.intensity));
-      addAttribute(charaId, AttributeType.defence, -5 * chara.getHiddenStatusIntData(status, StatusData.intensity));
+    else if (status == 'sacrifice') {
       damagePlayer('empty', charaId, 250, DamageType.lost);
-    }*/
+    }
     else if (status == 'slayer') {
       addAttribute(charaId, AttributeType.attack, -10);
     }
+    else if (status == 'ranger_atk') {
+      addAttribute(charaId, AttributeType.attack, -10);
+    }
+    else if (status == 'ranger_def') {
+      addAttribute(charaId, AttributeType.defence, -10);
+    }
 
-    chara.hiddenStatus.remove(status);
-    refresh();
+    chara.hiddenStatus.remove(status);    
   }
 
   // 更改隐藏状态层数
@@ -895,9 +1079,6 @@ class Game extends ChangeNotifier{
     }
 
     int modifiedLayer = layer;
-    /*if (chara.getHiddenStatusIntData(status, StatusData.layer) + layer < 0) {
-      modifiedLayer = -chara.getHiddenStatusIntData(status, StatusData.layer);
-    }*/
 
     chara.increaseHiddenStatusData(status, layer: modifiedLayer);
     refresh();
@@ -947,23 +1128,23 @@ class Game extends ChangeNotifier{
   }
 
   // 记录掷骰事件
-  int throwDice(String source, String target, int point, DiceType type, [Map<String, dynamic>? args]) {
+  int throwDice(String source, String target, int point, int maxPoint, DiceType type, [Map<String, dynamic>? args]) {
     Character sourceChara = players[source]!;
     // Character targetChara = players[target]!;
     int modifiedPoint = point;
 
     // 图西乌【蚀月】
-    if (target == langMap!['tussiu'] && type == DiceType.action) {
-      castTrait(target, [target], langMap!['eclipse'], {'type': 0, 'point': point});
+    if (target == CharacterId.tussiu.id && type == DiceType.action) {
+      castTrait(target, [target], TraitId.eclipse.id, {'type': 0, 'point': point});
     }
     // 雷刚【斩神】
-    if (source == langMap!['lei_gang'] && type == DiceType.action) {
+    if (source == CharacterId.leiGang.id && type == DiceType.action) {
       modifyHiddenStatusIntensity(source, 'deicide', point);
     }
     // 蒙德里安【禁忌知识】
     for (var chara in players.values) {
-      if(chara.id == langMap!['mondrian'] && point >= 4) {
-        castTrait(chara.id, [chara.id], langMap!['taboo_lore'], {'type': 0});
+      if(chara.id == CharacterId.mondrian.id && point >= 4) {
+        castTrait(chara.id, [chara.id], TraitId.tabooLore.id, {'type': 0});
         break;
       }
     }
@@ -976,46 +1157,50 @@ class Game extends ChangeNotifier{
       removeHiddenStatus(source, 'forbidden_plus');
     }
     // 星惑【众人的乌托邦】
-    if (source == langMap!['seiwaku'] && type == DiceType.action) { 
+    if (source == CharacterId.seiwaku.id && type == DiceType.action) { 
       if (point >= 6) {
-        castTrait(source, [source], langMap!['collective_utopia'], {'type': 1});
+        castTrait(source, [source], TraitId.collectiveUtopia.id, {'type': 1});
       }
       if (type == DiceType.action) {
         List<int> pointRef = [modifiedPoint];
-        castTrait(source, [source], langMap!['collective_utopia'], {'type': 0, 'pointRef': pointRef});
+        castTrait(source, [source], TraitId.collectiveUtopia.id, {'type': 0, 'pointRef': pointRef});
         modifiedPoint = pointRef[0];
       }
     }
     // 亭歆雨【彼岸之金】
-    if (source == langMap!['ting_xinyu'] && sourceChara.hasHiddenStatus('destiny') && type == DiceType.action) {
+    if (source == CharacterId.tingXinyu.id && sourceChara.hasHiddenStatus('destiny') && type == DiceType.action) {
       modifiedPoint += sourceChara.getHiddenStatusIntData('destiny', StatusData.intensity);
       removeHiddenStatus(source, 'destiny');
     }
     // 石蹄【蹦蹦咒语】
-    if (source == langMap!['stonehoof'] && type == DiceType.action) {
+    if (source == CharacterId.stonehoof.id && type == DiceType.action) {
       List<int> pointRef = [modifiedPoint];
-      castTrait(source, [source], langMap!['boing_spell'], {'type': 3, 'pointRef': pointRef});
+      castTrait(source, [source], TraitId.boingSpell.id, {'type': 3, 'pointRef': pointRef});
       modifiedPoint = pointRef[0];
+    }
+    // π123【二进制成对】
+    if (sourceChara.hasTrait(TraitId.binaryDyad.id) && type == DiceType.action) {
+      modifiedPoint += sourceChara.getHiddenStatusIntData('dyad', StatusData.intensity) % 1024;
     }
 
     // 状态【重伤】
-    if (sourceChara.hasStatus(langMap!['wounded'])) {
-      damagePlayer('empty', source, 10 * sourceChara.getStatusIntData(langMap!['wounded'], StatusData.intensity), DamageType.lost);
+    if (sourceChara.hasStatus(StatusId.wounded.id)) {
+      damagePlayer('empty', source, 10 * sourceChara.getStatusIntData(StatusId.wounded.id, StatusData.intensity), DamageType.lost);
     }
     // 状态【不安】
-    if (sourceChara.hasStatus(langMap!['uneasiness'])) {
-      modifiedPoint -= sourceChara.getStatusIntData(langMap!['uneasiness'], StatusData.intensity);
-      modifyStatusLayer(source, source, langMap!['uneasiness'], -1);
-      if (sourceChara.getStatusIntData(langMap!['uneasiness'], StatusData.layer) == 0) {
-        removeStatus(source, source, langMap!['uneasiness']);
+    if (sourceChara.hasStatus(StatusId.uneasiness.id)) {
+      modifiedPoint -= sourceChara.getStatusIntData(StatusId.uneasiness.id, StatusData.intensity);
+      modifyStatusLayer(source, source, StatusId.uneasiness.id, -1);
+      if (sourceChara.getStatusIntData(StatusId.uneasiness.id, StatusData.layer) == 0) {
+        removeStatus(source, source, StatusId.uneasiness.id);
       }
     }
     // 状态【激昂】
-    if (sourceChara.hasStatus(langMap!['impassioned'])) {
-      modifiedPoint += sourceChara.getStatusIntData(langMap!['impassioned'], StatusData.intensity);
-      modifyStatusLayer(source, source, langMap!['impassioned'], -1);
-      if (sourceChara.getStatusIntData(langMap!['impassioned'], StatusData.layer) == 0) {
-        removeStatus(source, source, langMap!['impassioned']);
+    if (sourceChara.hasStatus(StatusId.impassioned.id)) {
+      modifiedPoint += sourceChara.getStatusIntData(StatusId.impassioned.id, StatusData.intensity);
+      modifyStatusLayer(source, source, StatusId.impassioned.id, -1);
+      if (sourceChara.getStatusIntData(StatusId.impassioned.id, StatusData.layer) == 0) {
+        removeStatus(source, source, StatusId.impassioned.id);
       }
     }
 
@@ -1031,15 +1216,29 @@ class Game extends ChangeNotifier{
     }
 
     // 图西乌【蚀月】
-    if (target == langMap!['tussiu'] && type == DiceType.action) {
+    if (target == CharacterId.tussiu.id && type == DiceType.action) {
       List<int> pointRef = [modifiedPoint];
-      castTrait(target, [target], langMap!['eclipse'], {'type': 1, 'pointRef': pointRef});
-      castTrait(target, [target], langMap!['eclipse'], {'type': 2, 'pointRef': pointRef});
+      castTrait(target, [target], TraitId.eclipse.id, {'type': 1, 'pointRef': pointRef});
+      castTrait(target, [target], TraitId.eclipse.id, {'type': 2, 'pointRef': pointRef});
       modifiedPoint = pointRef[0];
     }
     // 雷刚【斩神】
     if (sourceChara.getHiddenStatusIntData('deicide', StatusData.intensity) > 0 && type == DiceType.action) {
       modifiedPoint = sourceChara.getHiddenStatusIntData('deicide', StatusData.intensity);
+    }
+
+    // 强化攻击
+    double poweredAttackRate = 0.7;
+    if (modifiedPoint / maxPoint >= poweredAttackRate && type == DiceType.action) {
+      addHiddenStatus(source, 'power_attack', 0, 0);
+    }
+    // π123【二进制成对】
+    if (sourceChara.hasTrait(TraitId.binaryDyad.id) && sourceChara.hasHiddenStatus('power_attack') && type == DiceType.action 
+    && modifiedPoint / (sourceChara.getHiddenStatusIntData('dyad', StatusData.intensity) ~/ 1024) < poweredAttackRate) {
+      removeHiddenStatus(source, 'power_attack');
+    }
+    if (sourceChara.hasHiddenStatus('dyad') && type == DiceType.action) {
+      removeHiddenStatus(source, 'dyad');
     }
 
     if (modifiedPoint < 0) {
@@ -1049,7 +1248,7 @@ class Game extends ChangeNotifier{
   }
 
   // 使用道具
-  void castCard(String source, List<String> targets, String card, [Map<String, dynamic>? args]){
+  bool castCard(String source, List<String> targets, String card, [Map<String, dynamic>? args]){
     bool cardAble = true;
     Character sourceChara = players[source]!;
     List<Character> targetCharaList = targets.map((target) => players[target]!).toList();
@@ -1059,45 +1258,45 @@ class Game extends ChangeNotifier{
     // 红黎【红莲业火】
     if (sourceChara.hasHiddenStatus('lotus')) {
       int tagIndex = sourceChara.getHiddenStatusIntData('lotus', StatusData.intensity);
-      Tag tag = Tag.values[tagIndex];
-      List<String> tagList = tagData![card];
-      if (tagList.contains(tag.tagId)) {
+      TagId tag = TagId.values[tagIndex];
+      List<String> tagList = cardTags[card]!;
+      if (tagList.contains(tag.id)) {
         cardAble = false;
       }
     }
     // 唐亚德【清心的乌托邦】
-    if (source == langMap!['tang_yade']) {
-      List<String> tagList = tagData![card];
-      if (tagList.contains(langMap!['weird']) || tagList.contains(langMap!['magic'])) {
+    if (source == CharacterId.tangYade.id) {
+      List<String> tagList = cardTags[card]!;
+      if (tagList.contains(TagId.weird.id) || tagList.contains(TagId.magic.id)) {
         cardAble = false;
-        castTrait(source, [source], langMap!['utopia_of_clarity'], {'type': 2});
+        castTrait(source, [source], TraitId.utopiaOfClarity.id, {'type': 2});
       }
     }
     // 亭歆雨【彼岸之金】
-    if (source == langMap!['ting_xinyu']) {
-      List<String> tagList = tagData![card];
+    if (source == CharacterId.tingXinyu.id) {
+      List<String> tagList = cardTags[card]!;
       if (tagList.length >= 2) {
         cardAble = false;
       }
     }
     // 染序【五采】
-    if (source == langMap!['ran_xu']) {
-      List<String> tagList = tagData![card];
+    if (source == CharacterId.ranXu.id) {
+      List<String> tagList = cardTags[card]!;
       int cardCount = sourceChara.getHiddenStatusIntData('cardcount', StatusData.intensity) >= 2 ? 2 : 1;
       int irisIntensity = sourceChara.getHiddenStatusIntData('iris', StatusData.intensity) % 5;
       int prohibitedCardIndex = 10 * cardCount + irisIntensity;
-      if (tagList.contains(langMap!['sharp']) && {10, 20, 24}.contains(prohibitedCardIndex)
-      || tagList.contains(langMap!['mystique']) && {11, 21, 20}.contains(prohibitedCardIndex)
-      || tagList.contains(langMap!['magic']) && {12, 22, 21}.contains(prohibitedCardIndex)
-      || tagList.contains(langMap!['vital']) && {13, 23, 22}.contains(prohibitedCardIndex)
-      || tagList.contains(langMap!['protect']) && {14, 24, 23}.contains(prohibitedCardIndex)) {
+      if (tagList.contains(TagId.sharp.id) && {10, 20, 24}.contains(prohibitedCardIndex)
+      || tagList.contains(TagId.mystique.id) && {11, 21, 20}.contains(prohibitedCardIndex)
+      || tagList.contains(TagId.magic.id) && {12, 22, 21}.contains(prohibitedCardIndex)
+      || tagList.contains(TagId.vital.id) && {13, 23, 22}.contains(prohibitedCardIndex)
+      || tagList.contains(TagId.protect.id) && {14, 24, 23}.contains(prohibitedCardIndex)) {
         cardAble = false;
       }
     }
     if (cardAble) {
       int reinforcementMulti = sourceChara.getHiddenStatusStringData('reinforcement', StatusData.strData) == card ? 2 : 1;
       // 破片水晶
-      if (card == langMap!['end_crystal']) {
+      if (card == CardId.endCrystal.id) {
         int crystalSelf = (cardArgs['crystalSelf'] as int?) ?? 1;
         int crystalMagic = (cardArgs['crystalMagic'] as int?) ?? 1;
         damagePlayer('empty', source, (30 + 15 * crystalSelf) * reinforcementMulti, DamageType.lost);
@@ -1108,7 +1307,7 @@ class Game extends ChangeNotifier{
         }
       }
       // 阿波罗之箭
-      else if (card == langMap!['apollo_arrow']) {
+      else if (card == CardId.apolloArrow.id) {
         int minDefence = targetChara.defence;
         for (Character chara in players.values) {
           if (chara.defence < minDefence && chara.id != 'empty' && !chara.isDead) {
@@ -1116,28 +1315,26 @@ class Game extends ChangeNotifier{
           }
         }
           if (minDefence == targetChara.defence) {
-          addHiddenStatus(target, 'damageplus', 100 * reinforcementMulti, 1);
+          addHiddenStatus(target, 'damageplus', 100 * reinforcementMulti, 0);
         }
       }
+      // 八重镜
+      else if (card == CardId.octastal.id) { 
+        addHiddenStatus(source, 'dice_size', 8, 0);
+      }
       // 巴别塔
-      else if (card == langMap!['babel_tower']) {
+      else if (card == CardId.babelTower.id) {
         for (Character chara in players.values) {
           addHiddenStatus(chara.id, 'babel', 0, 1 * reinforcementMulti);
         }
       }
       // 抽薪
-      else if (card == langMap!['filching']) { 
-        if (targetChara.cardCount < reinforcementMulti) {
-          addAttribute(source, AttributeType.card, targetChara.cardCount + 1 * reinforcementMulti);
-          addAttribute(target, AttributeType.card, -targetChara.cardCount);
-        }
-        else {
-          addAttribute(source, AttributeType.card, 2 * reinforcementMulti);
-          addAttribute(target, AttributeType.card, -1 * reinforcementMulti);
-        }
+      else if (card == CardId.filching.id) { 
+        modifyCardCount(source, target, reinforcementMulti, CardEventType.grab);
+        modifyCardCount(source, target, reinforcementMulti, CardEventType.draw);
       }
       // 达摩克利斯之剑
-      else if (card == langMap!['damocles_sword']) {
+      else if (card == CardId.damoclesSword.id) {
         if (reinforcementMulti == 2) {
           countdown.reinforcedDamocles += 1;
         }
@@ -1146,80 +1343,81 @@ class Game extends ChangeNotifier{
         }
       }
       // 短刀
-      else if (card == langMap!['wood_sword']) {
+      else if (card == CardId.woodSword.id) {
         addAttribute(source, AttributeType.attack, 10 * reinforcementMulti);
       }
       // 钝化术
-      else if (card == langMap!['slowness_spell']) {
-        addStatus(source, target, langMap!['slowness'], 1 * reinforcementMulti, 2);
+      else if (card == CardId.slownessSpell.id) {
+        addStatus(source, target, StatusId.slowness.id, 1 * reinforcementMulti, 2);
       }
       // 堕灵吊坠
-      else if (card == langMap!['corrupt_pendant']) {
+      else if (card == CardId.corruptPendant.id) {
         addAttribute(source, AttributeType.attack, 5 * reinforcementMulti);
         addAttribute(target, AttributeType.attack, -5 * reinforcementMulti);
         healPlayer(source, source, 60 * reinforcementMulti, DamageType.heal);
         damagePlayer(source, target, 60 * reinforcementMulti, DamageType.lost);
       }
       // 飞鸟·紫烈
-      else if (card == langMap!['violent_violet']) {
+      else if (card == CardId.violentViolet.id) {
         int sequence = gameSequence.indexOf(source);
         if (sequence == 0) {sequence = gameSequence.length - 1;}
         else {sequence--;}
         Character previousChara = players[gameSequence[sequence]]!;
-        addHiddenStatus(target, 'damageplus', 2 * previousChara.defence  * reinforcementMulti, 1);
+        addHiddenStatus(target, 'damageplus', 2 * previousChara.defence  * reinforcementMulti, 0);
       }
       // 复合弓 
-      else if (card == langMap!['bow']) {
-        int ammoCount = (args?['ammoCount'] as int?) ?? 1;
+      else if (card == CardId.bow.id) {
+        int ammoCount = sourceChara.cardCount;
         damagePlayer(source, target, 75 * ammoCount * reinforcementMulti, DamageType.magical);
-        players[source]!.cardCount = 0;
+        modifyCardCount(source, source, sourceChara.cardCount, CardEventType.discard);
       }
       // 高帽子
-      else if (card == langMap!['high_cap']) {
-        addStatus(source, target, langMap!['tigris_dilemma'], 0, 1 * reinforcementMulti);
+      else if (card == CardId.highCap.id) {
+        addStatus(source, target, StatusId.tigrisDilemma.id, 0, 1 * reinforcementMulti);
       }
       // 高能罐头
-      else if (card == langMap!['high_energy_can']) {
+      else if (card == CardId.highEnergyCan.id) {
         addAttribute(source, AttributeType.maxmove, 2 * reinforcementMulti);
         addAttribute(source, AttributeType.movepoint, 1 * reinforcementMulti);
       }
       // 鼓舞
-      else if (card == langMap!['hero_legend']) {
+      else if (card == CardId.heroLegend.id) {
         healPlayer(source, source, 100 * reinforcementMulti, DamageType.heal);
         addHiddenStatus(source, 'hero_legend', 1 * reinforcementMulti, 1);
       }
       // 过往凝视
-      else if (card == langMap!['passing_gaze']) {
-        addHiddenStatus(target, 'damageplus', 100 * reinforcementMulti, 1);
-        addStatus(source, target, langMap!['dissociated'], 10, 1);
+      else if (card == CardId.passingGaze.id) {
+        addHiddenStatus(target, 'damageplus', 100 * reinforcementMulti, 0);
+        addStatus(source, target, StatusId.dissociated.id, 10, 1);
       }
       // 寒绝凝冰
-      else if (card == langMap!['cryotheum']) {
-        addStatus(source, target, langMap!['frost'], 5 * reinforcementMulti, 2);
+      else if (card == CardId.cryotheum.id) {
+        addStatus(source, target, StatusId.frost.id, 5 * reinforcementMulti, 2);
       }
       // 后日谈
-      else if (card == langMap!['redstone']) {
+      else if (card == CardId.redstone.id) {
         String statusProlonged = cardArgs['statusProlonged'] ?? '';
         String playerProlonged = cardArgs['playerProlonged'] ?? '';
-        if (statusProlonged != '') {
-          addStatus(source, playerProlonged, statusProlonged, 0, 1 * reinforcementMulti);
+        if (statusProlonged != '' && playerProlonged != '') {
+          //addStatus(source, playerProlonged, statusProlonged, 0, 1 * reinforcementMulti);
+          modifyStatusLayer(source, playerProlonged, statusProlonged, 1 * reinforcementMulti);
         }
       }
       // 护身符
-      else if (card == langMap!['heart_locket']) {
+      else if (card == CardId.heartLocket.id) {
         addAttribute(source, AttributeType.defence, 10 * reinforcementMulti);
       }
       // 缓生
-      else if (card == langMap!['regenerating']) {
-        addStatus(source, source, langMap!['regeneration'], 6 * reinforcementMulti, 2);
+      else if (card == CardId.regenerating.id) {
+        addStatus(source, source, StatusId.regeneration.id, 6 * reinforcementMulti, 2);
         addHiddenStatus(source, 'rest', 0, 0);
       }
       // 混沌电钻
-      else if (card == langMap!['chaotic_drill']) {
-        addStatus(source, target, langMap!['confusion'], 0, 1 * reinforcementMulti);
+      else if (card == CardId.chaoticDrill.id) {
+        addStatus(source, target, StatusId.confusion.id, 0, 1 * reinforcementMulti);
       }
       // 混乱力场
-      else if (card == langMap!['ascension_stair']) {
+      else if (card == CardId.ascensionStair.id) {
         Map<String, int> ascensionPoints = cardArgs['ascensionPoints'] ?? {};
         int minPoint = 6;
         int maxPoint = 1;
@@ -1241,71 +1439,74 @@ class Game extends ChangeNotifier{
         }
       }
       // 极北之心
-      else if (card == langMap!['arctic_heart']) {
-        for (var skill in players[source]!.skill.keys) {
-          players[source]!.skill[skill] = players[source]!.skill[skill]! - 2 * reinforcementMulti < 0 
-            ? 0 : players[source]!.skill[skill]! - 2 * reinforcementMulti;
+      else if (card == CardId.arcticHeart.id) {
+        for (var sk in sourceChara.skill.keys) {
+          modifySkillCooldown(source, source, sk, -2 * reinforcementMulti);
         }
       }
       // 极光震荡
-      else if (card == langMap!['aurora_concussion']) {       
+      else if (card == CardId.auroraConcussion.id) {       
         Map<String, int> auroraPoints = cardArgs['auroraPoints'] ?? {};
         for(String chara in auroraPoints.keys){ 
           if(auroraPoints[chara] == 1){
-            addStatus(source, chara, langMap!['exhausted'], 0, 1 * reinforcementMulti);
+            addStatus(source, chara, StatusId.exhausted.id, 0, 1 * reinforcementMulti);
           }
         }
         damagePlayer('empty', source, 50, DamageType.lost);
         addHiddenStatus(source, 'rest', 0, 0);
       }
       // 加护
-      else if (card == langMap!['dream_shelter']) {
+      else if (card == CardId.dreamShelter.id) {
         healPlayer(source, source, 100 * reinforcementMulti, DamageType.heal);
         addHiddenStatus(source, 'dream_shelter', 1 * reinforcementMulti, 1);
       }
       // 箭
-      else if (card == langMap!['arrow']) {
-        addHiddenStatus(target, 'damageplus', 50 * reinforcementMulti, 1);
+      else if (card == CardId.arrow.id) {
+        addHiddenStatus(target, 'damageplus', 50 * reinforcementMulti, 0);
       }
       // 狼牙棒
-      else if (card == langMap!['mace']) {
-        addHiddenStatus(target, 'damageplus', 90 * reinforcementMulti, 1);
-        addStatus(source, target, langMap!['fractured'], 0, 2);
+      else if (card == CardId.mace.id) {
+        addHiddenStatus(target, 'damageplus', 90 * reinforcementMulti, 0);
+        addStatus(source, target, StatusId.fractured.id, 0, 2);
       }
       // 猎魔灵刃
-      else if (card == langMap!['track']) {
-        if (players[target]!.hasStatus(langMap!['dodge'])) {
-          removeStatus(source, target, langMap!['dodge']);
+      else if (card == CardId.track.id) {
+        if (players[target]!.hasStatus(StatusId.dodge.id)) {
+          removeStatus(source, target, StatusId.dodge.id);
           addHiddenStatus(target, 'track', 1 * reinforcementMulti, 1);
         }
       }
       // 林鸟·赤掠
-      else if (card == langMap!['crimson_swoop']) {
+      else if (card == CardId.crimsonSwoop.id) {
         int sequence = gameSequence.indexOf(source);
         if (sequence == 0) {sequence = gameSequence.length - 1;}
         else {sequence--;}
         Character previousChara = players[gameSequence[sequence]]!;
-        addHiddenStatus(target, 'damageplus', previousChara.attack * reinforcementMulti, 1);
+        addHiddenStatus(target, 'damageplus', previousChara.attack * reinforcementMulti, 0);
       }
       // 聆音掠影
-      else if (card == langMap!['echo_glimpse']) {
-        addStatus(source, target, langMap!['distant'], 0, 1 * reinforcementMulti);
+      else if (card == CardId.echoGlimpse.id) {
+        addStatus(source, target, StatusId.distant.id, 0, 1 * reinforcementMulti);
+      }
+      // 六方棱
+      else if (card == CardId.hexastal.id) {
+        addHiddenStatus(source, 'dice_size', 6, 0);
       }
       // 蛮力术
-      else if (card == langMap!['strength_spell']) {
-        addStatus(source, source, langMap!['strength'], 3 * reinforcementMulti, 2);
+      else if (card == CardId.strengthSpell.id) {
+        addStatus(source, source, StatusId.strength.id, 3 * reinforcementMulti, 2);
       }
       // 蛮力术II
-      else if (card == langMap!['strength_spell_ii']) {
-        addStatus(source, source, langMap!['strength'], 6 * reinforcementMulti, 2);
+      else if (card == CardId.strengthSpellIi.id) {
+        addStatus(source, source, StatusId.strength.id, 6 * reinforcementMulti, 2);
       }
       // 纳米渗透
-      else if (card == langMap!['nano_permeation']) {
+      else if (card == CardId.nanoPermeation.id) {
         addHiddenStatus(source, 'nano', 0, 1);
       }
       // 潘多拉魔盒
-      else if (card == langMap!['pandora_box']) {
-        int pandoraPoint = (args?['pandoraPoint'] as int?) ?? 1;
+      else if (card == CardId.pandoraBox.id) {
+        int pandoraPoint = (cardArgs['pandoraPoint'] as int?) ?? 1;
         if ([3, 6].contains(pandoraPoint)) {
           for (Character chara in players.values) {
             if (chara.id != 'empty' && !chara.isDead) {
@@ -1323,49 +1524,56 @@ class Game extends ChangeNotifier{
         addHiddenStatus(source, 'rest', 0, 0);   
       }
       // 全息投影
-      else if (card == langMap!['hologram']) {
+      else if (card == CardId.hologram.id) {
         addHiddenStatus(source, 'rest', 0, 0);
       }
       // 荣光循途
-      else if (card == langMap!['glory_road']) {
-        addStatus(source, source, langMap!['teroxis'], 1, 1);
+      else if (card == CardId.gloryRoad.id) {
+        addStatus(source, source, StatusId.teroxis.id, 1, 1);
       }
       // 融甲宝珠
-      else if (card == langMap!['penetrate']) {
+      else if (card == CardId.penetrate.id) {
         if (targetChara.armor > 0) {
           addAttribute(target, AttributeType.armor, -targetChara.armor);
           addHiddenStatus(target, 'penetrate', 1 * reinforcementMulti, 1);
         }
       }
       // 三叶草之祝
-      else if (card == langMap!['clover_blessing']) { 
+      else if (card == CardId.cloverBlessing.id) { 
         addHiddenStatus(source, 'clover', 2 * reinforcementMulti, 1);
       }
+      // 十面璃
+      else if (card == CardId.decastal.id) { 
+        addHiddenStatus(source, 'dice_size', 10, 0);
+      }
       // 刷新
-      else if (card == langMap!['refreshment']) {
+      else if (card == CardId.refreshment.id) {
         String refreshmentChoice = args?['refreshmentChoice'] ?? '';
-        players[source]!.skill[refreshmentChoice] = 0;
+        if (refreshmentChoice != '') {
+          //sourceChara.skill[refreshmentChoice]!.cooldown = 0;
+          modifySkillCooldown(source, source, refreshmentChoice, -sourceChara.skill[refreshmentChoice]!.cooldown);
+        }        
       }
       // 水波荡漾
-      else if (card == langMap!['rippling_water']) {
-        addStatus(source, target, langMap!['nebula'], 1 * reinforcementMulti, 1);
+      else if (card == CardId.ripplingWater.id) {
+        addStatus(source, target, StatusId.nebula.id, 1 * reinforcementMulti, 1);
       }
       // 瞬疗
-      else if (card == langMap!['curing']) {
+      else if (card == CardId.curing.id) {
         healPlayer(source, source, 120 * reinforcementMulti, DamageType.heal);
         addHiddenStatus(source, 'rest', 0, 0);
       }
       // 四叶草之愿
-      else if (card == langMap!['flover_wish']) { 
+      else if (card == CardId.floverWish.id) { 
         addHiddenStatus(source, 'flover', 2 * reinforcementMulti, 1);
       }
       // 天穹尘埃之障
-      else if (card == langMap!['aether_shroud']) {
-        addStatus(source, target, langMap!['oculus_veil'], 0, 1 * reinforcementMulti);
+      else if (card == CardId.aetherShroud.id) {
+        addStatus(source, target, StatusId.oculusVeil.id, 0, 1 * reinforcementMulti);
       }
       // 同调
-      else if (card == langMap!['homology']) {
-        Map<String, CharacterStatus> tempStatus = {};
+      else if (card == CardId.homology.id) {
+        Map<String, CharaStatus> tempStatus = {};
         List<dynamic> sourceStatusKeys = sourceChara.status.keys.toList();
         List<dynamic> targetStatusKeys = targetChara.status.keys.toList();
         for (String stat in targetChara.status.keys) {
@@ -1385,28 +1593,28 @@ class Game extends ChangeNotifier{
         }
       }
       // 无敌贯通
-      else if (card == langMap!['critical_strike']) {
+      else if (card == CardId.criticalStrike.id) {
         addHiddenStatus(source, 'critical', 0, 0);
       }
       // 西西弗斯之石头
-      else if (card == langMap!['sisyphus_stone']) {
-        addStatus(source, target, langMap!['grind'], 1 * reinforcementMulti, 1);
+      else if (card == CardId.sisyphusStone.id) {
+        addStatus(source, target, StatusId.grind.id, 1 * reinforcementMulti, 1);
       }
       // 休憩
-      else if (card == langMap!['rest']) {
-        addHiddenStatus(source, 'costminus', 2 * reinforcementMulti, 1);
+      else if (card == CardId.rest.id) {
+        addHiddenStatus(source, 'costminus', 2 * reinforcementMulti, 0);
       }
       // 迅捷术
-      else if (card == langMap!['swift_spell']) {
-        addStatus(source, source, langMap!['swift'], 1 * reinforcementMulti, 2);
-        sourceChara.increaseStatusData(langMap!['swift'], layerFraction: 1);
+      else if (card == CardId.swiftSpell.id) {
+        addStatus(source, source, StatusId.swift.id, 1 * reinforcementMulti, 2);
+        sourceChara.increaseStatusData(StatusId.swift.id, layerFraction: 1);
       }
       // 炎极烈火
-      else if (card == langMap!['pyrotheum']) {
-        addStatus(source, target, langMap!['flaming'], 5 * reinforcementMulti, 3);
+      else if (card == CardId.pyrotheum.id) {
+        addStatus(source, target, StatusId.flaming.id, 5 * reinforcementMulti, 3);
       }
       // 失乐园
-      else if (card == langMap!['eden_garden']) {
+      else if (card == CardId.edenGarden.id) {
         // 二进制编码失乐园触发次数，初始为10/11，正常为0，强化为1
         if (!sourceChara.hasHiddenStatus('eden')) {
           addHiddenStatus(source, 'eden', reinforcementMulti + 1, -1);
@@ -1417,48 +1625,48 @@ class Game extends ChangeNotifier{
         }        
       }
       // 遗失碎片
-      else if (card == langMap!['fragment']) {
-        addAttribute(source,AttributeType.card, 2 * reinforcementMulti);
-        addHiddenStatus(target, 'damageplus', 45 * reinforcementMulti, 1);
+      else if (card == CardId.fragment.id) {        
+        modifyCardCount(source, target, 2 * reinforcementMulti, CardEventType.draw);
+        addHiddenStatus(target, 'damageplus', 45 * reinforcementMulti, 0);
       }
       // 隐身术
-      else if (card == langMap!['invisibility_spell']) {
-        addStatus(source, source, langMap!['dodge'], 0, 1);
+      else if (card == CardId.invisibilitySpell.id) {
+        addStatus(source, source, StatusId.dodge.id, 0, 1);
         addHiddenStatus(source, 'rest', 0, 0);
       }
       // 御术者长矛·炎
-      else if (card == langMap!['flame_spear']) {
-        addStatus(source, source, langMap!['lumen_flare'], 0, 1);
+      else if (card == CardId.flameSpear.id) {
+        addStatus(source, source, StatusId.lumenFlare.id, 0, 1);
       }
       // 御术者重盾·霜
-      else if (card == langMap!['frost_shield']) {
-        addStatus(source, source, langMap!['erode_gelid'], 0, 1);
+      else if (card == CardId.frostShield.id) {
+        addStatus(source, source, StatusId.erodeGelid.id, 0, 1);
       }
       // 圆盾
-      else if (card == langMap!['shield']) {
+      else if (card == CardId.shield.id) {
         addAttribute(source, AttributeType.armor, 100 * reinforcementMulti);
         addAttribute(source, AttributeType.defence, 5 * reinforcementMulti);
       }
       // 长剑
-      else if (card == langMap!['rapier']) {
+      else if (card == CardId.rapier.id) {
         addAttribute(source, AttributeType.attack, 15 * reinforcementMulti);
       }
       // 昭示
-      else if (card == langMap!['declaration']) {
-        addAttribute(target, AttributeType.card, -1);
+      else if (card == CardId.declaration.id) {        
+        modifyCardCount(source, target, reinforcementMulti, CardEventType.discard);
       }
       // 折射水晶
-      else if (card == langMap!['amethyst']) {
+      else if (card == CardId.amethyst.id) {
         int amethystPoint = (args?['amethystPoint'] as int?) ?? 1;
         if (amethystPoint == 1) {
-          addHiddenStatus(target, 'damageplus', 80 * reinforcementMulti, 1);
+          addHiddenStatus(target, 'damageplus', 80 * reinforcementMulti, 0);
         }
         else {
-          addHiddenStatus(target, 'damageplus', -40 * reinforcementMulti, 1);
+          addHiddenStatus(target, 'damageplus', -40 * reinforcementMulti, 0);
         }
       }
       // 终焉长戟
-      else if (card == langMap!['end_halberd']) {
+      else if (card == CardId.endHalberd.id) {
         addHiddenStatus(target, 'end', 1 * reinforcementMulti, 1);
       }
 
@@ -1467,23 +1675,36 @@ class Game extends ChangeNotifier{
         removeHiddenStatus(source, 'reinforcement');
       }
     }
+
+    return cardAble;
   }
 
   // 出牌
-  void playCards(String source, List<String> targets, int dicePoint, List<String> cards, List<CardSetting> cardSettings, [Map<String, dynamic>? args]){
+  bool playCards(String source, List<String> targets, int dicePoint, List<String> cards, List<CardSetting> cardSettings, [Map<String, dynamic>? args]){
     Character sourceChara = players[source]!;
     List<Character> targetCharaList = targets.map((target) => players[target]!).toList();
     String target = targetCharaList.isEmpty ? '' : targetCharaList.first.id;    
     Character targetChara = targetCharaList.isEmpty ? emptyCharacter : targetCharaList.first;
     int attack = 0, attackPlus = 0, defence = 0, defencePlus = 0, cost = 0, cardCost = 1, point = dicePoint;
-    Map<String, dynamic> cardsArgs = args ?? {};
-    // int reinforcementMulti = sourceChara.hasHiddenStatus('reinforcement') ? 2 : 1;
+    Map<String, dynamic> cardsArgs = args ?? {};    
     double attackMulti = 1.0, defenceMulti = 1.0;
     bool actionAble = true;
     // 设置强化道具
     if (sourceChara.hasHiddenStatus('reinforcement')) {
       sourceChara.setHiddenStatusData('reinforcement', strData: cards.first);
     }
+    // 回合外行动
+    if (turn != gameSequence.indexOf(source) + 1) {
+      actionAble = false;
+      // 曙光【不容质疑的信任】
+      if (sourceChara.hasHiddenStatus('unquestion') && cards.isEmpty) {
+        actionAble = true;
+      }
+      // K97【二进制噪声】
+      if (sourceChara.hasHiddenStatus('binary') && cards.length == 1) {
+        actionAble = true;
+      }
+    }   
     // 计算行动点消耗
     if (cards.isEmpty) {
       cost = 1;
@@ -1496,7 +1717,7 @@ class Game extends ChangeNotifier{
       for (String card in cards) {
         cardCost = 1;
         // 道具【休憩】
-        if (card == langMap!['rest']) {
+        if (card == CardId.rest.id) {
           castCard(source, [target], card);
         }
         // 长霾【律令·禁空】
@@ -1511,6 +1732,7 @@ class Game extends ChangeNotifier{
       }
       if (sourceChara.hasHiddenStatus('costminus')) {
         cost -= sourceChara.getHiddenStatusIntData('costminus', StatusData.intensity);
+        removeHiddenStatus(source, 'costminus');
       }
     }
     // 技能【极速】
@@ -1521,57 +1743,57 @@ class Game extends ChangeNotifier{
       cost += 3;
     }
     // 舸灯【引渡】
-    if (source == langMap!['gentou']) {
+    if (source == CharacterId.gentou.id) {
       List<int> costRef = [cost];
-      castTrait(source, [source], langMap!['ghost_ferry'], {'type': 0, 'costRef': costRef});
+      castTrait(source, [source], TraitId.ghostFerry.id, {'type': 0, 'costRef': costRef});
       cost = costRef[0];
     }
     // 颜若卿【调和的乌托邦】
-    else if (source == langMap!['yan_ruoqing']) {
+    else if (source == CharacterId.yanRuoqing.id) {
       List<int> costRef = [cost];
-      castTrait(source, [source], langMap!['utopia_of_concord'], {'type': 0, 'costRef': costRef, 'cardList': cards});
-      castTrait(source, [source], langMap!['utopia_of_concord'], {'type': 1, 'costRef': costRef, 'cardList': cards});
+      castTrait(source, [source], TraitId.utopiaOfConcord.id, {'type': 0, 'costRef': costRef, 'cardList': cards});
+      castTrait(source, [source], TraitId.utopiaOfConcord.id, {'type': 1, 'costRef': costRef, 'cardList': cards});
       cost = costRef[0];
     }
     // 沈姝华【纯洁之爱】
-    if (source == langMap!['shen_shuhua']) {
+    if (source == CharacterId.shenShuhua.id) {
       List<int> costRef = [cost];
-      castTrait(source, [source], langMap!['innocent_love'], {'type': 0, 'costRef': costRef, 'cardList': cards});
+      castTrait(source, [source], TraitId.innocentLove.id, {'type': 0, 'costRef': costRef, 'cardList': cards});
       cost = costRef[0];
     }
     // 祝烨诚【凛息】
-    if (source == langMap!['zhu_yecheng']) {
+    if (source == CharacterId.zhuYecheng.id) {
       List<int> costRef = [cost];
-      castTrait(source, [source], langMap!['icy_stillness'], {'type': 1, 'costRef': costRef, 'cardList': cards});
+      castTrait(source, [source], TraitId.icyStillness.id, {'type': 1, 'costRef': costRef, 'cardList': cards});
       cost = costRef[0];
     }
     // 染序【五采】
-    if (source == langMap!['ran_xu']) {
+    if (source == CharacterId.ranXu.id) {
       addHiddenStatus(source, 'cardcount', cards.length, 0);
     }
     // 卡拉卡【友情防守】
-    if (isCharacterInGame(langMap!['karak'])) {
-      if (isEnemy(source, langMap!['karak']) && isTeammate(target, langMap!['karak'])) {
+    if (isCharacterInGame(CharacterId.karak.id)) {
+      if (isEnemy(source, CharacterId.karak.id) && isTeammate(target, CharacterId.karak.id)) {
         List<int> costRef = [cost];
-        castTrait(langMap!['karak'], [source], langMap!['buddy_block'], {'type': 0, 'costRef': costRef});
+        castTrait(CharacterId.karak.id, [source], TraitId.buddyBlock.id, {'type': 0, 'costRef': costRef});
         cost = costRef[0];
       }
     }
     // 行动点不足
-    if (cost > sourceChara.movePoint && !{langMap!['engine_4']}.contains(source)) {
+    if (cost > sourceChara.movePoint && !{CharacterId.engine4.id}.contains(source)) {
       actionAble = false;
     }
     // EnGine-4【<04>质能转换】
-    if (source == langMap!['engine_4']) {
+    if (source == CharacterId.engine4.id) {
       cost = cards.isEmpty ? 1 : cards.length;
       if (sourceChara.health <= 24 * cost) {
         actionAble = false;
       }
     }
     // 状态【冰封】【梦境】【星牢】【造梦】【窒息】
-    if (sourceChara.hasStatus(langMap!['frozen']) || sourceChara.hasStatus(langMap!['dreaming']) || 
-      sourceChara.hasStatus(langMap!['stellar_cage']) || sourceChara.hasStatus(langMap!['dream_crafting']) || 
-      sourceChara.hasStatus(langMap!['asphyxia'])) {
+    if (sourceChara.hasStatus(StatusId.frozen.id) || sourceChara.hasStatus(StatusId.dreaming.id) || 
+      sourceChara.hasStatus(StatusId.stellarCage.id) || sourceChara.hasStatus(StatusId.dreamCrafting.id) || 
+      sourceChara.hasStatus(StatusId.asphyxia.id)) {
       actionAble = false;
     }
     // 技能【追击】
@@ -1583,11 +1805,11 @@ class Game extends ChangeNotifier{
       actionAble = false;
     }
     // 卿别【安魂乐章】
-    if (sourceChara.hasHiddenStatus('requiem') && target != langMap!['valedictus']) {
+    if (sourceChara.hasHiddenStatus('requiem') && target != CharacterId.valedictus.id) {
       actionAble = false;
     }
     // 好好先生【深重情谊】
-    if (sourceChara.hasHiddenStatus('favor') && target == langMap!['mr_nice']) {
+    if (sourceChara.hasHiddenStatus('favor') && target == CharacterId.mrNice.id) {
       actionAble = false;
     }
     // 太夕【谜渊漩涡】
@@ -1596,8 +1818,8 @@ class Game extends ChangeNotifier{
     }
     // 祝言夙【精神干扰】
     if (sourceChara.hasHiddenStatus('disruption')) {
-      actionAble = false;
-      addAttribute(source, AttributeType.card, -cards.length);
+      actionAble = false;      
+      modifyCardCount(source, target, cards.length, CardEventType.play);
       sourceChara.actionTime--;
     }
     // 祝言夙【灵魂震荡】
@@ -1605,16 +1827,25 @@ class Game extends ChangeNotifier{
       actionAble = false;
     }
     // 蓝文策【探囊取物】
-    if (source == langMap!['lan_wence'] && !targetChara.hasHiddenStatus('pluck_tar')) {
+    if (source == CharacterId.lanWence.id && !targetChara.hasHiddenStatus('pluck_tar')) {
+      actionAble = false;
+    }
+    // K97【二进制噪声】
+    if (sourceChara.hasHiddenStatus('binary') && cards.length != 1) {
+      actionAble = false;
+    }
+    // 曙光【不容质疑的信任】
+    if (sourceChara.hasHiddenStatus('unquestion') && cards.isNotEmpty) { 
       actionAble = false;
     }
     // 状态【障目】
-    if (actionAble && sourceChara.hasStatus(langMap!['oculus_veil'])) {
+    if (actionAble && sourceChara.hasStatus(StatusId.oculusVeil.id)) {
       int oculusVeilPoint = cardsArgs['oculusVeilPoint'] as int? ?? 2;
+      throwDice(source, source, oculusVeilPoint, 2, DiceType.status);
       if (oculusVeilPoint == 1) {
         actionAble = false;
         addAttribute(source, AttributeType.movepoint, -cost);
-        addAttribute(source, AttributeType.card, -cards.length);
+        modifyCardCount(source, target, cards.length, CardEventType.play);
         sourceChara.actionTime--;
       }
     }    
@@ -1622,20 +1853,19 @@ class Game extends ChangeNotifier{
     if (sourceChara.actionTime <= 0) {
       actionAble = false;
     }
-    // 曙光【不容质疑的信任】
-    if (sourceChara.hasHiddenStatus('unquestion')) {
-      cost = 0;
-      sourceChara.actionTime++;
-      actionAble = true;
-    }
+     
     // 不能对自身行动
     if (source == target) {
+      actionAble = false;
+    }
+    // 玩家死亡
+    if (sourceChara.isDead || targetChara.isDead) {
       actionAble = false;
     }
     // 行动可用
     if (actionAble) {
       // 行动点减少
-      if (source == langMap!['engine_4']) {
+      if (source == CharacterId.engine4.id) {
         damagePlayer(source, source, 24 * cost, DamageType.lost);
       }
       else {
@@ -1643,46 +1873,49 @@ class Game extends ChangeNotifier{
       }
 
       // 行动次数减少
-      sourceChara.actionTime--;
+      //sourceChara.actionTime--;
+      addAttribute(source, AttributeType.actiontime, -1);
 
       // 使用道具
-      addAttribute(source, AttributeType.card, -cards.length);
+      modifyCardCount(source, target, cards.length, CardEventType.play);
       for (int i = 0; i < cards.length; i++) {
         Map<String, dynamic> cardData = cardSettings[i].toJson();
         castCard(source, [target], cards[i], cardData);
       }
 
       // 状态【烛焱】
-      if (sourceChara.hasStatus(langMap!['lumen_flare']) && !sourceChara.hasHiddenStatus('rest')) {
-        sourceChara.increaseStatusData(langMap!['lumen_flare'], intData: 1);
+      if (sourceChara.hasStatus(StatusId.lumenFlare.id) && !sourceChara.hasHiddenStatus('rest')) {
+        sourceChara.increaseStatusData(StatusId.lumenFlare.id, intData: 1);
       }
       // 状态【磨砺】
-      if (sourceChara.hasStatus(langMap!['teroxis']) && !sourceChara.hasHiddenStatus('rest') 
-        && sourceChara.getStatusIntData(langMap!['teroxis'], StatusData.intensity) < 5) {
-        modifyStatusIntensity(source, source, langMap!['teroxis'], 1);
+      if (sourceChara.hasStatus(StatusId.teroxis.id) && !sourceChara.hasHiddenStatus('rest') 
+        && sourceChara.getStatusIntData(StatusId.teroxis.id, StatusData.intensity) < 5) {
+        modifyStatusIntensity(source, source, StatusId.teroxis.id, 1);
       }
 
       // 应用攻击特效
       // 特效【烛焱】
-      if (sourceChara.hasStatus(langMap!['lumen_flare'])) {
+      if (sourceChara.hasStatus(StatusId.lumenFlare.id)) {
         int lumenFlarePoint = cardsArgs['lumenFlarePoint'] as int? ?? 10;
-        if (sourceChara.getStatusIntData(langMap!['lumen_flare'], StatusData.intData) % 3 == 0 && lumenFlarePoint <= 8
+        throwDice(source, target, lumenFlarePoint, 10, DiceType.status);
+        if (sourceChara.getStatusIntData(StatusId.lumenFlare.id, StatusData.intData) % 3 == 0 && lumenFlarePoint <= 8
           || lumenFlarePoint <= 2) {
-          addStatus(source, target, langMap!['flaming'], 3, 1);
+          addStatus(source, target, StatusId.flaming.id, 3, 1);
         }
       }
 
       // 特效【反胃】
-      if (sourceChara.hasStatus(langMap!['nausea'])) {
+      if (sourceChara.hasStatus(StatusId.nausea.id)) {
         int nauseaPoint = cardsArgs['nauseaPoint'] as int? ?? 1;
+        throwDice(source, target, nauseaPoint, 6, DiceType.status);
         if ({2, 4, 6}.contains(nauseaPoint)) {
           addHiddenStatus(source, 'void', 0, 1);
         }
       }
 
       // 染序【五采】
-      if (source == langMap!['ran_xu']) {
-        castTrait(source, [target], langMap!['iridescent_hue'], {'cardList': cards});
+      if (source == CharacterId.ranXu.id && !sourceChara.hasHiddenStatus('rest')) {
+        castTrait(source, [target], TraitId.iridescentHue.id, {'cardList': cards});
       }
       for (int i = 0; i < sourceChara.getHiddenStatusIntData('color_yellow', StatusData.intensity); i++) {
         addAttribute(source, AttributeType.armor, sourceChara.health ~/ 10);
@@ -1691,10 +1924,10 @@ class Game extends ChangeNotifier{
         damagePlayer(source, target, targetChara.health ~/ 10, DamageType.physical);
       }
       for (int i = 0; i < sourceChara.getHiddenStatusIntData('color_black', StatusData.intensity); i++) {
-        addStatus(source, target, langMap!['frost'], 2, 2);
+        addStatus(source, target, StatusId.frost.id, 2, 2);
       }
       for (int i = 0; i < sourceChara.getHiddenStatusIntData('color_red', StatusData.intensity); i++) {
-        addStatus(source, target, langMap!['flaming'], 2, 2);
+        addStatus(source, target, StatusId.flaming.id, 2, 2);
       }
       for (int i = 0; i < sourceChara.getHiddenStatusIntData('color_green', StatusData.intensity); i++) {
         healPlayer(source, source, (sourceChara.maxHealth - sourceChara.health) ~/ 10, DamageType.heal);
@@ -1704,82 +1937,115 @@ class Game extends ChangeNotifier{
         addHiddenStatus(source, 'barrier', 0, -1);
       }
       if (sourceChara.hasHiddenStatus('kindle_white')) {
-        addStatus(source, target, langMap!['wounded'], 5, 2);
+        addStatus(source, target, StatusId.wounded.id, 5, 2);
       }
       if (sourceChara.hasHiddenStatus('kindle_black')) {
-        addStatus(source, target, langMap!['fragility'], 5, 2);
+        addStatus(source, target, StatusId.fragility.id, 5, 2);
       }
       if (sourceChara.hasHiddenStatus('kindle_red')) {
-        addStatus(source, target, langMap!['uneasiness'], 2, 2);
+        addStatus(source, target, StatusId.uneasiness.id, 2, 2);
       }
       if (sourceChara.hasHiddenStatus('kindle_green')) {
         addAttribute(source, AttributeType.maxhp, 150);
       }
+      // 观风【气象万千】
+      if (source == CharacterId.viento.id && sourceChara.hasHiddenStatus('weather')) {
+        if (!sourceChara.hasHiddenStatus('rest')) {
+          List<StatusRecord> statusRecords = _recordProvider!.getFilteredRecords(type: RecordType.status, target: target).cast<StatusRecord>();
+          String stat = statusRecords.lastWhere((e) => statusToType[e.name]!.buffType == BuffType.negative && e.changeType == StatusChange.add
+            && targetChara.hasStatus(e.name), orElse: () => StatusRecord(source: '', target: '', name: '', paramsOld: [], paramsNew: [], 
+            changeType: StatusChange.add, tag: '', turn: GameTurn(round: 1, turn: 1, extra: 0))).name;
+          if (stat != '') {
+            modifyStatusLayer(source, target, stat, sourceChara.getHiddenStatusIntData('cloud', StatusData.intensity));
+            if (statusToType[stat]!.hasIntensity) {
+              modifyStatusIntensity(source, target, stat, 2 * sourceChara.getHiddenStatusIntData('wind', StatusData.intensity));
+            }
+            else {
+              modifyStatusLayer(source, target, stat, sourceChara.getHiddenStatusIntData('wind', StatusData.intensity));
+            }
+            modifyHiddenStatusIntensity(source, 'wind', -sourceChara.getHiddenStatusIntData('wind', StatusData.intensity));
+            modifyHiddenStatusIntensity(source, 'cloud', -sourceChara.getHiddenStatusIntData('cloud', StatusData.intensity));
+          }
+        }
+        else {
+          List<StatusRecord> statusRecords = _recordProvider!.getFilteredRecords(type: RecordType.status, target: source).cast<StatusRecord>();
+          String stat = statusRecords.lastWhere((e) => statusToType[e.name]!.buffType == BuffType.positive && e.changeType == StatusChange.add
+            && sourceChara.hasStatus(e.name), orElse: () => StatusRecord(source: '', target: '', name: '', paramsOld: [], paramsNew: [], 
+            changeType: StatusChange.add, tag: '', turn: GameTurn(round: 1, turn: 1, extra: 0))).name;
+          if (stat != '') {
+            modifyStatusLayer(source, source, stat, sourceChara.getHiddenStatusIntData('cloud', StatusData.intensity));
+            if (statusToType[stat]!.hasIntensity) {
+              modifyStatusIntensity(source, source, stat, 2 * sourceChara.getHiddenStatusIntData('wind', StatusData.intensity));
+            }
+            else {
+              modifyStatusLayer(source, source, stat, sourceChara.getHiddenStatusIntData('wind', StatusData.intensity));
+            }
+            modifyHiddenStatusIntensity(source, 'wind', -sourceChara.getHiddenStatusIntData('wind', StatusData.intensity));
+            modifyHiddenStatusIntensity(source, 'cloud', -sourceChara.getHiddenStatusIntData('cloud', StatusData.intensity));
+          }
+        }
+      }
+      // 安提忒斯【冰与火之歌】
+      if (source == CharacterId.antithesis.id && sourceChara.hasHiddenStatus('ice_and_fire') 
+        &&!sourceChara.hasHiddenStatus('rest')) {
+        String status = sourceChara.getHiddenStatusStringData('ice_and_fire', StatusData.strData);
+        if (statusToType[status]!.hasIntensity) {
+          addStatus(source, target, status, 2 * sourceChara.getStatusIntData(status, StatusData.intensity), 
+          sourceChara.getStatusIntData(status, StatusData.layer));
+        }
+        else {
+          addStatus(source, target, status, 0, sourceChara.getStatusIntData(status, StatusData.layer));
+        }
+        removeStatus(source, source, status);
+      }
 
       // 应用防守特效
       // 特效【蚀凛】
-      if (targetChara.hasStatus(langMap!['erode_gelid'])) {
+      if (targetChara.hasStatus(StatusId.erodeGelid.id)) {
         int erodeGelidPoint = cardsArgs['erodeGelidPoint'] as int? ?? 1;
-        if (erodeGelidPoint >= 9 - 2 * targetChara.getStatusIntData(langMap!['erode_gelid'], StatusData.intData)) {
-          addStatus(target, source, langMap!['frost'], 2, 1);
-          targetChara.setStatusData(langMap!['erode_gelid'], intData: 0);
-        }
-        else {
-          targetChara.increaseStatusData(langMap!['erode_gelid'], intData: 1);
+        throwDice(source, target, erodeGelidPoint, 10, DiceType.status);
+        if (erodeGelidPoint >= 9 - 2 * targetChara.getStatusIntData(StatusId.erodeGelid.id, StatusData.intData)) {
+          addStatus(target, source, StatusId.frost.id, 2, 1);
+          targetChara.setStatusData(StatusId.erodeGelid.id, intData: 0);
+        } else {
+          targetChara.increaseStatusData(StatusId.erodeGelid.id, intData: 1);
         }
       }
 
       // 特质结算
       // 好好先生【见面礼】
-      if (source == langMap!['mr_nice'] && !sourceChara.hasHiddenStatus('rest')) {
-        castTrait(source, [target], langMap!['introductory_gift']);
+      if (source == CharacterId.mrNice.id && !sourceChara.hasHiddenStatus('rest')) {
+        castTrait(source, [target], TraitId.introductoryGift.id);
       }
       // 科亚特尔【拟造“伊甸园”】
-      else if (source == langMap!['quetzalcoatl'] && !sourceChara.hasHiddenStatus('sanctify')) {
+      else if (source == CharacterId.quetzalcoatl.id && !sourceChara.hasHiddenStatus('sanctify')) {
         attackMulti *= 1.5;
         removeHiddenStatus(source, 'sanctify');
       }
       // 阿波菲斯【毁灭暗影】
-      else if (source == langMap!['apophis'] && !sourceChara.hasHiddenStatus('rest')) {
-        castTrait(source, [target], langMap!['ruinous_shade'], {'type': 0});
+      else if (source == CharacterId.apophis.id && !sourceChara.hasHiddenStatus('rest')) {
+        castTrait(source, [target], TraitId.ruinousShade.id, {'type': 0});
       }
       // 红黎【红莲业火】
-      else if (source == langMap!['dimpsy'] && !sourceChara.hasHiddenStatus('rest')) {
-        castTrait(source, [target], langMap!['lotus_flame'], {'type': 0});
+      else if (source == CharacterId.dimpsy.id && !sourceChara.hasHiddenStatus('rest')) {
+        castTrait(source, [target], TraitId.lotusFlame.id, {'type': 0});
       }
       // 雷刚【决意的乌托邦】
-      else if (source == langMap!['lei_gang']) {
-        castTrait(source, [target], langMap!['utopia_of_resolve'], {'type': 1, 'cardList': cards});
-        castTrait(source, [target], langMap!['utopia_of_resolve'], {'type': 2, 'cardList': cards});
+      else if (source == CharacterId.leiGang.id) {
+        castTrait(source, [target], TraitId.utopiaOfResolve.id, {'type': 1, 'cardList': cards});
+        castTrait(source, [target], TraitId.utopiaOfResolve.id, {'type': 2, 'cardList': cards});
       }
       // 安山定【后发的乌托邦】
-      else if (source == langMap!['an_shanding'] && sourceChara.hasHiddenStatus('upspring')) {
+      else if (source == CharacterId.anShanding.id && sourceChara.hasHiddenStatus('upspring')) {
         removeHiddenStatus(source, 'upspring');
       }
       // 亭歆雨【彼岸之金】
-      else if (source == langMap!['ting_xinyu']) {
-        castTrait(source, [target], langMap!['aurelysium'], {'cardList': cards});
+      else if (source == CharacterId.tingXinyu.id) {
+        castTrait(source, [target], TraitId.aurelysium.id, {'cardList': cards});
       }
       // 翠灵【破土】
-      else if (source == langMap!['turbach']) {
-        /*String maxHpChara = '';
-        String maxSecondHpChara = '';
-        for (var player in gameSequence) {
-          Character chara = players[player]!;
-          if (chara.id == 'empty' || chara.id == langMap!['turbach'] || isTeammate(chara.id, langMap!['turbach'])) {continue;}
-          if (maxHpChara == '' || chara.health > players[maxHpChara]!.health) {
-            maxSecondHpChara = maxHpChara;
-            maxHpChara = chara.id;
-            continue;
-          }
-          if (maxSecondHpChara == '' || chara.health > players[maxSecondHpChara]!.health && 
-            chara.health <= players[maxHpChara]!.health) {
-            maxSecondHpChara = chara.id;
-          }
-        }
-        final targets = playerCount - playerDiedCount > 2 ? [maxHpChara, maxSecondHpChara] : [maxHpChara];
-        castTrait(source, targets, langMap!['earth_break'], {'cardList': cards});*/
-        final turbachId = langMap!['turbach'];
+      else if (source == CharacterId.turbach.id) {
+        final turbachId = CharacterId.turbach.id;
         var enemies = players.values.where((e) => e.id != 'empty' && isEnemy(e.id, turbachId) && !e.isDead).toList();
         enemies.sort((a, b) => b.health.compareTo(a.health));
         if (enemies.isNotEmpty) {
@@ -1787,61 +2053,79 @@ class Game extends ChangeNotifier{
           if (enemies.length > 1) {
             earthBreakTargets.add(enemies[1].id);
           }
-          castTrait(source, earthBreakTargets, langMap!['earth_break'], {'cardList': cards});
+          castTrait(source, earthBreakTargets, TraitId.earthBreak.id, {'cardList': cards});
         }
       }
       // 符楹【光暗双生】
-      else if (source == langMap!['fu_ying'] && !sourceChara.hasHiddenStatus('rest')) {
+      else if (source == CharacterId.fuYing.id && !sourceChara.hasHiddenStatus('rest')) {
         int geminiIntensity = sourceChara.getHiddenStatusIntData('gemini', StatusData.intensity) % 2;
-        castTrait(source, [target], langMap!['lumen_umbra_gemini'], {'type': geminiIntensity + 1});
+        castTrait(source, [target], TraitId.lumenUmbraGemini.id, {'type': geminiIntensity + 1});
       }
       // 祝烨诚【凛息】
-      else if (source == langMap!['zhu_yecheng'] && !sourceChara.hasHiddenStatus('rest')) {
-        castTrait(source, [target], langMap!['icy_stillness'], {'type': 0});
-        castTrait(source, [target], langMap!['icy_stillness'], {'type': 2, 'cardList': cards});
+      else if (source == CharacterId.zhuYecheng.id && !sourceChara.hasHiddenStatus('rest')) {
+        castTrait(source, [target], TraitId.icyStillness.id, {'type': 0});
+        castTrait(source, [target], TraitId.icyStillness.id, {'type': 2, 'cardList': cards});
       }
       // 焰心剑【陨光之刃】【山河剑意】
-      else if (source == langMap!['ember_blade']) {
+      else if (source == CharacterId.emberBlade.id) {
         if (!sourceChara.hasHiddenStatus('rest')) {
-          castTrait(source, [target], langMap!['lightfall_blade'], {'type': 0});
-          castTrait(source, [target], langMap!['lightfall_blade'], {'type': 1, 'cardList': cards});
+          castTrait(source, [target], TraitId.lightfallBlade.id, {'type': 0});
+          castTrait(source, [target], TraitId.lightfallBlade.id, {'type': 1, 'cardList': cards});
         }        
-        castTrait(source, [target], langMap!['lands_grace_swords_soul'], {'cardList': cards});
+        castTrait(source, [target], TraitId.landsGraceSwordsSoul.id, {'cardList': cards});
       }
       // 好好先生【深重情谊】
-      if (target == langMap!['mr_nice'] && !sourceChara.hasHiddenStatus('rest')){
-        castTrait(target, [source], langMap!['imposing_favor']);
+      if (target == CharacterId.mrNice.id && !sourceChara.hasHiddenStatus('rest')){
+        castTrait(target, [source], TraitId.imposingFavor.id);
       }
       // 奥赛罗【黑白棋】
-      if (isCharacterInGame(langMap!['othello'])) {
-        final othelloId = langMap!['othello'];
-        castTrait(othelloId, [source], langMap!['reversi'], {'type': 0});
+      if (isCharacterInGame(CharacterId.othello.id) && !sourceChara.hasHiddenStatus('rest')) {
+        final othelloId = CharacterId.othello.id;
+        castTrait(othelloId, [source], TraitId.reversi.id, {'type': 0});
+      }
+      // K97【二进制噪声】
+      if (sourceChara.hasHiddenStatus('binary')) {
+        removeHiddenStatus(source, 'binary');
       }
       
       // 状态结算
       // 阿波菲斯【毁灭暗影】
-      if (isCharacterInGame(langMap!['apophis']) && sourceChara.hasStatus(langMap!['nightmare']) 
+      if (isCharacterInGame(CharacterId.apophis.id) && sourceChara.hasStatus(StatusId.nightmare.id) 
         && sourceChara.getHiddenStatusIntData('night', StatusData.intensity) < 3) {
-        Character chara = players[langMap!['apophis']]!;
-        if (sourceChara.hasStatus(langMap!['eden'])) {
-          damagePlayer(chara.id, source, 20 + 40 * sourceChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity), DamageType.magical);
-          healPlayer(chara.id, chara.id, 10 + 20 * sourceChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity), DamageType.heal);
-        }
-        else { 
-          damagePlayer(chara.id, source, 10 + 20 * sourceChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity), DamageType.magical);
-          healPlayer(chara.id, chara.id, 5 + 10 * sourceChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity), DamageType.heal);
+        Character chara = players[CharacterId.apophis.id]!;
+        if (sourceChara.hasStatus(StatusId.eden.id)) {
+              damagePlayer(chara.id, source, 20 + 40 * sourceChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity), DamageType.magical);
+              healPlayer(chara.id, chara.id, 10 + 20 * sourceChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity), DamageType.heal);
+        } else { 
+          damagePlayer(chara.id, source, 10 + 20 * sourceChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity), DamageType.magical);
+          healPlayer(chara.id, chara.id, 5 + 10 * sourceChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity), DamageType.heal);
         }
         addHiddenStatus(source, 'night', 1, -1);
         addHiddenStatus(chara.id, 'night', 1, -1);
-        castTrait(chara.id, [source], langMap!['ruinous_shade'], {'type': 1});
+        castTrait(chara.id, [source], TraitId.ruinousShade.id, {'type': 1});
       }
       // 符楹【邪能侵袭】
-      if (sourceChara.hasStatus(langMap!['tenebrae'])) {
+      if (sourceChara.hasStatus(StatusId.tenebrae.id)) {
         damagePlayer(source, target, targetChara.maxHealth ~/ 20, DamageType.magical);
       }
 
       // 投掷骰子
-      point = throwDice(source, target, point, DiceType.action);
+      int maxPoint = sourceChara.getHiddenStatusIntData('dice_size', StatusData.intensity) == -1 ? 4 
+      : sourceChara.getHiddenStatusIntData('dice_size', StatusData.intensity);
+      // 云云子【晨昏寥落】
+      if (sourceChara.hasTrait(TraitId.duskVoid.id)) {
+        List<int> maxPointRef = [maxPoint];
+        castTrait(source, [source], TraitId.duskVoid.id, {'type': 1, 'maxPointRef': maxPointRef});
+        maxPoint = maxPointRef[0];
+      }
+
+      // π123【二进制成对】
+      if (sourceChara.hasTrait(TraitId.binaryDyad.id) && sourceChara.hasHiddenStatus('dyad')) {
+        point = throwDice(source, target, point, 2, DiceType.action);
+      } else {
+        point = throwDice(source, target, point, maxPoint, DiceType.action);
+      }
+      
 
       // 计算伤害
       // 道具【鼓舞】
@@ -1868,44 +2152,47 @@ class Game extends ChangeNotifier{
 
       // 特质结算
       // 岚【血灵斩】
-      if (source == langMap!['windflutter'] && sourceChara.hasHiddenStatus('hema') && sourceChara.actionTime == 1) {
+      if (sourceChara.hasTrait(TraitId.hemaSlash.id) && sourceChara.hasHiddenStatus('hema') && sourceChara.actionTime == 1) {
         addAttribute(source, AttributeType.attack, 15);
       }
       // 洛尔【毫无章法的进攻】
-      if (source == langMap!['lor']) {
-        castTrait(source, [target], langMap!['chaotic_strikes'], {'type': 0, 'point': point});
-        castTrait(source, [target], langMap!['chaotic_strikes'], {'type': 1, 'point': point});
+      if (source == CharacterId.lor.id) {
+        castTrait(source, [target], TraitId.chaoticStrikes.id, {'type': 0, 'point': point});
+        castTrait(source, [target], TraitId.chaoticStrikes.id, {'type': 1, 'point': point});
       }
 
       // 伤害结算
       if (!sourceChara.hasHiddenStatus('rest')) {
         // 云云子【晨昏寥落】
-        if (source == langMap!['yun']) {
+        if (sourceChara.hasTrait(TraitId.duskVoid.id)) {
           List<double> baseDamageRef = [baseDamage];
-          castTrait(source, [target], langMap!['dusk_void'], {'baseDamageRef': baseDamageRef, 'attack': (attack + attackPlus), 
-            'attackMulti': attackMulti, 'point': point});
+          List<DamageType> damageTypeRef = [DamageType.action];
+          castTrait(source, [target], TraitId.duskVoid.id, {'type': 0, 'baseDamageRef': baseDamageRef, 'attack': (attack + attackPlus), 
+            'attackMulti': attackMulti, 'point': point, 'damageTypeRef': damageTypeRef});
           baseDamage = baseDamageRef[0];
-          damagePlayer(source, target, baseDamage.toInt(), DamageType.lost);    
+          DamageType damageType = damageTypeRef[0];
+          damagePlayer(source, target, baseDamage.toInt(), damageType);    
         }
-        else if (sourceChara.hasHiddenStatus('critical')) {
+        if (sourceChara.hasHiddenStatus('critical')) {
           damagePlayer(source, target, baseDamage.toInt(), DamageType.lost);
         }
         else {
           damagePlayer(source, target, baseDamage.toInt(), DamageType.action);
         }
       }
-      /*else {
-        removeHiddenStatus(source, 'rest');
-      }*/
       // 记录行动
       _recordProvider!.addActionRecord(getGameTurn(), source, target, point, cards, !sourceChara.hasHiddenStatus('rest'));
       _gameLogger!.addActionLog(getGameTurn(), source, target, point, cards.toString(), 
-        'attack: $attack, defence: $defence, attackPlus: $attackPlus, defencePlus: $defencePlus, attackMulti: $attackMulti, defenceMulti: $defenceMulti, point: $point');
+        'attack: $attack, defence: $defence, attackPlus: $attackPlus, defencePlus: $defencePlus, attackMulti: $attackMulti, defenceMulti: $defenceMulti, point: $point, attacked: ${!sourceChara.hasHiddenStatus('rest')}');
+      removeHiddenStatus(source, 'rest');
+      refresh();
     }
+
+    return actionAble;
   }
 
   // 使用技能
-  void castSkill(String source, List<String> targets, String skill, [Map<String, dynamic>? args]){
+  bool castSkill(String source, List<String> targets, String skill, [Map<String, dynamic>? args]){
     bool skillAble = true;
     int movePointCost = 0;
     Character sourceChara = players[source]!;
@@ -1915,7 +2202,7 @@ class Game extends ChangeNotifier{
     Map<String, dynamic> skillData = args ?? {};
     // 技能发动条件
     // 仁慈
-    if (skill == langMap!['benevolence']) {
+    if (skill == SkillId.benevolence.id) {
       List<GameRecord> damageRecords = _recordProvider!.getFilteredRecords(type: RecordType.damage, source: source, 
         startTurn: getGameTurn(), endTurn: getGameTurn());
       if (damageRecords.isEmpty) {
@@ -1933,7 +2220,7 @@ class Game extends ChangeNotifier{
       }
     }
     // 相转移
-    else if (skill == langMap!['phase_transition']) {
+    else if (skill == SkillId.phaseTransition.id) {
       movePointCost = 2;
       List<GameRecord> damageRecords = _recordProvider!.getFilteredRecords(type: RecordType.damage, target: source, 
         startTurn: getGameTurn(), endTurn: getGameTurn());
@@ -1942,7 +2229,7 @@ class Game extends ChangeNotifier{
       }
     }
     // 阈限
-    else if (skill == langMap!['threshold']) {
+    else if (skill == SkillId.threshold.id) {
       List<GameRecord> damageRecords = _recordProvider!.getFilteredRecords(type: RecordType.damage, target: source, 
         startTurn: getGameTurn(), endTurn: getGameTurn());
       if (damageRecords.isEmpty) {
@@ -1960,7 +2247,7 @@ class Game extends ChangeNotifier{
       }
     }
     // 追击
-    else if (skill == langMap!['chase']) {
+    else if (skill == SkillId.chase.id) {
       List<GameRecord> actionRecords = _recordProvider!.getFilteredRecords(type: RecordType.action, source: source,
         target: target, startTurn: getGameTurn(), endTurn: getGameTurn());
       if (actionRecords.isEmpty) {
@@ -1971,43 +2258,43 @@ class Game extends ChangeNotifier{
       }
     }
     // 最后的希望
-    else if (skill == langMap!['finale_hope']) {
+    else if (skill == SkillId.finaleHope.id) {
       movePointCost = 2;
     }
     // 不死
-    else if (skill == langMap!['undying']) {
+    else if (skill == SkillId.undying.id) {
       if (sourceChara.health > 0) {
         skillAble = false;
       }
     }
     // 止杀
-    else if (skill == langMap!['kill_ceasing']) {
+    else if (skill == SkillId.killCeasing.id) {
       if (targetChara.damageDealtTurn < 200) {
         skillAble = false;
       }
     }
     // 镜像
-    else if (skill == langMap!['inversions']) {
+    else if (skill == SkillId.inversion.id) {
       movePointCost = 1;
     }
     // 奇点
-    else if (skill == langMap!['singularity']) {
+    else if (skill == SkillId.singularity.id) {
       movePointCost = 2;
     }
     // 瞬影
-    else if (skill == langMap!['flash_shade']) {
+    else if (skill == SkillId.flashShade.id) {
       movePointCost = 1;
     }
     // 侵蚀
-    else if (skill == langMap!['corrosion']) {
+    else if (skill == SkillId.corrosion.id) {
       movePointCost = 1;
     }
     // 逆转乾坤
-    else if (skill == langMap!['karma_reversal']) {
+    else if (skill == SkillId.karmaReversal.id) {
       movePointCost = 2;
     }
     // 黯星【屠杀】
-    else if (skill == langMap!['massacre']) {
+    else if (skill == SkillId.massacre.id) {
       List<GameRecord> damageRecords = _recordProvider!.getFilteredRecords(type: RecordType.damage, source: source, 
         startTurn: getGameTurn(), endTurn: getGameTurn());
       if (damageRecords.isEmpty) {
@@ -2025,25 +2312,25 @@ class Game extends ChangeNotifier{
       }
     }
     // 敏博士【异镜解构】
-    else if (skill == langMap!['deconstruction']) {
+    else if (skill == SkillId.deconstruction.id) {
       if (sourceChara.movePoint < 1) {
         skillAble = false;
       }
     }
     // 卿别【安魂乐章】
-    else if (skill == langMap!['requiem']) {
-      if (!targetChara.hasStatus(langMap!['dreaming'])) {
+    else if (skill == SkillId.requiem.id) {
+      if (!targetChara.hasStatus(StatusId.dreaming.id)) {
         skillAble = false;
       }
     }
     // 炎焕【赤焱炼狱】
-    else if (skill == langMap!['crimson_inferno']) {
+    else if (skill == SkillId.crimsonInferno.id) {
       if (targets.length > 3) {
         skillAble = false;
       }
     }
     // 斯威芬【造梦者】
-    else if (skill == langMap!['dream_weaver']) {
+    else if (skill == SkillId.dreamWeaver.id) {
       int point = skillData['point'];
       int dreamCount = sourceChara.getHiddenStatusIntData('dreaming', StatusData.intensity);
       if ((dreamCount + 1) ~/ 2 < point) {
@@ -2051,11 +2338,11 @@ class Game extends ChangeNotifier{
       }
     }
     // 红烬【封焰的135秒】
-    else if (skill == langMap!['sealed_flame_135_seconds']) {
+    else if (skill == SkillId.sealedFlame135Seconds.id) {
       int flamingLayer = 0;
       for (var chara in players.values) {
-        if (chara.hasStatus(langMap!['flaming'])) {
-          flamingLayer += chara.getStatusIntData(langMap!['flaming'], StatusData.layer);
+        if (chara.hasStatus(StatusId.flaming.id)) {
+          flamingLayer += chara.getStatusIntData(StatusId.flaming.id, StatusData.layer);
         }
       }
       if (flamingLayer < 6) {
@@ -2068,49 +2355,50 @@ class Game extends ChangeNotifier{
       }
     }
     // 好好先生【礼尚往来】
-    else if (skill == langMap!['give_and_take']) {
+    else if (skill == SkillId.giveAndTake.id) {
       if (!targetChara.hasHiddenStatus('intro_gift')) {
         skillAble = false;
       }      
     }
-    // 叶姬【须臾】
-    else if (skill == langMap!['emphemeral']) {
+    // 叶姬【永恒】
+    else if (skill == SkillId.eternity.id) {
       String status = skillData['status'];
-      if (status == '' || statusInfo![status][1] == 0) {
+      int point = skillData['point'];
+      if (status == '' || !statusToType[status]!.hasLayer || sourceChara.cardCount < point || point > 3) {
         skillAble = false;
       }
     }
     // 科亚特尔【天启之庭】
-    else if (skill == langMap!['apocalyptic_court']) {
+    else if (skill == SkillId.apocalypticCourt.id) {
       if (targets.length > 3) {
         skillAble = false;
       }
     }
     // 祝烨明【八寒之七】
-    else if (skill == langMap!['seventh_frost']) {
+    else if (skill == SkillId.seventhFrost.id) {
       String status = skillData['status'];
       if (status == '') {
         skillAble = false;
       }
     }
     // 方塔索【入梦之手】
-    else if (skill == langMap!['dream_grasp']) {
+    else if (skill == SkillId.dreamGrasp.id) {
       if (gameSequence.length - targets.length > 3) {
         skillAble = false;
       }
     }
     // 颜若卿【补给】
-    else if (skill == langMap!['replenishment']) {
+    else if (skill == SkillId.replenishment.id) {
       if (sourceChara.health < 250 || sourceChara.cardCount < 1) {
         skillAble = false;
       }
     }
     // 白谢【冰灭的135小节】
-    else if (skill == langMap!['icy_oblivion_135_bars']) {
+    else if (skill == SkillId.icyOblivion135Bars.id) {
       int frostLayer = 0;
       for (var chara in players.values) {
-        if (chara.hasStatus(langMap!['frost'])) {
-          frostLayer += chara.getStatusIntData(langMap!['frost'], StatusData.layer);
+        if (chara.hasStatus(StatusId.frost.id)) {
+          frostLayer += chara.getStatusIntData(StatusId.frost.id, StatusData.layer);
         }
       }
       if (sourceChara.health < 100 * targets.length - frostLayer * 50) {
@@ -2120,13 +2408,13 @@ class Game extends ChangeNotifier{
         skillAble = false;
       }
     }
-    else if (skill == langMap!['frost_shatter']) {
+    else if (skill == SkillId.frostShatter.id) {
       if (targets.length > 2 || targets.isEmpty) {
         skillAble = false;
       }
     }
     // 符楹【秩序结界】
-    else if (skill == langMap!['order_aegis']) {
+    else if (skill == SkillId.orderAegis.id) {
       if (sourceChara.getHiddenStatusIntData('gemini', StatusData.intensity) % 2 != 0) {
         skillAble = false;
       }
@@ -2135,40 +2423,61 @@ class Game extends ChangeNotifier{
       }
     }
     // 符楹【邪能侵袭】
-    else if (skill == langMap!['chaos_incursion']) {
+    else if (skill == SkillId.chaosIncursion.id) {
       if (sourceChara.getHiddenStatusIntData('gemini', StatusData.intensity) % 2 != 1) {
         skillAble = false;
       }
     }
+    // 埃诺雅【溯洄】
+    else if (skill == SkillId.anabasis.id) {
+      movePointCost = 1;
+    }
+    // 蓝文曦【去伪存真】
+    else if (skill == SkillId.veritasNonFalsitas.id) {
+      int point = skillData['point'];
+      if (point > 4 || point < 1) {
+        skillAble = false;
+      }
+    }
     // 状态【混乱】【冰封】【梦境】【星牢】【造梦】
-    if (sourceChara.hasStatus(langMap!['confusion']) || sourceChara.hasStatus(langMap!['frozen']) || 
-          sourceChara.hasStatus(langMap!['dreaming']) || sourceChara.hasStatus(langMap!['stellar_cage']) ||
-          sourceChara.hasStatus(langMap!['dream_crafting'])){
+    if (sourceChara.hasStatus(StatusId.confusion.id) || sourceChara.hasStatus(StatusId.frozen.id) || 
+          sourceChara.hasStatus(StatusId.dreaming.id) || sourceChara.hasStatus(StatusId.stellarCage.id) ||
+          sourceChara.hasStatus(StatusId.dreamCrafting.id)){
       skillAble = false;
     }
     // 技能【净化】
-    if (skill == langMap!['purification']) {
+    if (skill == SkillId.purification.id) {
       skillAble = true;
     }
     // 冷却未转好
     if (sourceChara.skill.keys.contains(skill)){
-      if (sourceChara.skill[skill]! > 0){
+      if (sourceChara.skill[skill]!.cooldown > 0){
         skillAble = false;
       }
     }
     // 唐菁延【盈光】
-    if (source == langMap!['tang_jingyan']) {
+    if (source == CharacterId.tangJingyan.id) {
       List<int> costRef = [movePointCost];
-      castTrait(source, [source], langMap!['radiant_fullness'], {'costRef': costRef});
+      castTrait(source, [source], TraitId.radiantFullness.id, {'costRef': costRef});
       movePointCost = costRef[0];
     }
     // 卡拉卡【友情防守】
-    if (isCharacterInGame(langMap!['karak'])) {
-      if (isEnemy(source, langMap!['karak']) && isTeammate(target, langMap!['karak'])) {
+    if (isCharacterInGame(CharacterId.karak.id)) {
+      if (isEnemy(source, CharacterId.karak.id) && isTeammate(target, CharacterId.karak.id)) {
         List<int> costRef = [movePointCost];
-        castTrait(langMap!['karak'], [source], langMap!['buddy_block'], {'type': 0, 'costRef': costRef});
+        castTrait(CharacterId.karak.id, [source], TraitId.buddyBlock.id, {'type': 0, 'costRef': costRef});
         movePointCost = costRef[0];
       }
+    }
+    // 司库【裁虚留要】
+    if (sourceChara.hasTrait(TraitId.essenceOverIllusion.id)) {
+      List<int> costRef = [movePointCost];
+      List<bool> skillAbleRef = [skillAble];
+      final int cooldown = skillToType[skill]!.cooldown;
+      castTrait(source, [source], TraitId.essenceOverIllusion.id, {'cooldown': cooldown, 'costRef': costRef, 'skillAbleRef': skillAbleRef});
+      skillAble = skillAbleRef[0];
+      movePointCost = costRef[0];
+      modifySkillCooldown(source, source, skill, skillToType[skill]!.cooldown);
     }
     // 长霾【律令·禁空】
     if (sourceChara.hasHiddenStatus('non_flying')) {
@@ -2185,22 +2494,22 @@ class Game extends ChangeNotifier{
     // 沉默
     if (skillAble) {
       if (sourceChara.hasHiddenStatus('reticence')){
-        sourceChara.skill[skill] = skillCooldown![skill];
+        modifySkillCooldown(source, source, skill, skillToType[skill]!.cooldown);
         skillAble = false;
       }
     }
     // 玩家死亡
-    if (sourceChara.isDead) {
+    if (sourceChara.isDead || targetChara.isDead) {
       skillAble = false;
     }
     // 技能可用
     if (skillAble) {
       addAttribute(source, AttributeType.movepoint, -movePointCost);
       // 仁慈
-      if (skill == langMap!['benevolence']) {
+      if (skill == SkillId.benevolence.id) {
         int type = skillData['type'];
-        if (type == 1) {
-          addAttribute(source, AttributeType.card, 2);
+        if (type == 1) {          
+          modifyCardCount(source, target, 2, CardEventType.draw);
         }
         else {
           healPlayer(source, source, sourceChara.maxHealth ~/ 5, DamageType.heal);
@@ -2224,7 +2533,7 @@ class Game extends ChangeNotifier{
         addAttribute(source, AttributeType.dmgdealt, -maxDamage);
       }
       // 相转移
-      else if (skill == langMap!['phase_transition']) {
+      else if (skill == SkillId.phaseTransition.id) {
         Map<String, int> damageDealer = {};
         List<DamageRecord> damageRecords = _recordProvider!.getFilteredRecords(type: RecordType.damage, target: source, 
           startTurn: getGameTurn(), endTurn: getGameTurn()).cast<DamageRecord>();
@@ -2245,7 +2554,7 @@ class Game extends ChangeNotifier{
         }
       }
       // 天国邮递员
-      else if (skill == langMap!['heaven_delivery']) {
+      else if (skill == SkillId.heavenDelivery.id) {
         addHiddenStatus(target, 'heaven', 0, 1);
         addHiddenStatus(source, 'heaven', 0, 1);
         if (sourceChara.hasHiddenStatus('heaven')) {
@@ -2255,29 +2564,30 @@ class Game extends ChangeNotifier{
         }        
       }
       // 净化
-      else if (skill == langMap!['purification']) {
+      else if (skill == SkillId.purification.id) {
         List<dynamic> statusKeys = targetChara.status.keys.toList();
         for (var stat in statusKeys) {
           removeStatus(source, target, stat);
         }
       }
       // 嗜血
-      else if (skill == langMap!['blood_thirst']) {
+      else if (skill == SkillId.bloodThirst.id) {
         healPlayer(source, source, sourceChara.damageDealtTurn ~/ 2, DamageType.heal);
       }
       // 外星人
-      else if (skill == langMap!['stellar']) {
-        addStatus(source,target, langMap!['stellar_cage'], 0, 1);
+      else if (skill == SkillId.stellar.id) {
+        addStatus(source, target, StatusId.stellarCage.id, 0, 1);
       }
       // 恐吓
-      else if (skill == langMap!['intimidation']) {
+      else if (skill == SkillId.intimidation.id) {
         int point = skillData['point'];
+        throwDice(source, source, point, 6, DiceType.skill);
         if ({3, 6}.contains(point)) {
           addHiddenStatus(source, 'intimidation', 0, 1);
         }
       }
       // 阈限
-      else if (skill == langMap!['threshold']) {
+      else if (skill == SkillId.threshold.id) {
         List<DamageRecord> damageRecords = _recordProvider!.getFilteredRecords(type: RecordType.damage, target: source, 
           startTurn: getGameTurn(), endTurn: getGameTurn()).cast<DamageRecord>();
         int maxDamage = 0;
@@ -2299,78 +2609,71 @@ class Game extends ChangeNotifier{
         addAttribute(maxDmgSource, AttributeType.dmgdealt, -maxDamage);
       }
       // 强化
-      else if (skill == langMap!['reinforcement']) {
+      else if (skill == SkillId.reinforcement.id) {
         addHiddenStatus(source, 'reinforcement', 0, 1);
       }
       // 追击
-      else if (skill == langMap!['chase']) {
+      else if (skill == SkillId.chase.id) {
         addHiddenStatus(source, 'extra', 0, 1);
         addHiddenStatus(source, 'chase', 0, 1);
         addHiddenStatus(target, 'chased', 0, 1);
       }
       // 沉默
-      else if (skill == langMap!['reticence']) {
+      else if (skill == SkillId.reticence.id) {
         addHiddenStatus(target, 'reticence', 0, 1);
       }
       // 奉献
-      else if (skill == langMap!['devotion']) {
+      else if (skill == SkillId.devotion.id) {
         int point = skillData['point'];
         damagePlayer('empty', source, 100 * point, DamageType.lost);
         healPlayer(source, target, 100 * point, DamageType.heal);
-        if (point >= 2) {
-          addAttribute(source, AttributeType.card, point - 1);
+        if (point >= 2) {          
+          modifyCardCount(source, target, point - 1, CardEventType.draw);
         }
       }
       // 屏障
-      else if (skill == langMap!['barrier']) {
+      else if (skill == SkillId.barrier.id) {
         addAttribute(source, AttributeType.armor, 150);
         addHiddenStatus(source, 'barrier', 0, -1);
       }
       // 镭射
-      else if (skill == langMap!['laser']) {
+      else if (skill == SkillId.laser.id) {
         damagePlayer(source, target, 60, DamageType.physical);
-        addStatus(source, target, langMap!['fragility'], 2, 1);
+        addStatus(source, target, StatusId.fragility.id, 2, 1);
       }
       // 不死
-      else if (skill == langMap!['undying']) {
+      else if (skill == SkillId.undying.id) {
         sourceChara.isDead = false;
         healPlayer(source, source, 200 - sourceChara.health, DamageType.revive);
         addAttribute(source, AttributeType.armor, 400);
         addHiddenStatus(source, 'undying', 0, 2);
       }
       // 止杀
-      else if (skill == langMap!['kill_ceasing']) {
-        if (targetChara.cardCount > 2) {
-          addAttribute(target, AttributeType.card, -2);
-          addAttribute(source, AttributeType.card, 2);
-        }
-        else {
-          addAttribute(source, AttributeType.card, targetChara.cardCount);
-          addAttribute(target, AttributeType.card, -targetChara.cardCount);
-        }
-        addStatus(source, target, langMap!['exhausted'], 1, 1);
+      else if (skill == SkillId.killCeasing.id) {
+        modifyCardCount(source, target, 2, CardEventType.grab);
+        addStatus(source, target, StatusId.exhausted.id, 1, 1);
       }
       // 灵能注入
-      else if (skill == langMap!['psionia']) {
+      else if (skill == SkillId.psionia.id) {
         damagePlayer('empty', source, 75, DamageType.lost);
       }
       // 镜像
-      else if (skill == langMap!['inversion']) {
-        addStatus(source, target, langMap!['mirror'], 0, 3);
+      else if (skill == SkillId.inversion.id) {
+        addStatus(source, target, StatusId.mirror.id, 0, 3);
         addHiddenStatus(target, 'mirror', 0, 3);
         modifyHiddenStatusIntensity(target, 'mirror', targetChara.damageReceivedTotal);
       }
       // 分裂
-      else if (skill == langMap!['fission']) {
+      else if (skill == SkillId.fission.id) {
         addHiddenStatus(source, 'fission', 0, 1);
         addHiddenStatus(target, 'fission_target', 0, 1);
       }
       // 透支
-      else if (skill == langMap!['overdraw']) {
-        addStatus(source, source, langMap!['burn_out'], 5, 1);
+      else if (skill == SkillId.overdraw.id) {
+        addStatus(source, source, StatusId.burnOut.id, 5, 1);
       }
       // 挑唆
-      else if (skill == langMap!['instigation']) {
+      else if (skill == SkillId.instigation.id) {
         Map<String, int> points = skillData['points'];
         Map<String, int> isInstigated = skillData['isInstigated'];
         for (var chara in players.values) {
@@ -2392,69 +2695,64 @@ class Game extends ChangeNotifier{
         }
       }
       // 开阳
-      else if (skill == langMap!['mizar']) {
-        addAttribute(source, AttributeType.card, 1);
+      else if (skill == SkillId.mizar.id) {        
+        modifyCardCount(source, target, 1, CardEventType.gain);
       }
       // 太阴
-      else if (skill == langMap!['lunar']) {
-        if (targetChara.cardCount < 2) {
-          addAttribute(target, AttributeType.card, -targetChara.cardCount);
-        }
-        else {
-          addAttribute(target, AttributeType.card, -2);
-        }
+      else if (skill == SkillId.lunar.id) {
+        modifyCardCount(source, target, 2, CardEventType.discard);
       }
       // 博览
-      else if (skill == langMap!['perusing']) {
-        addAttribute(source, AttributeType.card, 1);
+      else if (skill == SkillId.perusing.id) {        
+        modifyCardCount(source, target, 1, CardEventType.gain);
       }
       // 反重力
-      else if (skill == langMap!['anti_gravity']) {
+      else if (skill == SkillId.antiGravity.id) {
         countdown.antiGravity++;
       }
       // 奇点
-      else if (skill == langMap!['singularity']) {
+      else if (skill == SkillId.singularity.id) {
         damagePlayer('empty', target, 300, DamageType.lost);
       }
       // 魂怨
-      else if (skill == langMap!['soul_rancor']) {
+      else if (skill == SkillId.soulRancor.id) {
         for (var charaId in targets) {
           damagePlayer(source, charaId, 50, DamageType.physical, isAOE: true);
         }
       }
       // 瞬影
-      else if (skill == langMap!['flash_shade']) {
+      else if (skill == SkillId.flashShade.id) {
         addHiddenStatus(source, 'extra', 0, 1);
       }
       // 侵蚀
-      else if (skill == langMap!['corrosion']) {
-        addStatus(source, target, langMap!['corroded'], 3, 1);
+      else if (skill == SkillId.corrosion.id) {
+        addStatus(source, target, StatusId.corroded.id, 3, 1);
       }
       // 逆转乾坤
-      else if (skill == langMap!['karma_reversal']) {
+      else if (skill == SkillId.karmaReversal.id) {
         int tempHp = sourceChara.health;
         int tempMp = sourceChara.movePoint;
         int tempCard = sourceChara.cardCount;
         addAttribute(source, AttributeType.health, targetChara.health - sourceChara.health);
-        addAttribute(source, AttributeType.movepoint, targetChara.movePoint - sourceChara.movePoint);
-        addAttribute(source, AttributeType.card, targetChara.cardCount - sourceChara.cardCount);
+        addAttribute(source, AttributeType.movepoint, targetChara.movePoint - sourceChara.movePoint);        
+        modifyCardCount(source, target, targetChara.cardCount, CardEventType.grab);
         addAttribute(target, AttributeType.health, tempHp - targetChara.health);
-        addAttribute(target, AttributeType.movepoint, tempMp - targetChara.movePoint);
-        addAttribute(target, AttributeType.card, tempCard - targetChara.cardCount);
+        addAttribute(target, AttributeType.movepoint, tempMp - targetChara.movePoint);        
+        modifyCardCount(target, source, tempCard, CardEventType.grab);
       }
       // 极速
-      else if (skill == langMap!['velocity']) {
+      else if (skill == SkillId.velocity.id) {
         addHiddenStatus(source, 'velocity', 0, 1);
       }
       // 空袭
-      else if (skill == langMap!['airstrike']) {
+      else if (skill == SkillId.airstrike.id) {
         damagePlayer(source, target, 100, DamageType.physical);
         if (target == source || isTeammate(source, target)) {
-          addAttribute(target, AttributeType.card, 2);
+          modifyCardCount(target, source, 2, CardEventType.draw);
         }
       }
       // 黯星【屠杀】
-      else if (skill == langMap!['massacre']) {
+      else if (skill == SkillId.massacre.id) {
         addAttribute(source, AttributeType.attack, 10);
         healPlayer(source, source, 100, DamageType.heal);
         if (extra == 0) {
@@ -2462,65 +2760,65 @@ class Game extends ChangeNotifier{
         }
       }
       // 恋慕【氤氲】
-      else if (skill == langMap!['nebula_field']) {
-        addStatus(source, target, langMap!['nebula'], 1, 2);
+      else if (skill == SkillId.nebulaField.id) {
+        addStatus(source, target, StatusId.nebula.id, 1, 2);
       }
       // 卿别【安魂乐章】
-      else if (skill == langMap!['requiem']) {
+      else if (skill == SkillId.requiem.id) {
         addHiddenStatus(target, 'requiem', 0, 2);
       }
       // 时雨【冰芒】
-      else if (skill == langMap!['ice_splinter']) {
+      else if (skill == SkillId.iceSplinter.id) {
         damagePlayer(source, target, 80, DamageType.magical);
-        modifyStatusLayer(source, target, langMap!['frost'], 1);
-        modifyStatusIntensity(source, target, langMap!['frost'], 3);
+        modifyStatusLayer(source, target, StatusId.frost.id, 1);
+        modifyStatusIntensity(source, target, StatusId.frost.id, 3);
       }
       // 敏博士【异镜解构】
-      else if (skill == langMap!['deconstruction']) {
-        addAttribute(source, AttributeType.card, 1);
+      else if (skill == SkillId.deconstruction.id) {        
+        modifyCardCount(source, target, 1, CardEventType.gain);
       }
       // 炎焕【赤焱炼狱】
-      else if (skill == langMap!['crimson_inferno']) {
+      else if (skill == SkillId.crimsonInferno.id) {
         for (var tar in targets) {
-          addStatus(source, tar, langMap!['flaming'], 5, 1);
+          addStatus(source, tar, StatusId.flaming.id, 5, 1);
         }
       }
       // 斯威芬【造梦者】
-      else if (skill == langMap!['dream_weaver']) {
+      else if (skill == SkillId.dreamWeaver.id) {
         int point = skillData['point'];
         sourceChara.increaseHiddenStatusData('dreaming', intensity: -(2 * point - 1));
         if (point == 1) {
           addHiddenStatus(source, 'dream_weave', 0, 1);
         }
-        else if (point == 2) {
-          addAttribute(source, AttributeType.card, 1);
+        else if (point == 2) {          
+          modifyCardCount(source, target, 1, CardEventType.gain);
         }
         else {
           addHiddenStatus(source, 'dream_force', 0, 2);
           for (var chara in players.values) {
             if (isEnemy(source, chara.id)) {
-              addStatus(source, chara.id, langMap!['dreaming'], 0, 1);
+              addStatus(source, chara.id, StatusId.dreaming.id, 0, 1);
             }
           }
         }
       }
       // 红烬【封焰的135秒】
-      else if (skill == langMap!['sealed_flame_135_seconds']) {
+      else if (skill == SkillId.sealedFlame135Seconds.id) {
         List<DamageRecord> damageRecords = _recordProvider!.getFilteredRecords(type: RecordType.damage, source: source, 
           startTurn: getGameTurn(), endTurn: getGameTurn()).cast<DamageRecord>();
         DamageRecord damageRecord = damageRecords.firstWhere((e) => e.damageType == DamageType.action);
         for (var tar in targets) {
           damagePlayer(source, tar, (3 * damageRecord.damage) ~/ 2, DamageType.lost, isAOE: true);
-          removeStatus(source, tar, langMap!['flaming']);
+          removeStatus(source, tar, StatusId.flaming.id);
         }
       }
       // 余梦得【护梦者】
-      else if (skill == langMap!['dream_keeper']) {
-        addStatus(source,target, langMap!['slowness'], 1, 1);
-        addStatus(source, target, langMap!['weakness'], 2, 1);
+      else if (skill == SkillId.dreamKeeper.id) {
+        addStatus(source, target, StatusId.slowness.id, 1, 1);
+        addStatus(source, target, StatusId.weakness.id, 2, 1);
       }
       // 好好先生【礼尚往来】
-      else if (skill == langMap!['give_and_take']) {
+      else if (skill == SkillId.giveAndTake.id) {
         int damageReceivedLastRound = 0;
         List<DamageRecord> damageRecords = _recordProvider!.getFilteredRecords(type: RecordType.damage, target: source, 
           startTurn: GameTurn(round: round - 1, turn: 1, extra: 0), 
@@ -2531,54 +2829,57 @@ class Game extends ChangeNotifier{
         damagePlayer(source, target, damageReceivedLastRound ~/ 2, DamageType.magical);
         healPlayer(source, source, damageReceivedLastRound ~/ 2, DamageType.heal);
       }
-      // 叶姬【须臾】
-      else if (skill == langMap!['ephemeral']) {
+      // 叶姬【永恒】
+      else if (skill == SkillId.eternity.id) {
         String status = skillData['status'];
-        targetChara.setStatusData(status, intensity: targetChara.getStatusIntData(status, StatusData.intensity) * targetChara.getStatusIntData(status, StatusData.layer), layer: 1);        
+        int point = skillData['point'];
+        modifyStatusLayer(source, target, status, point);        
+        modifyCardCount(source, target, point, CardEventType.discard);
       }
       // 太夕【谜渊漩涡】
-      else if (skill == langMap!['abyssal_whirl']) {
+      else if (skill == SkillId.abyssalWhirl.id) {
         addHiddenStatus(source, 'abyss', 0, 1);
         addHiddenStatus(target, 'taunt', 0, 1);
       }
       // 科亚特尔【天启之庭】
-      else if (skill == langMap!['apocalyptic_court']) {
+      else if (skill == SkillId.apocalypticCourt.id) {
         int point = skillData['point'];
+        throwDice(source, source, point, 4, DiceType.skill);
         for (String tar in targets) {
-          addStatus(source, tar, langMap!['eden'], point, 2);
+          addStatus(source, tar, StatusId.eden.id, point, 2);
         }
       }
       // 祝烨明【八寒之七】
-      else if (skill == langMap!['seventh_frost']) {
+      else if (skill == SkillId.seventhFrost.id) {
         int point = skillData['point'];
         String status = skillData['status'];
         if (point >= targetChara.getStatusIntData(status, StatusData.layer)) {
-          addStatus(source, target, langMap!['moisturize'], 0, targetChara.getStatusIntData(status, StatusData.layer));
+          addStatus(source, target, StatusId.moisturize.id, 0, targetChara.getStatusIntData(status, StatusData.layer));
           removeStatus(source, target, status);
         }
         else {
-          addStatus(source, target, langMap!['moisturize'], 0, point);
+          addStatus(source, target, StatusId.moisturize.id, 0, point);
           targetChara.setStatusData(status, layer: targetChara.getStatusIntData(status, StatusData.layer) - point);
         }
         damagePlayer('empty', source, 50 * point, DamageType.magical);
       }
       // 方塔索【入梦之手】
-      else if (skill == langMap!['dream_grasp']) {
+      else if (skill == SkillId.dreamGrasp.id) {
         for (var tar in targets) {
-          addStatus(source, tar, langMap!['dreaming'], 0, 1);
+          addStatus(source, tar, StatusId.dreaming.id, 0, 1);
         }
       }
       // 龙宇澈【牺牲】
-      else if (skill == langMap!['sacrifice']) {
+      else if (skill == SkillId.sacrifice.id) {
         addHiddenStatus(source, 'sacrifice', sourceChara.getHiddenStatusIntData('light_elf', StatusData.intensity), 2);        
         sourceChara.setHiddenStatusData('light_elf', intensity: 0);
       }
       // 祝言夙【灵魂震荡】
-      else if (skill == langMap!['soul_tremor']) {
+      else if (skill == SkillId.soulTremor.id) {
         addHiddenStatus(target, 'soul_tremor', 0, 1);
       }
       // 雷刚【斩神】
-      else if (skill == langMap!['deicide']) {
+      else if (skill == SkillId.deicide.id) {
         damagePlayer('empty', source, sourceChara.health ~/ 5, DamageType.lost);
         addAttribute(source, AttributeType.armor, sourceChara.maxHealth ~/ 10);
         if (sourceChara.health > 300) {
@@ -2589,27 +2890,27 @@ class Game extends ChangeNotifier{
         }
       }
       // 颜若卿【补给】
-      else if (skill == langMap!['replenishment']) {
-        addAttribute(source, AttributeType.card, -1);
-        addAttribute(target, AttributeType.card, 2);
+      else if (skill == SkillId.replenishment.id) {
+        modifyCardCount(source, target, 1, CardEventType.draw);
+        modifyCardCount(source, target, 2, CardEventType.give);
         damagePlayer('empty', source, 250, DamageType.lost);
         healPlayer(source, target, 250, DamageType.heal);
       }
       // 白谢【冰灭的135小节】
-      else if (skill == langMap!['icy_oblivion_135_bars']) {
+      else if (skill == SkillId.icyOblivion135Bars.id) {
         int frostLayer = 0;
         for (var chara in players.values) {
-          if (chara.hasStatus(langMap!['frost'])) {
-            frostLayer += chara.getStatusIntData(langMap!['frost'], StatusData.layer);
+          if (chara.hasStatus(StatusId.frost.id)) {
+            frostLayer += chara.getStatusIntData(StatusId.frost.id, StatusData.layer);
           }
         }
         damagePlayer('empty', source, 100 * targets.length - 50 * frostLayer, DamageType.lost);
         for (var tar in targets) {
-          addStatus(source, tar, langMap!['frozen'], 0, 1);
+          addStatus(source, tar, StatusId.frozen.id, 0, 1);
         }
       }
       // 沈姝华【奉献之爱】
-      else if (skill == langMap!['sacrificial_love']) {
+      else if (skill == SkillId.sacrificialLove.id) {
         for (var tar in targets) {
           addAttribute(tar, AttributeType.armor, 50);
           if (isTeammate(tar, source) || tar == source) {
@@ -2618,65 +2919,65 @@ class Game extends ChangeNotifier{
         }
       }
       // 符楹【秩序结界】
-      else if (skill == langMap!['order_aegis']) {
+      else if (skill == SkillId.orderAegis.id) {
         for (var tar in targets) {
           damagePlayer(source, tar, 40, DamageType.magical, isAOE: true);
           healPlayer(source, source, 40, DamageType.heal);
         }
-        addStatus(source, source, langMap!['luminance'], 0, 1);
+        addStatus(source, source, StatusId.luminance.id, 0, 1);
       }
       // 符楹【邪能侵袭】
-      else if (skill == langMap!['chaos_incursion']) {
+      else if (skill == SkillId.chaosIncursion.id) {
         damagePlayer(source, target, 100, DamageType.magical);
-        addStatus(source, source, langMap!['tenebrae'], 0, 1);
+        addStatus(source, source, StatusId.tenebrae.id, 0, 1);
       }
       // 祝烨诚【裁冰裂霜】
-      else if (skill == langMap!['frost_shatter']) {
+      else if (skill == SkillId.frostShatter.id) {
         for (var tar in targets) {
           var tarChara = players[tar]!;
-          int frostLayer = !tarChara.hasStatus(langMap!['frost']) ? 0 : tarChara.getStatusIntData(langMap!['frost'], StatusData.layer);
-          int frozenLayer = !tarChara.hasStatus(langMap!['frozen']) ? 0 : tarChara.getStatusIntData(langMap!['frozen'], StatusData.layer);
-          int damage = 75 + 10 * frostLayer * tarChara.getStatusIntData(langMap!['frost'], StatusData.intensity)
+          int frostLayer = !tarChara.hasStatus(StatusId.frost.id) ? 0 : tarChara.getStatusIntData(StatusId.frost.id, StatusData.layer);
+          int frozenLayer = !tarChara.hasStatus(StatusId.frozen.id) ? 0 : tarChara.getStatusIntData(StatusId.frozen.id, StatusData.layer);
+          int damage = 75 + 10 * frostLayer * tarChara.getStatusIntData(StatusId.frost.id, StatusData.intensity)
             + 30 * frozenLayer;
           damagePlayer(source, tar, damage, DamageType.physical, isAOE: true);
-          addStatus(source, tar, langMap!['dissociated'], 10, 1);
+          addStatus(source, tar, StatusId.dissociated.id, 10, 1);
         }
       }
       // 蓝文策【三仙归洞】
-      else if (skill == langMap!['three_immortals_return']) { 
+      else if (skill == SkillId.threeImmortalsReturn.id) { 
         int type = skillData['type'];
-        if (type == 0) {
-          addAttribute(target, AttributeType.card, -2);
+        if (type == 0) {          
+          modifyCardCount(source, target, 2, CardEventType.discard);
           addAttribute(target, AttributeType.movepoint, 2);
         }
-        else if (type == 1) {
-          addAttribute(target, AttributeType.card, 2);
+        else if (type == 1) {          
+          modifyCardCount(target, target, 2, CardEventType.draw);
           addAttribute(target, AttributeType.movepoint, -2);
         }
       }
       // 染序【点睛】
-      else if (skill == langMap!['kindle_eye']) {
+      else if (skill == SkillId.kindleEye.id) {
         addHiddenStatus(source, 'kindle', 2, 0);
       }
       // 卡拉卡【木头羊】
-      else if (skill == langMap!['timber_sheep']) {
+      else if (skill == SkillId.timberSheep.id) {
         int point = skillData['point'];
         addAttribute(source, AttributeType.movepoint, point);
       }
       // 守塔人【怒海引路】
-      else if (skill == langMap!['rage_pilot']) {
-        modifyStatusLayer(source, target, langMap!['regeneration'], 1);
-        modifyStatusIntensity(source, target, langMap!['regeneration'], 3);
+      else if (skill == SkillId.ragePilot.id) {
+        modifyStatusLayer(source, target, StatusId.regeneration.id, 1);
+        modifyStatusIntensity(source, target, StatusId.regeneration.id, 3);
       }
       // 曙光【不可动摇的守护】
-      else if (skill == langMap!['unwavering_guard']) {
+      else if (skill == SkillId.unwaveringGuard.id) {
         addAttribute(source, AttributeType.defence, 5);
         if (sourceChara.health < 400) {
-          addStatus(source, source, langMap!['shelter'], 4, 1);
+          addStatus(source, source, StatusId.shelter.id, 4, 1);
         }
       }
       // 奥赛罗【余裕手】
-      else if (skill == langMap!['spare_move']) {
+      else if (skill == SkillId.spareMove.id) {
         int whitePieceCount = 0;
         for (var chara in players.values) {
           if (chara.hasHiddenStatus('white_piece') && chara.id != 'empty' && !chara.isDead) {
@@ -2686,37 +2987,82 @@ class Game extends ChangeNotifier{
         }
         addAttribute(source, AttributeType.armor, 5 * whitePieceCount);
       }
+      // 埃诺雅【溯洄】
+      else if (skill == SkillId.anabasis.id) {
+        final int type = skillData['type'];
+        final int point = skillData['point'];
+        final String card = skillData['card'];
+        final CardSetting settings = skillData['settings'];
+        final int actionId = skillData['actionId'];
+        if (type == 0) {
+          damagePlayer(source, target, point ~/ 2, DamageType.physical);
+          castCard(source, [target], card, settings.toJson());
+        }
+        else {
+          String mirrorCard = '';
+          if (mirrorCards[0].contains(card)) {
+            mirrorCard = mirrorCards[1][mirrorCards[0].indexOf(card)];
+          }
+          else if (mirrorCards[1].contains(card)) {
+            mirrorCard = mirrorCards[0][mirrorCards[1].indexOf(card)];
+          }
+          healPlayer(source, target, point ~/ 4, DamageType.heal);
+          if (card != '') {
+            castCard(source, [target], mirrorCard);
+          }
+        }
+        removeHiddenStatus(source, 'action_$actionId');
+        modifyHiddenStatusIntensity(source, 'horologe', -(1 << actionId));
+      }
+      // 蓝文曦【去伪存真】
+      else if (skill == SkillId.veritasNonFalsitas.id) {
+        int type = skillData['type'];
+        int point = skillData['point'];
+        if (type == 0) {
+          damagePlayer(source, source, 50 * point, DamageType.lost);
+          modifyCardCount(source, source, point, CardEventType.draw);
+        }
+        else {
+          healPlayer(source, source, 50 * point, DamageType.heal);
+          modifyCardCount(source, source, point, CardEventType.discard);
+        }
+      }
 
       // 技能进入CD
-      sourceChara.skill[skill] = skillCooldown![skill];
+      modifySkillCooldown(source, source, skill, skillToType[skill]!.cooldown);
+      // 叶姬【永恒】
+      if (skill == SkillId.eternity.id) {
+        int point = skillData['point'];
+        modifySkillCooldown(source, source, skill, point + 1);        
+      }
       // 斯威芬【造梦者】
-      if (skill == langMap!['dream_weaver']) {
+      if (skill == SkillId.dreamWeaver.id) {
         int point = skillData['point'];
         if (point == 2) {
-          sourceChara.skill[skill] = sourceChara.skill[skill]! + 4;
+          modifySkillCooldown(source, source, skill, 4);
         }
         else if (point == 3) {
-          sourceChara.skill[skill] = sourceChara.skill[skill]! + 8;
+          modifySkillCooldown(source, source, skill, 8);
         }
       }
       // 雷刚【斩神】
-      else if (skill == langMap!['deicide']) {
+      else if (skill == SkillId.deicide.id) {
         if (sourceChara.health < 300) {
-          sourceChara.skill[skill] = sourceChara.skill[skill]! + 4;
+          modifySkillCooldown(source, source, skill, 4);
         }
       }
       // 卡拉卡【木头羊】
-      else if (skill == langMap!['timber_sheep']) {
+      else if (skill == SkillId.timberSheep.id) {
         int point = skillData['point'];
-        sourceChara.skill[skill] = sourceChara.skill[skill]! + point + 1;
-      }
+        modifySkillCooldown(source, source, skill, point + 1);
+      }      
 
       // 道具结算
       // 失乐园
       for (var chara in players.values) {
         if (chara.hasHiddenStatus('eden') && chara.id != 'empty' && isEnemy(source, chara.id)) {
           int edenIntensity = chara.getHiddenStatusIntData('eden', StatusData.intensity) % 2 + 1;
-          addStatus(chara.id, source, langMap!['fragility'], 2 * edenIntensity, 1);
+          addStatus(chara.id, source, StatusId.fragility.id, 2 * edenIntensity, 1);
           chara.setHiddenStatusData('eden', intensity: chara.getHiddenStatusIntData('eden', StatusData.intensity) ~/ 2);
           if (chara.getHiddenStatusIntData('eden', StatusData.intensity) <= 1) {
             removeHiddenStatus(chara.id, 'eden');
@@ -2726,56 +3072,59 @@ class Game extends ChangeNotifier{
 
       // 特质结算
       // 妮卡欧【不倦的观测者】
-      if (source == langMap!['neko']) {
-        castTrait(source, [source], langMap!['tireless_observer'], {'skill': skill});
+      if (sourceChara.hasTrait(TraitId.tirelessObserver.id)) {
+        castTrait(source, [source], TraitId.tirelessObserver.id, {'skill': skill});
       }
       // 唐菁延【延光】
-      else if (source == langMap!['tang_jingyan']) {
+      else if (source == CharacterId.tangJingyan.id) {
         if (isEnemy(source, target)) {
-          castTrait(source, [target], langMap!['lingering_light'], {'type': 0, 'cooldown': sourceChara.skill[skill]});
+          castTrait(source, [target], TraitId.lingeringLight.id, {'type': 0, 'cooldown': sourceChara.skill[skill]});
         }
         else {
           var lingeringLightTargets = players.values.where((e) => (e.id == source || isTeammate(e.id, source)) 
             && !e.isDead && e.id != 'empty').map((e) => e.id).toList();
-          castTrait(source, lingeringLightTargets, langMap!['lingering_light'], {'type': 1, 'cooldown': sourceChara.skill[skill]});
+          castTrait(source, lingeringLightTargets, TraitId.lingeringLight.id, {'type': 1, 'cooldown': sourceChara.skill[skill]});
         }
       }
       // 好好先生【见面礼】
-      else if (sourceChara.hasStatus(langMap!['gift'])) {
+      else if (sourceChara.hasStatus(StatusId.gift.id)) {
         damagePlayer('empty', source, 2 * sourceChara.attack, DamageType.magical);
-        addStatus(langMap!['mr_nice'], source, langMap!['confusion'], 0, 2);
-        removeStatus(langMap!['mr_nice'], source, langMap!['gift']);
+        addStatus(CharacterId.mrNice.id, source, StatusId.confusion.id, 0, 2);
+        removeStatus(CharacterId.mrNice.id, source, StatusId.gift.id);
       }
       // 阿波菲斯【毁灭暗影】
-      if (isCharacterInGame(langMap!['apophis']) && sourceChara.hasStatus(langMap!['nightmare']) 
+      if (isCharacterInGame(CharacterId.apophis.id) && sourceChara.hasStatus(StatusId.nightmare.id) 
         && sourceChara.getHiddenStatusIntData('night', StatusData.intensity) < 3) {
-        Character chara = players[langMap!['apophis']]!;
-        if (sourceChara.hasStatus(langMap!['eden'])) {
-          damagePlayer(chara.id, source, 20 + 40 * sourceChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity), DamageType.magical);
-          healPlayer(chara.id, chara.id, 10 + 20 * sourceChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity), DamageType.heal);
+        Character chara = players[CharacterId.apophis.id]!;
+        if (sourceChara.hasStatus(StatusId.eden.id)) {
+          damagePlayer(chara.id, source, 20 + 40 * sourceChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity), DamageType.magical);
+          healPlayer(chara.id, chara.id, 10 + 20 * sourceChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity), DamageType.heal);
         }
         else { 
-          damagePlayer(chara.id, source, 10 + 20 * sourceChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity), DamageType.magical);
-          healPlayer(chara.id, chara.id, 5 + 10 * sourceChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity), DamageType.heal);
+          damagePlayer(chara.id, source, 10 + 20 * sourceChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity), DamageType.magical);
+          healPlayer(chara.id, chara.id, 5 + 10 * sourceChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity), DamageType.heal);
         }
         addHiddenStatus(source, 'night', 1, -1);
         addHiddenStatus(chara.id, 'night', 1, -1);
-        castTrait(chara.id, [source], langMap!['ruinous_shade'], {'type': 1});
+        castTrait(chara.id, [source], TraitId.ruinousShade.id, {'type': 1});
       }
 
       // 唐亚德【清心的乌托邦】
-      if (source == langMap!['tang_yade']) {
-        castTrait(source, [source], langMap!['utopia_of_clarity'], {'type': 0});
+      if (source == CharacterId.tangYade.id) {
+        castTrait(source, [source], TraitId.utopiaOfClarity.id, {'type': 0});
       }
       
       // 记录技能
       _recordProvider!.addSkillRecord(getGameTurn(), source, targets, skill, skillData);
       _gameLogger!.addSkillLog(getGameTurn(), source, targets.toString(), skill, skillData.toString());
+      refresh();
     }
+
+    return skillAble;
   }
 
   // 使用特质
-  void castTrait(String source, List<String> targets, String trait, [Map<String, dynamic>? args]){
+  bool castTrait(String source, List<String> targets, String trait, [Map<String, dynamic>? args]){
     bool traitAble = true;
     int movePointCost = 0;
     Character sourceChara = players[source]!;
@@ -2783,52 +3132,99 @@ class Game extends ChangeNotifier{
     String target = targetCharaList.isEmpty ? '' : targetCharaList.first.id;
     Character targetChara = targetCharaList.isEmpty ? emptyCharacter : targetCharaList.first;
     Map<String, dynamic> traitData = args ?? {};
+    // 特质不属于玩家
+    if (!sourceChara.hasTrait(trait)) {
+      return false;
+    }
+
     // 特质触发条件
     // 茵竹【自勉】
-    if (trait == langMap!['self_encouragement']) {
+    if (trait == TraitId.selfEncouragement.id) {
       int type = traitData['type'];      
       if (type == 0 && (sourceChara.health > sourceChara.maxHealth * 0.5 || sourceChara.health < 0 
       || sourceChara.hasHiddenStatus('encouragement'))){
         traitAble = false;
       }
+      else if (type == 1) {
+        String status = traitData['status'];
+        if (status != StatusId.dissociated.id) {
+          traitAble = false;
+        }
+      }
     }
-    // 黯星【决心】
-    else if (trait == langMap!['resolution']) {
-      if (sourceChara.health > 0) {
+    // 星尘【幸运壁垒】
+    else if (trait == TraitId.luckyShield.id) {
+      DamageType damageType = traitData['dmgType'];
+      if (!{DamageType.action, DamageType.physical}.contains(damageType)) {
         traitAble = false;
       }
     }
+    // 黯星【决心】
+    else if (trait == TraitId.resolution.id) {
+      if (sourceChara.health > 0) {
+        traitAble = false;
+      }
+    }    
     // 岚【天魔体】
-    else if (trait == langMap!['demonic_avatar']) {
-      if (sourceChara.health > sourceChara.maxHealth * 0.5) {
+    else if (trait == TraitId.demonicAvatar.id) {
+      DamageType damageType = traitData['dmgType'];
+      if (sourceChara.health > sourceChara.maxHealth * 0.5 || damageType != DamageType.action) {
         traitAble = false;
       }
     }
     // 岚【血灵斩】
-    else if (trait == langMap!['hema_slash']) {
+    else if (trait == TraitId.hemaSlash.id) {
       movePointCost = 1;
       if (sourceChara.cardCount < 1) {
         traitAble = false;
       }
     }
-    // K97【二进制】
-    else if (trait == langMap!['binary']) {
+    // 恋慕【勿忘我】
+    else if (trait == TraitId.dontForgetMe.id) {
       int type = traitData['type'];
-      if (type == 0 && sourceChara.health < 100) {
+      if (type == 0) {
+        DamageType damageType = traitData['dmgType'];
+        if (damageType != DamageType.action) {
+          traitAble = false;
+        }
+      }
+      else if (type == 1) {
+        DamageType damageType = traitData['dmgType'];
+        if (!{DamageType.action, DamageType.physical, DamageType.magical}.contains(damageType)) {
+          traitAble = false;
+        }
+      }
+      else if (type == 2) {
+        if (sourceChara.health > 0 || round > 1) {
+          traitAble = false;
+        }
+      }
+    }
+    // K97【二进制噪声】
+    else if (trait == TraitId.binary.id) {
+      int type = traitData['type'];
+      if (type == 0 && sourceChara.health < 1) {
         traitAble = false;
       }
-      else if (type == 2 && sourceChara.armor <= 0) {
+      else if (type == 1 && sourceChara.armor <= 0) {
         traitAble = false;
+      }
+      else if (type == 2) {
+        int armor = traitData['armor'];
+        // int attValue = traitData['attValue'];
+        if (armor != 0) {
+          traitAble = false;
+        }        
       }
     }
     // 安德宁【回旋曲】
-    else if (trait == langMap!['rondo']) {
+    else if (trait == TraitId.rondo.id) {
       if (sourceChara.damageDealtTurn > 150) {
         traitAble = false;
       }
     }
     // 扶风【大预言】
-    else if (trait == langMap!['grand_prophecy']) {
+    else if (trait == TraitId.grandProphecy.id) {
       int type = traitData['type'];
       if (type == 1) {
         movePointCost = 1;
@@ -2838,11 +3234,11 @@ class Game extends ChangeNotifier{
       }
     }
     // 星凝【祝愿】
-    else if (trait == langMap!['blessing']) {
+    else if (trait == TraitId.blessing.id) {
       movePointCost = 1;
     }
     // 时雨【天霜封印】
-    else if (trait == langMap!['arctic_seal']) {
+    else if (trait == TraitId.arcticSeal.id) {
       List<GameRecord> damageRecords =  _recordProvider!.getFilteredRecords(type: RecordType.damage, target: target, 
         startTurn: getPreviousGameTurn(), endTurn: getGameTurn());
       traitAble = false;
@@ -2854,20 +3250,20 @@ class Game extends ChangeNotifier{
       }
     }
     // 赐弥【在云端】
-    else if (trait == langMap!['upon_the_clouds']) {
+    else if (trait == TraitId.uponTheClouds.id) {
       if (sourceChara.health > 0 || sourceChara.hasHiddenStatus('cloud')) {
         traitAble = false;
       }
     }
     // 舸灯【引渡】
-    else if (trait == langMap!['ghost_ferry']) {
+    else if (trait == TraitId.ghostFerry.id) {
       int type = traitData['type'];
       if (type == 1) {
         movePointCost = 2;
       }
     }
     // 长霾【律令】
-    else if (trait == langMap!['decree']) {
+    else if (trait == TraitId.decree.id) {
       movePointCost = 1;
       List<TraitRecord> traitRecords =  _recordProvider!.getFilteredRecords(type: RecordType.trait, source: source,
         target: target, startTurn: GameTurn(round: 1, turn: 1, extra: 0), endTurn: getGameTurn()).cast<TraitRecord>();
@@ -2884,7 +3280,7 @@ class Game extends ChangeNotifier{
       }
     }
     // 卿别【夜魇游吟】
-    else if (trait == langMap!['nightmare_refrain']) {
+    else if (trait == TraitId.nightmareRefrain.id) {
       int type = traitData['type'];
       if (type == 0) {
         movePointCost = 1;
@@ -2899,7 +3295,7 @@ class Game extends ChangeNotifier{
       }
     }
     // 云津【云系祝乐】
-    else if (trait == langMap!['celestial_joy']) {
+    else if (trait == TraitId.celestialJoy.id) {
       int type = traitData['type'];
       if (type == 0) {
         if (!sourceChara.hasHiddenStatus('celestial')) {
@@ -2917,50 +3313,38 @@ class Game extends ChangeNotifier{
       }
     }
     // 炎焕【心炎】
-    else if (trait == langMap!['cardio_blaze']) {
+    else if (trait == TraitId.cardioBlaze.id) {
       movePointCost = 1;
     }
     // 樊求【游侠】
-    else if (trait == langMap!['ranger']) {
-      int type = traitData['type'];
-      if (type == 0) {
+    else if (trait == TraitId.ranger.id) {
+      int type = traitData['type'];      
+      if (type == 1 && (sourceChara.hasHiddenStatus('ranger_used') || 
+      sourceChara.getHiddenStatusIntData('ranger', StatusData.intensity) < 3)) {
         traitAble = false;
-        if (!sourceChara.hasHiddenStatus('ranger_def')) {
-          for (var chara in players.values) {
-            if (gameType == GameType.team && isTeammate(source, chara.id) && !chara.isDead) {
-              traitAble = true;
-              break;
-            }
-          }
-        }
       }
-      else {        
-        if (!sourceChara.hasHiddenStatus('ranger_atk')) {
-          traitAble = true;
-          for (var chara in players.values) {
-            if (gameType == GameType.team && isTeammate(source, chara.id) && !chara.isDead) {
-              traitAble = false;
-              break;
-            }
-          }
-        }
+    }
+    // 樊求【精准】
+    else if (trait == TraitId.precision.id) {
+      if (!targetChara.hasHiddenStatus('power_attack') || isEnemy(source, target)) {
+        traitAble = false;
       }
     }
     // 斯威芬【梦的塑造】
-    else if (trait == langMap!['crafting_of_dreams']) {
+    else if (trait == TraitId.craftingOfDreams.id) {
       int type = traitData['type'];
       if (type == 0) {
         movePointCost = 2;
-        if (sourceChara.hasStatus(langMap!['dream_crafting'])) {
+        if (sourceChara.hasStatus(StatusId.dreamCrafting.id)) {
           traitAble = false;
         }
       }
-      else if ((type == 1 || type == 2) && !sourceChara.hasStatus(langMap!['dream_crafting'])) {        
+      else if ((type == 1 || type == 2) && !sourceChara.hasStatus(StatusId.dreamCrafting.id)) {        
         traitAble = false;
       }
     }
     // 红烬【烈焰之体】
-    else if (trait == langMap!['conflagration_avatar']) {
+    else if (trait == TraitId.conflagrationAvatar.id) {
       int type = traitData['type'];
       if (type == 1) {
         List<GameRecord> actionRecords = _recordProvider!.getFilteredRecords(type: RecordType.action, source: source,
@@ -2978,7 +3362,7 @@ class Game extends ChangeNotifier{
       }
     }
     // 余梦得【梦的守护】
-    else if (trait == langMap!['guardian_of_dreams']) {
+    else if (trait == TraitId.guardianOfDreams.id) {
       int type = traitData['type'];
       if (type == 0) {
         List<ActionRecord> actionRecords = _recordProvider!.getFilteredRecords(type: RecordType.action, source: source,
@@ -2991,7 +3375,7 @@ class Game extends ChangeNotifier{
         }
       }
       else if (type == 1) {
-        if (!sourceChara.hasStatus(langMap!['dream_guarding'])) {
+        if (!sourceChara.hasStatus(StatusId.dreamGuarding.id)) {
           traitAble = false;
         }
       }
@@ -3017,30 +3401,27 @@ class Game extends ChangeNotifier{
       }
     }
     // 好好先生【见面礼】
-    else if (trait == langMap!['introductory_gift']) {
+    else if (trait == TraitId.introductoryGift.id) {
       if (targetChara.hasHiddenStatus('intro_gift')) {
         traitAble = false;
       }
     }
     // 好好先生【深重情谊】
-    else if (trait == langMap!['imposing_favor']) {
+    else if (trait == TraitId.imposingFavor.id) {
       if (playerCount - playerDiedCount <= 2) {
         traitAble = false;
       }
     }
-    // 叶姬【永恒】
-    else if (trait == langMap!['eternity']) {
-      int point = traitData['point'];
-      if (point > 0) {
-        movePointCost = point - 1;
-      }
-      String status = traitData['status'];
-      if (status == '' || statusInfo![status][1] == 0) {
+    // 叶姬【须臾】
+    else if (trait == TraitId.ephemeral.id) {
+      movePointCost = 1;
+      String status = traitData['status'];      
+      if (status == '' || !statusToType[status]!.hasIntensity || !statusToType[status]!.hasLayer) {
         traitAble = false;
       }
     }
     // 太夕【黯灭】
-    else if (trait == langMap!['dark_dissolution']) {
+    else if (trait == TraitId.darkDissolution.id) {
       int type = traitData['type'];
       if (type == 0) {
         movePointCost = 1;
@@ -3052,26 +3433,26 @@ class Game extends ChangeNotifier{
       }
     }
     // 太夕【吞噬之锁】
-    else if (trait == langMap!['devouring_lock']) {
+    else if (trait == TraitId.devouringLock.id) {
       if (sourceChara.getHiddenStatusIntData('dark', StatusData.intensity) < 2){
         traitAble = false;
       }
     }
     // 科亚特尔【拟造“伊甸园”】
-    else if (trait == langMap!['artificial_eden']) {
+    else if (trait == TraitId.artificialEden.id) {
       if (sourceChara.damageDealtTurn > 0) {
         traitAble = false;
       }
     }
     // 科亚特尔【善恶天平】
-    else if (trait == langMap!['balance_of_light_and_shadow']) {
+    else if (trait == TraitId.balanceOfLightAndShadow.id) {
       traitAble = false;
-      if (sourceChara.hasStatus(langMap!['eden']) && sourceChara.hasStatus(langMap!['nightmare'])) {
+      if (sourceChara.hasStatus(StatusId.eden.id) && sourceChara.hasStatus(StatusId.nightmare.id)) {
         traitAble = true;
       }
     }
     // 蒙德里安【禁忌知识】
-    else if (trait == langMap!['taboo_lore']) {
+    else if (trait == TraitId.tabooLore.id) {
       int type = traitData['type'];
       if ({1, 2}.contains(type)) {
         if (sourceChara.getHiddenStatusIntData('forbidden', StatusData.intensity) < 1) {
@@ -3080,40 +3461,40 @@ class Game extends ChangeNotifier{
       }  
     }
     // 阿波菲斯【永夜无终】
-    else if (trait == langMap!['endless_night']) {
+    else if (trait == TraitId.endlessNight.id) {
       if (sourceChara.getHiddenStatusIntData('night', StatusData.intensity) < 9) {
         traitAble = false;
       }
     }
     // 红黎【红莲业火】
-    else if (trait == langMap!['lotus_flame']) {
+    else if (trait == TraitId.lotusFlame.id) {
       int type = traitData['type'];
-      if (type == 1 && !targetChara.hasStatus(langMap!['flaming'])) {        
+      if (type == 1 && !targetChara.hasStatus(StatusId.flaming.id)) {        
         traitAble = false;        
       }      
     }
     // 红黎【冰火相融】
-    else if (trait == langMap!['ice_fire_fusion']) {
-      if (targetChara.hasStatus(langMap!['flaming'])) {
+    else if (trait == TraitId.iceFireFusion.id) {
+      if (targetChara.hasStatus(StatusId.flaming.id)) {
         traitAble = false;
       }
     }
     // 祝烨明【八裂】
-    else if (trait == langMap!['cryo_fissuring']) {
+    else if (trait == TraitId.cryoFissuring.id) {
       int type = traitData['type'];
-      if (type == 0 && !targetChara.hasStatus(langMap!['moisturize'])) {
+      if (type == 0 && !targetChara.hasStatus(StatusId.moisturize.id)) {
         traitAble = false;
       }
     }
     // 方塔索【神游】
-    else if (trait == langMap!['astral_projection']) {
+    else if (trait == TraitId.astralProjection.id) {
       int type = traitData['type'];
-      if (type == 0 && !sourceChara.hasStatus(langMap!['dreaming'])) {
+      if (type == 0 && !sourceChara.hasStatus(StatusId.dreaming.id)) {
         traitAble = false;        
       }
     }
     // 龙宇澈【光耀】
-    else if (trait == langMap!['radiance']) {
+    else if (trait == TraitId.radiance.id) {
       int type = traitData['type'];
       if (type == 0) {
         if (sourceChara.cardCount < 1) {
@@ -3130,21 +3511,27 @@ class Game extends ChangeNotifier{
           traitAble = false;
         }
       }
+      else if (type == 2) {
+        DamageType damageType = traitData['dmgType'];
+        if (!{DamageType.physical, DamageType.magical}.contains(damageType)) {
+          traitAble = false;
+        }        
+      }
     }
     // 龙宇澈【燃魂】
-    else if (trait == langMap!['soul_burning']) {
+    else if (trait == TraitId.soulBurning.id) {
       if (sourceChara.hasHiddenStatus('soul_burning')) {
         traitAble = false;
       }
     }
     // 祝言夙【精神干扰】
-    else if (trait == langMap!['mental_disruption']) {
+    else if (trait == TraitId.mentalDisruption.id) {
       if (!{1, gameSequence.length - 1}.contains((gameSequence.indexOf(source) - gameSequence.indexOf(target)) % gameSequence.length)) {
         traitAble = false;
       }
     }
     // 唐亚德【清心的乌托邦】
-    else if (trait == langMap!['utopia_of_clarity']) {
+    else if (trait == TraitId.utopiaOfClarity.id) {
       int type = traitData['type'];
       if (type == 1) {
         if (!sourceChara.hasHiddenStatus('clarity')) {
@@ -3156,7 +3543,7 @@ class Game extends ChangeNotifier{
       }     
     }
     // 雷刚【决意的乌托邦】
-    else if (trait == langMap!['utopia_of_resolve']) {
+    else if (trait == TraitId.utopiaOfResolve.id) {
       int type = traitData['type'];
       if (type == 0 && (sourceChara.health > 300 || sourceChara.hasHiddenStatus('resolve'))) {
         traitAble = false;
@@ -3165,8 +3552,8 @@ class Game extends ChangeNotifier{
         List<String> cardList = traitData['cardList'];
         traitAble = false;
         for (String card in cardList) {
-          List<String> tagList = tagData![card];
-          if (tagList.contains(langMap!['vital'])){
+          List<String> tagList = cardTags[card]!;
+          if (tagList.contains(TagId.vital.id)){
             traitAble = true;
             break;
           }
@@ -3174,20 +3561,20 @@ class Game extends ChangeNotifier{
       }
     }
     // 陆风【追猎的乌托邦】
-    else if (trait == langMap!['utopia_of_celerity']) {
+    else if (trait == TraitId.utopiaOfCelerity.id) {
       int type = traitData['type'];
-      if (type == 0 && (sourceChara.cardCount < 1 || targetChara.hasStatus(langMap!['prey']))) {
+      if (type == 0 && (sourceChara.cardCount < 1 || targetChara.hasStatus(StatusId.prey.id))) {
         traitAble = false;
       }
-      else if (type == 1 && !targetChara.hasStatus(langMap!['prey'])) {
+      else if (type == 1 && !targetChara.hasStatus(StatusId.prey.id)) {
         traitAble = false;
       }
-      else if (type == 2 && !targetChara.hasStatus(langMap!['prey'])) {
+      else if (type == 2 && !targetChara.hasStatus(StatusId.prey.id)) {
         traitAble = false;
       }
     }
     // 安山定【后发的乌托邦】
-    else if (trait == langMap!['utopia_of_upspring']) {
+    else if (trait == TraitId.utopiaOfUpspring.id) {
       int type = traitData['type'];
       if (type == 0) { 
         List<ActionRecord> actionRecords =  _recordProvider!.getFilteredRecords(type: RecordType.action, source: source,
@@ -3205,14 +3592,14 @@ class Game extends ChangeNotifier{
       }
     }
     // 颜若卿【调和的乌托邦】
-    else if (trait == langMap!['utopia_of_concord']) {
+    else if (trait == TraitId.utopiaOfConcord.id) {
       int type = traitData['type'];
       if (type == 1) {
         traitAble = false;
         List<String> cardList = traitData['cardList'];
         for (String card in cardList) {
-          if ({langMap!['filching'], langMap!['regenerating'], langMap!['curing'], langMap!['aurora_concussion'],
-            langMap!['pandora_box'], langMap!['homology'], langMap!['invisibility_spell']}.contains(card)) {
+          if ({CardId.filching.id, CardId.regenerating.id, CardId.curing.id, CardId.auroraConcussion.id,
+            CardId.pandoraBox.id, CardId.homology.id, CardId.invisibilitySpell.id}.contains(card)) {
             traitAble = true;
             break;
           }
@@ -3226,7 +3613,7 @@ class Game extends ChangeNotifier{
       }      
     }
     // 白谢【极寒环域】
-    else if (trait == langMap!['glacial_circle']) {
+    else if (trait == TraitId.glacialCircle.id) {
       int type = traitData['type'];
       if (type == 0) {
         List<DamageRecord> damageRecords =  _recordProvider!.getFilteredRecords(type: RecordType.damage, target: source,
@@ -3237,7 +3624,7 @@ class Game extends ChangeNotifier{
       }
     }
     // 沈姝华【纯洁之爱】
-    else if (trait == langMap!['innocent_love']) {
+    else if (trait == TraitId.innocentLove.id) {
       int type = traitData['type'];
       if (type == 0) {
         List<String> cardList = traitData['cardList'];
@@ -3247,7 +3634,7 @@ class Game extends ChangeNotifier{
       }
     }
     // 翠灵【生息】
-    else if (trait == langMap!['life_breath']) {
+    else if (trait == TraitId.lifeBreath.id) {
       int type = traitData['type'];
       if (type == 0) {
         if (sourceChara.damageReceivedRound <= 300) {
@@ -3261,7 +3648,7 @@ class Game extends ChangeNotifier{
       }
     }
     // 湍云【屏息】
-    else if (trait == langMap!['hold_breath']) {
+    else if (trait == TraitId.holdBreath.id) {
       int type = traitData['type'];
       if (type == 0 && (sourceChara.damageDealtRound >= 120 || sourceChara.damageDealtRound <= 0)) {
         traitAble = false;        
@@ -3284,7 +3671,7 @@ class Game extends ChangeNotifier{
       }
     }
     // 湍云【惊弓】
-    else if (trait == langMap!['gun_shy']) {
+    else if (trait == TraitId.gunShy.id) {
       int type = traitData['type'];
       if (type == 0 && sourceChara.damageDealtRound < 300) {
         traitAble = false;
@@ -3294,13 +3681,13 @@ class Game extends ChangeNotifier{
       }
     }
     // ReFre-3【<06>自卫协议】
-    else if (trait == langMap!['defensive_protocol']) {
+    else if (trait == TraitId.defensiveProtocol.id) {
       if (sourceChara.getHiddenStatusIntData('protocol', StatusData.intensity) >= 1) {
         traitAble = false;
       }
     }
     // 洛尔【不断燃烧的愤怒】
-    else if (trait == langMap!['smoldering_rage']) {
+    else if (trait == TraitId.smolderingRage.id) {
       int type = traitData['type'];
       int rageIntensity = sourceChara.getHiddenStatusIntData('rage', StatusData.intensity) == -1 
         ? 0 : sourceChara.getHiddenStatusIntData('rage', StatusData.intensity);
@@ -3309,7 +3696,7 @@ class Game extends ChangeNotifier{
       }
     }
     // 洛尔【毫无章法的进攻】
-    else if (trait == langMap!['chaotic_strikes']) {
+    else if (trait == TraitId.chaoticStrikes.id) {
       int type = traitData['type'];
       int point = traitData['point'];
       if (type == 0 && point > 2) {
@@ -3320,45 +3707,45 @@ class Game extends ChangeNotifier{
       }
     }
     // 奥菲莉娅【控水】
-    else if (trait == langMap!['hydromancy']) {
+    else if (trait == TraitId.hydromancy.id) {
       int type = traitData['type'];
       if (type == 0) {
         movePointCost = 1;
-        if (targetChara.hasStatus(langMap!['submerged'])) {
+        if (targetChara.hasStatus(StatusId.submerged.id)) {
           traitAble = false;
         }
       }
       else if (type == 1) {
         movePointCost = 1;
-        if (targetChara.hasStatus(langMap!['dehydration'])) {
+        if (targetChara.hasStatus(StatusId.dehydration.id)) {
           traitAble = false;
         }
       }
     }
     // 奥菲莉娅【水之刑】
-    else if (trait == langMap!['water_torture']) {
+    else if (trait == TraitId.waterTorture.id) {
       int type = traitData['type'];
       if (type == 0) {
         movePointCost = 1;
-        if (!targetChara.hasStatus(langMap!['submerged']) && !targetChara.hasStatus(langMap!['dehydration'])) {
+        if (!targetChara.hasStatus(StatusId.submerged.id) && !targetChara.hasStatus(StatusId.dehydration.id)) {
           traitAble = false;
         }
       }
       else if (type == 1) {
-        if (!targetChara.hasStatus(langMap!['asphyxia'])) {
+        if (!targetChara.hasStatus(StatusId.asphyxia.id)) {
           traitAble = false;
         }
       }
     }
     // 符楹【光暗双生】
-    else if (trait == langMap!['lumen_umbra_gemini']) { 
+    else if (trait == TraitId.lumenUmbraGemini.id) { 
       int type = traitData['type'];
       if (type == 0 && sourceChara.cardCount < 1) {
         traitAble = false;
       }
     }
     // EnGine-4【<04>质能转换】
-    else if (trait == langMap!['mass_energy_conversion']) {
+    else if (trait == TraitId.massEnergyConversion.id) {
       int type = traitData['type'];
       if (type == 0) {        
         int damage = traitData['damage'];
@@ -3374,13 +3761,13 @@ class Game extends ChangeNotifier{
       }
     }
     // DeFen-5【<15>力场模拟】
-    else if (trait == langMap!['force_field_simulation']) {
+    else if (trait == TraitId.forceFieldSimulation.id) {
       if (sourceChara.cardCount < 1) {
         traitAble = false;
       }      
     }
     // 兰斯洛特【针锋相对】
-    else if (trait == langMap!['tit_for_tat']) {
+    else if (trait == TraitId.titForTat.id) {
       List<ActionRecord> actionRecords =  _recordProvider!.getFilteredRecords(type: RecordType.action, target: source,
         startTurn: getGameTurn(), endTurn: getGameTurn()).cast<ActionRecord>();
       if (actionRecords.isEmpty) {
@@ -3388,14 +3775,14 @@ class Game extends ChangeNotifier{
       }
     }
     // 卡拉卡【友情防守】
-    else if (trait == langMap!['buddy_block']) {
+    else if (trait == TraitId.buddyBlock.id) {
       int type = traitData['type'];
       if (type == 2 && sourceChara.movePoint != 0) {
         traitAble = false;
       }
     }
     // 观风【气象万千】
-    else if (trait == langMap!['weathers_unfold']) {
+    else if (trait == TraitId.weathersUnfold.id) {
       int type = traitData['type'];
       if (type == 0 || type == 1) {
         List<ActionRecord> actionRecords = _recordProvider!.getFilteredRecords(type: RecordType.action, source: source,
@@ -3408,54 +3795,26 @@ class Game extends ChangeNotifier{
           traitAble = false;
         }
       }
-      else if (type == 2) {
-        traitAble = false;
-        for (var stat in targetChara.status.keys) {
-          if (statusInfo![stat][0] == 1) {
-            traitAble = true;
-            break;
-          }
-        }
-        List<ActionRecord> actionRecords =  _recordProvider!.getFilteredRecords(type: RecordType.action, source: source,
-          startTurn: getGameTurn(), endTurn: getGameTurn()).cast<ActionRecord>();
-        if (actionRecords.isEmpty || actionRecords.last.attacked != true) {
-          traitAble = false;
-        }
-      }
-      else if (type == 3) {
-        traitAble = false;
-        for (var stat in sourceChara.status.keys) {
-          if (statusInfo![stat][0] == 0) {
-            traitAble = true;
-            break;
-          }
-        }
-        List<ActionRecord> actionRecords =  _recordProvider!.getFilteredRecords(type: RecordType.action, source: source,
-          startTurn: getGameTurn(), endTurn: getGameTurn()).cast<ActionRecord>();
-        if (actionRecords.isEmpty || actionRecords.last.attacked != false) {
-          traitAble = false;
-        }
-      }
     }
     // 安提忒斯【冰与火之歌】
-    else if (trait == langMap!['ice_and_fire']) { 
+    else if (trait == TraitId.iceAndFire.id) { 
       int type = traitData['type'];
       if (type == 2) {
         movePointCost = 1;
       }
     }
     // 守塔人【潮海明灯】
-    else if (trait == langMap!['tide_beaconk']) { 
+    else if (trait == TraitId.tideBeacon.id) { 
       traitAble = false;
       for (var stat in targetChara.status.keys) {
-        if (statusInfo![stat][0] == 1) {
+        if (statusToType[stat]!.buffType == BuffType.negative) {
           traitAble = true;
           break;
         }
       }
     }
     // 曙光【不容置疑的信任】
-    else if (trait == langMap!['unquestioning_trust']) { 
+    else if (trait == TraitId.unquestioningTrust.id) { 
       int type = traitData['type'];
       if (type == 0) {
         List<ActionRecord> actionRecords =  _recordProvider!.getFilteredRecords(type: RecordType.action, target: source,
@@ -3468,27 +3827,48 @@ class Game extends ChangeNotifier{
         traitAble = false;
       }
       else if (type == 2 && (targetChara.hasHiddenStatus('support_atk') || !sourceChara.hasHiddenStatus('trust'))) {
-        traitAble = false;        
+        traitAble = false;
+      }
+      else if (type == 3) {
+        int damage = traitData['damage'];
+        DamageType damageType = traitData['dmgType'];
+        if (damage < 300 || damageType != DamageType.action) {
+          traitAble = false;
+        }
       }
     }
     // 石蹄【蹦蹦咒语】
-    else if (trait == langMap!['boing_spell']) { 
+    else if (trait == TraitId.boingSpell.id) { 
       int type = traitData['type'];
       if (type == 0 || type == 1) {
         movePointCost = 1;
       }
     }
+    // 埃诺雅【原初时计】
+    else if (trait == TraitId.primordialHorologe.id) { 
+      if (sourceChara.getHiddenStatusIntData('horologe', StatusData.intensity) == 31) {
+        traitAble = false;
+      }
+    }
+    // 蓝文曦【盈亏相济】
+    else if (trait == TraitId.lossGainEquilibrium.id) { 
+      int type = traitData['type'];
+      int count = traitData['count'];
+      if (type == 0 && count < 3 || type == 1 && count > -3 || type == 2 && count != 0) { 
+        traitAble = false;
+      }
+    }
     // 状态【混乱】【冰封】
-    if (sourceChara.hasStatus(langMap!['confusion']) || sourceChara.hasStatus(langMap!['frozen'])) {
+    if (sourceChara.hasStatus(StatusId.confusion.id) || sourceChara.hasStatus(StatusId.frozen.id)) {
       traitAble = false;
     }
     // 状态【梦境】【星牢】
-    if ((sourceChara.hasStatus(langMap!['dreaming']) || sourceChara.hasStatus(langMap!['stellar_cage'])) 
+    if ((sourceChara.hasStatus(StatusId.dreaming.id) || sourceChara.hasStatus(StatusId.stellarCage.id)) 
       && turn == gameSequence.indexOf(source)) {
       traitAble = false;
     }
     // 长霾【律令·禁空】
-    if (sourceChara.hasHiddenStatus('non_flying')) {
+    if (sourceChara.hasHiddenStatus('non_flying') && movePointCost > 0) {
       movePointCost++;
     }
     // 长霾【律令·封魔】
@@ -3503,21 +3883,30 @@ class Game extends ChangeNotifier{
     if (movePointCost > sourceChara.movePoint) {
       traitAble = false;
     }
+    // 使用次数不足
+    if (sourceChara.trait[trait]!.castCount >= sourceChara.trait[trait]!.maxCast 
+    && sourceChara.trait[trait]!.maxCast > 0) {
+      traitAble = false;
+    }
     // 永久可用特质
-    if ({langMap!['resolution']}.contains(trait)) {
+    if ({TraitId.resolution.id}.contains(trait)) {
       traitAble = true;
     }
     // 玩家死亡
-    if (sourceChara.isDead) {
+    if (sourceChara.isDead || targetChara.isDead) {
       traitAble = false;
     }
     if (traitAble) {
       // 行动点减损
       if (movePointCost > 0) {
         addAttribute(source, AttributeType.movepoint, -movePointCost);
-      }      
+      }
+      // 特质使用次数增加
+      if (sourceChara.trait[trait]!.maxCast > 0) {
+        modifyTraitCastCount(source, source, trait, 1);
+      }
       // 茵竹【自勉】
-      if (trait == langMap!['self_encouragement']) {
+      if (trait == TraitId.selfEncouragement.id) {
         int type = traitData['type'];
         if (type == 0) {
           healPlayer(source, source, (sourceChara.maxHealth * 0.8).toInt() - sourceChara.health, DamageType.heal);
@@ -3529,23 +3918,33 @@ class Game extends ChangeNotifier{
         }        
       }
       // 妮卡欧【不倦的观测者】
-      else if (trait == langMap!['tireless_observer']) {
+      else if (trait == TraitId.tirelessObserver.id) {
         String skill = traitData['skill'];
-        sourceChara.skill[skill] = sourceChara.skill[skill]! - 1;
+        modifySkillCooldown(source, source, skill, -1);
       }
       // 云云子【晨昏寥落】
-      else if (trait == langMap!['dusk_void']) {
-        List<double> baseDamageRef = traitData['baseDamageRef'];
+      else if (trait == TraitId.duskVoid.id) {
+        int type = traitData['type'];
+        if (type == 0) { 
+          List<double> baseDamageRef = traitData['baseDamageRef'];
         int attack = traitData['attack'];
         double attackMulti = traitData['attackMulti'];
         int point = traitData['point'];
-        baseDamageRef[0] = (point - 1) * (attack - 30) * attackMulti;
+        List<DamageType> damageTypeRef = traitData['damageTypeRef'];
+        damageTypeRef[0] = DamageType.lost;
+        baseDamageRef[0] = (point) * (attack - 30) * attackMulti;
+        }
+        else {
+          List<int> maxPointRef = traitData['maxPointRef'];
+          maxPointRef[0] -= 1;
+        }        
       }
       // 星尘【幸运壁垒】
-      else if (trait == langMap!['lucky_shield']) {
+      else if (trait == TraitId.luckyShield.id) {
         String dmgSource = traitData['dmgSource'];
         int damage = traitData['damage'];
         int point = traitData['point'];
+        throwDice(source, source, point, 6, DiceType.trait);
         if ({3, 6}.contains(point)) {
           addAttribute(source, AttributeType.health, damage);
           addAttribute(source, AttributeType.dmgreceived, -damage);
@@ -3561,8 +3960,9 @@ class Game extends ChangeNotifier{
         }
       }
       // 黯星【决心】
-      else if (trait == langMap!['resolution']) {
+      else if (trait == TraitId.resolution.id) {
         int point = traitData['point'];
+        throwDice(source, source, point, 6, DiceType.trait);
         if ({1, 5, 6}.contains(point)) {
           addAttribute(source, AttributeType.health, 1 - sourceChara.health);
         }
@@ -3571,29 +3971,31 @@ class Game extends ChangeNotifier{
         }
       }
       // 方寒【耀光爆裂】
-      else if (trait == langMap!['radiant_blast']) {
+      else if (trait == TraitId.radiantBlast.id) {
         int point = traitData['point'];
+        throwDice(source, source, point, 6, DiceType.trait);
         if ({4, 5}.contains(point)) {
-          addStatus(source, target, langMap!['soul_flare'], 1, -1);
+          addStatus(source, target, StatusId.soulFlare.id, 1, 1);
         }
         else if (point == 6) {
-          addStatus(source, target, langMap!['soul_flare'], 2, -1);
+          addStatus(source, target, StatusId.soulFlare.id, 2, 1);
         }
       }
       // 恪玥【咕尘散】
-      else if (trait == langMap!['escaping']) {
+      else if (trait == TraitId.escaping.id) {
         int point = traitData['point'];
+        throwDice(source, source, point, 6, DiceType.trait);
         if ({3, 6}.contains(point)) {
-          addStatus(source, source, langMap!['gugu'], 0, 1);
+          addStatus(source, source, StatusId.gugu.id, 0, 1);
           modifyHiddenStatusIntensity(source, 'gugu', 1);
         }
         else {
           final renouncingTargets = players.values.where((e) => isEnemy(source, e.id)).map((e) => e.id).toList();
-          castTrait(source, renouncingTargets, langMap!['renouncing']);
+          castTrait(source, renouncingTargets, TraitId.renouncing.id);
         }
       }
       // 恪玥【歇尘凡】
-      else if (trait == langMap!['renouncing']) {
+      else if (trait == TraitId.renouncing.id) {
         int damage = 60 * sourceChara.getHiddenStatusIntData('gugu', StatusData.intensity) ~/ targets.length;
         for (var tar in targets) {
           damagePlayer(source, tar, damage, DamageType.physical, isAOE: true);
@@ -3601,21 +4003,21 @@ class Game extends ChangeNotifier{
         modifyHiddenStatusIntensity(source, 'gugu', -sourceChara.getHiddenStatusIntData('gugu', StatusData.intensity));
       }
       // 岚【天魔体】
-      else if (trait == langMap!['demonic_avatar']) {
+      else if (trait == TraitId.demonicAvatar.id) {
         List<double> damageMultiRef = traitData['damageMultiRef'] ;
         damageMultiRef[0] = damageMultiRef[0] * 1.5;
       }
       // 岚【血灵斩】
-      else if (trait == langMap!['hema_slash']) {
-        addAttribute(source, AttributeType.card, -1);
-        sourceChara.actionTime++;
+      else if (trait == TraitId.hemaSlash.id) {        
+        modifyCardCount(source, source, 1, CardEventType.discard);
+        addAttribute(source, AttributeType.actiontime, 1);
         addHiddenStatus(source, 'hema', 0, 0);
         if (sourceChara.actionTime == 1) {
           addAttribute(source, AttributeType.attack, 15);
         }
       }
       // 恋慕【勿忘我】
-      else if (trait == langMap!['dont_forget_me']) {
+      else if (trait == TraitId.dontForgetMe.id) {
         int type = traitData['type'];
         if (type == 0) {
           List<double> damageMultiRef = traitData['damageMultiRef'];
@@ -3630,31 +4032,33 @@ class Game extends ChangeNotifier{
           addHiddenStatus(source, 'forget_me', 0, 1);
         }
       }
-      // K97【二进制】
-      else if (trait == langMap!['binary']) {
+      // K97【二进制噪声】
+      else if (trait == TraitId.binary.id) {
         int type = traitData['type'];
         if (type == 0) {
-          addAttribute(source, AttributeType.health, -100);
-          addAttribute(source, AttributeType.armor, 100);
+          addAttribute(source, AttributeType.health, -1);
+          addAttribute(source, AttributeType.armor, 1);
         }
         else if (type == 1) {
           addAttribute(source, AttributeType.health, sourceChara.armor);
           addAttribute(source, AttributeType.armor, -sourceChara.armor);
         }
         else if (type == 2) {
-          List<double> damageMultiRef = traitData['damageMultiRef'];
-          damageMultiRef[0] *= 0.4;         
-        }
+          addHiddenStatus(source, 'binary', 0, 0);
+          addHiddenStatus(source, 'costminus', 1, 0);
+          addAttribute(source, AttributeType.card, 1);
+          addAttribute(source, AttributeType.actiontime, 1);
+        }        
       }
       // 安德宁【回旋曲】
-      else if (trait == langMap!['rondo']) {
-        addStatus(source, source, langMap!['dodge'], 0, 1);
+      else if (trait == TraitId.rondo.id) {
+        addStatus(source, source, StatusId.dodge.id, 0, 1);
       }
       // 卿别【夜魇游吟】
-      else if (trait == langMap!['nightmare_refrain']) {
+      else if (trait == TraitId.nightmareRefrain.id) {
         int type = traitData['type'];
         if (type == 0) {
-          addStatus(source, target, langMap!['dreaming'], 0, 1);
+          addStatus(source, target, StatusId.dreaming.id, 0, 1);
           addHiddenStatus(target, 'dream', 0, 2);
           addHiddenStatus(target, 'dream_tar', 0, 0);
           addHiddenStatus(source, 'dream_src', 0, 0);
@@ -3667,17 +4071,19 @@ class Game extends ChangeNotifier{
           damageMultiRef[0] = damageMultiRef[0] * 1.2;
         }
         else {
-          addStatus(source, target, langMap!['drowsy'], 1, 1);
+          addStatus(source, target, StatusId.drowsy.id, 1, 1);
         }
       }
       // 扶风【大预言】
-      else if (trait == langMap!['grand_prophecy']) {
+      else if (trait == TraitId.grandProphecy.id) {
         int point = traitData['point'];
-        throwDice(target, target, point, DiceType.trait);
-        addHiddenStatus(source, 'grand_prophecy', 0, 1);
+        int maxPoint = traitData['maxPoint'];
+        throwDice(target, target, point, maxPoint, DiceType.trait);
+        
+        //addHiddenStatus(source, 'grand_prophecy', 0, 1);
       }
       // 奈普斯特【幽魂化】
-      else if (trait == langMap!['spectralization']) {
+      else if (trait == TraitId.spectralization.id) {
         int type = traitData['type'];
         if (type == 0) {
           List<int> damageRef = traitData['damageRef'];
@@ -3691,7 +4097,7 @@ class Game extends ChangeNotifier{
         }
       }
       // 奈普斯特【小惊吓】
-      else if (trait == langMap!['little_spook']) {
+      else if (trait == TraitId.littleSpook.id) {
         List<GameRecord> actionDamageRecords =  _recordProvider!.getFilteredRecords(type: RecordType.damage, 
           startTurn: GameTurn(round: round - 1, turn: 1, extra: 0), endTurn: getGameTurn());
         Set<String> actionSources = {};
@@ -3703,12 +4109,12 @@ class Game extends ChangeNotifier{
         }
         for (var chara in players.keys) {
           if (!actionSources.contains(chara)) {
-            addStatus(source, chara, langMap!['uneasiness'], 1, 2);
+            addStatus(source, chara, StatusId.uneasiness.id, 1, 2);
           }
         }
       }
       // 星凝【希冀】
-      else if (trait == langMap!['yearning']) {
+      else if (trait == TraitId.yearning.id) {
         int type = traitData['type'];
         if (type == 0) {
           addHiddenStatus(target, 'yearning_atk', (sourceChara.damageDealtTurn * 0.1).toInt(), 1);
@@ -3719,30 +4125,29 @@ class Game extends ChangeNotifier{
         }
       }
       // 星凝【祝愿】
-      else if (trait == langMap!['blessing']) {
+      else if (trait == TraitId.blessing.id) {
         healPlayer(source, target, 100, DamageType.heal);
         List<dynamic> statusKeys = targetChara.status.keys.toList();
         for (var stat in statusKeys) {
-          if (statusInfo![stat][0] == 1) {
+          if (statusToType[stat]!.buffType == BuffType.negative) {
             removeStatus(source, target, stat);
           }
         }
       }
       // 时雨【天霜封印】
-      else if (trait == langMap!['arctic_seal']){
+      else if (trait == TraitId.arcticSeal.id){
         int point = traitData['point'];
+        throwDice(source, source, point, 6, DiceType.trait);
         if ({1, 3, 6}.contains(point)) {
-          addStatus(source, target, langMap!['frozen'], 0, 1);
-          if (targetChara.hasStatus(langMap!['frozen'])) {
-            // 此处是为了平衡回合结束时，冰封状态的层数减少，否则轮到该玩家时，冰封状态已经结束
-            //targetChara.status[langMap!['frozen']]![2]++;
-            //targetChara.setStatusData(langMap!['frozen'], layerFraction: targetChara.getStatusIntData(langMap!['frozen'], StatusData.layerFraction) + 1);
-            targetChara.increaseStatusData(langMap!['frozen'], layerFraction: 1); 
+          addStatus(source, target, StatusId.frozen.id, 0, 1);
+          if (targetChara.hasStatus(StatusId.frozen.id)) {
+            // 此处是为了平衡回合结束时，冰封状态的层数减少，否则轮到该玩家时，冰封状态已经结束            
+            targetChara.increaseStatusData(StatusId.frozen.id, layerFraction: 1); 
           }
         }
       }
       // 时雨【寒冰血脉】
-      else if (trait == langMap!['icy_blood']){
+      else if (trait == TraitId.icyBlood.id){
         int type = traitData['type'];
         if (type == 0) {
           List<bool> isImmuneRef = traitData['isImmuneRef'];
@@ -3750,20 +4155,20 @@ class Game extends ChangeNotifier{
         }
         else {
           List<int> damagePlusRef = traitData['damagePlusRef'];
-          if (targetChara.hasStatus(langMap!['frost'])) {
-            damagePlusRef[0] = damagePlusRef[0] - 30 * targetChara.getStatusIntData(langMap!['frost'], StatusData.intensity);
+          if (targetChara.hasStatus(StatusId.frost.id)) {
+            damagePlusRef[0] = damagePlusRef[0] - 30 * targetChara.getStatusIntData(StatusId.frost.id, StatusData.intensity);
           }
         }
       }
       // 图西乌【凌日】
-      else if (trait == langMap!['transit']) {
+      else if (trait == TraitId.transit.id) {
         List<int> damagePlusRef = traitData['damagePlusRef'];
         List<double> damageMultiRef = traitData['damageMultiRef'];
         damagePlusRef[0] = 0;
         damageMultiRef[0] = 1;
       }
       // 图西乌【蚀月】
-      else if (trait == langMap!['eclipse']) {
+      else if (trait == TraitId.eclipse.id) {
         int type = traitData['type'];
         if (type == 0) {
           int point = traitData['point'];
@@ -3784,19 +4189,19 @@ class Game extends ChangeNotifier{
         }        
       }
       // 舸灯【引渡】
-      else if (trait == langMap!['ghost_ferry']) {
+      else if (trait == TraitId.ghostFerry.id) {
         int type = traitData['type'];
         if (type == 0) {
           List<int> costRef = traitData['costRef'];
           costRef[0] -= 1;
         }
-        else {
-          addAttribute(source, AttributeType.card, 2);
+        else {          
+          modifyCardCount(source, target, 2, CardEventType.draw);
           addHiddenStatus(source, 'ferry', 0, 1);
         }
       }
       // 赐弥【在云端】
-      else if (trait == langMap!['upon_the_clouds']) {
+      else if (trait == TraitId.uponTheClouds.id) {
         int sourceSeq = gameSequence.indexOf(source) + 1;
         bool findHistory = false;
 
@@ -3816,15 +4221,23 @@ class Game extends ChangeNotifier{
             addAttribute(source, AttributeType.defence, playersData[source]['defence'] - sourceChara.defence);
             addAttribute(source, AttributeType.movepoint, playersData[source]['movePoint'] - sourceChara.movePoint);
             addAttribute(source, AttributeType.card, playersData[source]['cardCount'] - sourceChara.cardCount);
-            sourceChara.skill = Map<String, int>.from(playersData[source]['skill']);
-            //sourceChara.status = Map<String, CharacterStatus>.from(playersData[source]['status']);
+            sourceChara.skill = {};
+            if (playersData[source]['skill'] is Map) {
+              (playersData[source]['skill'] as Map).forEach((k, v) {
+                try {
+                  sourceChara.skill[k.toString()] = CharaSkill.fromJson(Map<String, dynamic>.from(v));
+                } catch (e) {
+                  //
+                }
+              });
+            }            
             sourceChara.status = {};
             if (playersData[source]['status'] is Map) {
               (playersData[source]['status'] as Map).forEach((k, v) {
                 try {
-                  sourceChara.status[k.toString()] = CharacterStatus.fromJson(Map<String, dynamic>.from(v));
+                  sourceChara.status[k.toString()] = CharaStatus.fromJson(Map<String, dynamic>.from(v));
                 } catch (e) {
-                //
+                  //
                 }
               });
             }
@@ -3834,10 +4247,10 @@ class Game extends ChangeNotifier{
         }
       }
       // 高淼【轻捷妙手】
-      else if (trait == langMap!['deft_touch']) {
+      else if (trait == TraitId.deftTouch.id) {
         int type = traitData['type'];
-        if (type == 0) {
-          addAttribute(source, AttributeType.card, 1);
+        if (type == 0) {          
+          modifyCardCount(source, source, 1, CardEventType.draw);
         }
         else {
           String skill = traitData['skill'];
@@ -3847,7 +4260,7 @@ class Game extends ChangeNotifier{
         }
       }
       // 沫【湮灭性轮回】
-      else if (trait == langMap!['annihilative_cycle']) {
+      else if (trait == TraitId.annihilativeCycle.id) {
         int type = traitData['type'];
         if (type == 0) {
           List<double> damageMultiRef = traitData['damageMultiRef'];
@@ -3859,7 +4272,7 @@ class Game extends ChangeNotifier{
         }
       }
       // 长霾【我还能喝】
-      else if (trait == langMap!['im_drunk']) {
+      else if (trait == TraitId.imDrunk.id) {
         int type = traitData['type'];
         if (type == 0) {
           addHiddenStatus(source, 'alcohol', 50, -1);
@@ -3870,13 +4283,13 @@ class Game extends ChangeNotifier{
           if (damage >= 300) {
             damagePlayer(source, target, sourceChara.getHiddenStatusIntData('alcohol', StatusData.intensity), DamageType.physical);
             modifyHiddenStatusIntensity(source, 'alcohol', -sourceChara.getHiddenStatusIntData('alcohol', StatusData.intensity));
-            addStatus(source, source, langMap!['weakness'], 1, 1);
-            addStatus(source, target, langMap!['nausea'], 0, 2);
+            addStatus(source, source, StatusId.weakness.id, 1, 1);
+            addStatus(source, target, StatusId.nausea.id, 0, 2);
           }
         }
       }
       // 长霾【律令】
-      else if (trait == langMap!['decree']) {
+      else if (trait == TraitId.decree.id) {
         int type = traitData['type'];
         if (type == 0) {
           addHiddenStatus(target, 'non_flying', 0, 1);
@@ -3892,19 +4305,18 @@ class Game extends ChangeNotifier{
         }        
       }
       // 云津【云系祝乐】
-      else if (trait == langMap!['celestial_joy']) {
+      else if (trait == TraitId.celestialJoy.id) {
         int type = traitData['type'];
         if (type == 0) {
           int point = traitData['point'];
+          throwDice(source, source, point, 2, DiceType.trait);
           if (point == 2) {
             addAttribute(source, AttributeType.movepoint, 1);
           }
-          //sourceChara.hiddenStatus['celestial']![0] -= 2;
-          //sourceChara.increaseHiddenStatusData('celestial', intensity: -2);
           modifyHiddenStatusIntensity(source, 'celestial', -2);
         }
-        else if (type == 1) {
-          addAttribute(source, AttributeType.card, 1);
+        else if (type == 1) {          
+          modifyCardCount(source, source, 1, CardEventType.draw);
         }
         else {
           int movepoint = traitData['movepoint'];
@@ -3914,12 +4326,13 @@ class Game extends ChangeNotifier{
         }
       }
       // 晖夕【挑拣】
-      else if (trait == langMap!['discerning']) {
+      else if (trait == TraitId.discerning.id) {
         int point = traitData['point'];
-        throwDice(source, source, point, DiceType.action);
+        int maxPoint = traitData['maxPoint'];
+        throwDice(source, source, point, maxPoint, DiceType.action);
       }
       // 唐菁延【延光】
-      else if (trait == langMap!['lingering_light']) {
+      else if (trait == TraitId.lingeringLight.id) {
         int type = traitData['type'];
         int cooldown = traitData['cooldown'];
         if (type == 0) {
@@ -3932,51 +4345,66 @@ class Game extends ChangeNotifier{
         }
       }
       // 唐菁延【盈光】
-      else if (trait == langMap!['radiant_fullness']) {
+      else if (trait == TraitId.radiantFullness.id) {
         List<int> costRef = traitData['costRef'];
         costRef[0] = 0;
       }
       // 炎焕【心炎】
-      else if (trait == langMap!['cardio_blaze']) {
+      else if (trait == TraitId.cardioBlaze.id) {
         int point = traitData['point'];
+        throwDice(source, source, point, 6, DiceType.trait);
         if ({2, 3, 4}.contains(point)) {
           for (var chara in players.values) {
             if (chara.id != source) {
-              bool hasDebuff = false;
               for (var stat in chara.status.keys) {  
-                if (statusInfo![stat][0] == 1) {
-                  hasDebuff = true;
+                if (statusToType[stat]!.buffType == BuffType.negative) {
+                  addStatus(source, chara.id, StatusId.infernoFire.id, 5, 1);
                   break;
                 }
               }              
-              if (hasDebuff) {
-                addStatus(source, chara.id, langMap!['inferno_fire'], 5, 1);
-              }
             }
           }
         }
       }
       // 樊求【游侠】
-      else if (trait == langMap!['ranger']) { 
+      else if (trait == TraitId.ranger.id) { 
         int type = traitData['type'];
         if (type == 0) {
-          addAttribute(source, AttributeType.defence, 10);
-          addHiddenStatus(source, 'ranger_def', 0, -1);
+          bool hasTeammate = false;
+          for (var chara in players.values) {
+            if (isTeammate(source, chara.id) && !chara.isDead) {
+              hasTeammate = true;
+              break;
+            }
+          }
+          if (hasTeammate) {
+            addHiddenStatus(source, 'ranger_def', 0, 1);
+            removeHiddenStatus(source, 'ranger');
+          }
+          else {
+            addHiddenStatus(source, 'ranger_atk', 0, 1);
+            addHiddenStatus(source, 'ranger', 1, -1);
+          }
         }
         else {
-          addAttribute(source, AttributeType.attack, 15);
-          addHiddenStatus(source, 'ranger_atk', 0, -1);
+          addAttribute(source, AttributeType.attack, 10);
+          addHiddenStatus(source, 'ranger_used', 0, -1);
         }
       }
+      // 樊求【精准】
+      else if (trait == TraitId.precision.id) { 
+        List<double> damageMultiRef = traitData['damageMultiRef'];
+        damageMultiRef[0] *= 1.3;
+      }
       // 斯威芬【梦的塑造】
-      else if (trait == langMap!['crafting_of_dreams']) { 
+      else if (trait == TraitId.craftingOfDreams.id) { 
         int type = traitData['type'];
         if (type == 0) { 
-          addAttribute(source, AttributeType.card, -1);
-          addStatus(source, source, langMap!['dream_crafting'], 0, 1);
+          modifyCardCount(source, source, 1, CardEventType.discard);
+          addStatus(source, source, StatusId.dreamCrafting.id, 0, 1);
         }
         else if (type == 1) {
-          removeStatus(source, source, langMap!['dream_crafting']);
+          removeStatus(source, source, StatusId.dreamCrafting.id);
         }
         else if (type == 2) {
           int point = traitData['point'];
@@ -3996,7 +4424,7 @@ class Game extends ChangeNotifier{
         }
       }
       // 红烬【烈焰之体】
-      else if (trait == langMap!['conflagration_avatar']) { 
+      else if (trait == TraitId.conflagrationAvatar.id) { 
         int type = traitData['type'];        
         if (type == 0) { 
           List<bool> isImmuneRef = traitData['isImmuneRef'];
@@ -4004,73 +4432,70 @@ class Game extends ChangeNotifier{
         }
         else if (type == 1) {
           int point = traitData['point'];
+          throwDice(source, source, point, 6, DiceType.trait);
           if ({2, 4, 5}.contains(point)) {
             List<GameRecord> actionRecords = _recordProvider!.getFilteredRecords(type: RecordType.action, source: source, 
               startTurn: getGameTurn(), endTurn: getGameTurn());
             for (var record in actionRecords) {
               ActionRecord actionRecord = record as ActionRecord;
-              addStatus(source, actionRecord.target, langMap!['flaming'], 5, 3);     
+              addStatus(source, actionRecord.target, StatusId.flaming.id, 5, 3);     
             }
           }
         }
         else if (type == 2) {
           int point = traitData['point'];
+          throwDice(source, source, point, 6, DiceType.trait);
           if ({2, 4, 5}.contains(point)) {
             List<GameRecord> actionRecords = _recordProvider!.getFilteredRecords(type: RecordType.action, target: source, 
               startTurn: getGameTurn(), endTurn: getGameTurn());
             for (var record in actionRecords) {
               ActionRecord actionRecord = record as ActionRecord;
-              addStatus(source, actionRecord.source, langMap!['flaming'], 5, 3);     
+              addStatus(source, actionRecord.source, StatusId.flaming.id, 5, 3);     
             }
           }
         }
       }
       // 余梦得【梦的守护】
-      else if (trait == langMap!['guardian_of_dreams']) {
+      else if (trait == TraitId.guardianOfDreams.id) {
         int type = traitData['type'];
         if (type == 0) {
-          addStatus(source, source, langMap!['dream_guarding'], 0, 1);
+          addStatus(source, source, StatusId.dreamGuarding.id, 0, 1);
         }
         else if (type == 1) {
           addHiddenStatus(source, 'dream_guard', 0, 1);
         }
         else if (type == 2) {
-          if (sourceChara.skill.keys.contains(langMap!['dream_keeper'])) {
-            sourceChara.skill[langMap!['dream_keeper']] = sourceChara.skill[langMap!['dream_keeper']]! - 1;
+          if (sourceChara.skill.keys.contains(SkillId.dreamKeeper.id)) {
+            modifySkillCooldown(source, source, SkillId.dreamKeeper.id, -1);
           }
         }
       }
       // 好好先生【见面礼】
-      else if (trait == langMap!['introductory_gift']) { 
-        addStatus(source, target, langMap!['gift'], 0, -1);
+      else if (trait == TraitId.introductoryGift.id) { 
+        addStatus(source, target, StatusId.gift.id, 0, -1);
         addHiddenStatus(target, 'intro_gift', 0, -1);
       }
       // 好好先生【深重情谊】
-      else if (trait == langMap!['imposing_favor']) {
+      else if (trait == TraitId.imposingFavor.id) {
         addHiddenStatus(target, 'favor', 0, 2);
       }
-      // 叶姬【永恒】
-      else if (trait == langMap!['eternity']) {
-        int point = traitData['point'];
+      // 叶姬【须臾】
+      else if (trait == TraitId.ephemeral.id) {        
         String status = traitData['status'];
-        if (point == 0) {
-          addAttribute(source, AttributeType.movepoint, 1);
-        }
-        else {
-          //targetChara.status[status]![1] += point;
-          modifyStatusLayer(source, target, status, point);
-        }
+        modifyStatusIntensity(source, target, status, targetChara.getStatusIntData(status, StatusData.intensity) 
+        * (targetChara.getStatusIntData(status, StatusData.layer) - 1));
+        modifyStatusLayer(source, target, status, -targetChara.getStatusIntData(status, StatusData.layer) + 1);
       }
       // 太夕【黯灭】
-      else if (trait == langMap!['dark_dissolution']) {
+      else if (trait == TraitId.darkDissolution.id) {
         int type = traitData['type'];
         if (type == 0) {
           modifyHiddenStatusIntensity(source, 'dark', 1);
         }
         else if (type == 1) {
           String card = traitData['card'];
-          addAttribute(source, AttributeType.card, -1);
-          if (tagData![card].length > 1){
+          modifyCardCount(source, source, 1, CardEventType.discard);
+          if (cardTags[card]!.length > 1){
             modifyHiddenStatusIntensity(source, 'dark', 2);
           }
           else {
@@ -4079,34 +4504,34 @@ class Game extends ChangeNotifier{
         }
       }
       // 太夕【吞噬之锁】
-      else if (trait == langMap!['devouring_lock']) {         
+      else if (trait == TraitId.devouringLock.id) {         
         modifyHiddenStatusIntensity(source, 'dark', -2);
-        damagePlayer(source, target, 100, DamageType.physical);
-        healPlayer(source, source, 100, DamageType.heal);
-        addStatus(source, target, langMap!['constraint'], 0, 1);
+        damagePlayer(source, target, 75, DamageType.physical);
+        healPlayer(source, source, 75, DamageType.heal);
+        addStatus(source, target, StatusId.constraint.id, 0, 1);
       }
       // 科亚特尔【拟造“伊甸园”】
-      else if (trait == langMap!['artificial_eden']) { 
-        addStatus(source, source, langMap!['sanctify'], 0, 1);
+      else if (trait == TraitId.artificialEden.id) { 
+        addStatus(source, source, StatusId.sanctify.id, 0, 1);
         addHiddenStatus(source, 'sanctify', 0, 1);
         if (sourceChara.hasHiddenStatus('sanctify')) {
           sourceChara.increaseHiddenStatusData('sanctify', layerFraction: 1);
         }
       }
       // 科亚特尔【善恶天平】
-      else if (trait == langMap!['balance_of_light_and_shadow']) { 
+      else if (trait == TraitId.balanceOfLightAndShadow.id) { 
         addHiddenStatus(source, 'balance_change', 0, 1);
       }
       // 蒙德里安【禁忌知识】
-      else if (trait == langMap!['taboo_lore']) { 
+      else if (trait == TraitId.tabooLore.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           addHiddenStatus(source, 'forbidden', 1, -1);
         }
         else if (type == 1) {           
           modifyHiddenStatusIntensity(source, 'forbidden', -1);
-          if (targetChara.hasStatus(langMap!['eden'])) {
-            removeStatus(source, target, langMap!['eden']);
+          if (targetChara.hasStatus(StatusId.eden.id)) {
+            removeStatus(source, target, StatusId.eden.id);
             damagePlayer(source, source, 75, DamageType.physical);
           }
           else {
@@ -4116,8 +4541,8 @@ class Game extends ChangeNotifier{
         }
         else if (type == 2) {           
           modifyHiddenStatusIntensity(source, 'forbidden', -1);
-          if (targetChara.hasStatus(langMap!['eden'])) {
-            removeStatus(source, target, langMap!['eden']);
+          if (targetChara.hasStatus(StatusId.eden.id)) {
+            removeStatus(source, target, StatusId.eden.id);
             damagePlayer(source, source, 75, DamageType.physical);
           }
           else {            
@@ -4131,26 +4556,26 @@ class Game extends ChangeNotifier{
         }
       }
       // 阿波菲斯【毁灭暗影】
-      else if (trait == langMap!['ruinous_shade']) { 
+      else if (trait == TraitId.ruinousShade.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           if (!sourceChara.hasHiddenStatus('shade')) {
             addHiddenStatus(source, 'shade', 1, -1);
           }
-          addStatus(source, target, langMap!['nightmare'], sourceChara.getHiddenStatusIntData('shade', StatusData.intensity), 2);
+          addStatus(source, target, StatusId.nightmare.id, sourceChara.getHiddenStatusIntData('shade', StatusData.intensity), 2);
           addHiddenStatus(target, 'night', 0, -1);
         }
         else if (type == 1) { 
-          castTrait(source, targets, langMap!['endless_night']);
+          castTrait(source, targets, TraitId.endlessNight.id);
           for (var chara in players.values) {
-            if (chara.id == langMap!['mondrian'] && !chara.isDead) {              
-              if (targetChara.hasStatus(langMap!['eden'])) {
-                castTrait(chara.id, [source], langMap!['taboo_lore'], {'type': 3, 'heal': 6 + 12 * targetChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity)});                              
+            if (chara.id == CharacterId.mondrian.id && !chara.isDead) {              
+              if (targetChara.hasStatus(StatusId.eden.id)) {
+                castTrait(chara.id, [source], TraitId.tabooLore.id, {'type': 3, 'heal': 6 + 12 * targetChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity)});                              
               } 
               else {
-                castTrait(chara.id, [source], langMap!['taboo_lore'], {'type': 3, 'heal': 3 + 6 * targetChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity)});              
+                castTrait(chara.id, [source], TraitId.tabooLore.id, {'type': 3, 'heal': 3 + 6 * targetChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity)});              
               }
-              castTrait(source, targets, langMap!['ruinous_shade'], {'type': 2, 'damage': 30 * chara.getHiddenStatusIntData('forbidden', StatusData.intensity)}); 
+              castTrait(source, targets, TraitId.ruinousShade.id, {'type': 2, 'damage': 30 * chara.getHiddenStatusIntData('forbidden', StatusData.intensity)}); 
               break;
             }
           }
@@ -4161,18 +4586,15 @@ class Game extends ChangeNotifier{
         }
       }
       // 阿波菲斯【永夜无终】
-      else if (trait == langMap!['endless_night']) { 
+      else if (trait == TraitId.endlessNight.id) { 
         addHiddenStatus(source, 'shade', 1, -1);
-        //addAttribute(target, AttributeType.attack, -5);
-        //addAttribute(target, AttributeType.defence, -5);
-        //targetChara.hiddenStatus['night']![0] %= 1024;
         modifyHiddenStatusIntensity(source, 'night', -sourceChara.getHiddenStatusIntData('night', StatusData.intensity));
       }
       // 红黎【红莲业火】
-      else if (trait == langMap!['lotus_flame']) { 
+      else if (trait == TraitId.lotusFlame.id) { 
         int type = traitData['type'];
         if (type == 0) { 
-          addStatus(source, target, langMap!['flaming'], 5, 1);
+          addStatus(source, target, StatusId.flaming.id, 5, 1);
         }
         else if (type == 1) {
           int tag = traitData['tag'];
@@ -4180,23 +4602,22 @@ class Game extends ChangeNotifier{
         }
       }
       // 红黎【冰火相融】
-      else if (trait == langMap!['ice_fire_fusion']) { 
+      else if (trait == TraitId.iceFireFusion.id) { 
         List<double> damageMultiRef = traitData['damageMultiRef'];
         damageMultiRef[0] *= 1.5;
       }
       // 祝烨明【八裂】
-      else if (trait == langMap!['cryo_fissuring']) { 
+      else if (trait == TraitId.cryoFissuring.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           int layers = traitData['damage'] ~/ 100;
-          if (layers >= targetChara.getStatusIntData(langMap!['moisturize'], StatusData.layer)) {
-            addStatus(source, target, langMap!['frozen'], 0, targetChara.getStatusIntData(langMap!['moisturize'], StatusData.layer));
-            removeStatus(source, target, langMap!['moisturize']);
+          if (layers >= targetChara.getStatusIntData(StatusId.moisturize.id, StatusData.layer)) {
+            addStatus(source, target, StatusId.frozen.id, 0, targetChara.getStatusIntData(StatusId.moisturize.id, StatusData.layer));
+            removeStatus(source, target, StatusId.moisturize.id);
           }
           else {
-            addStatus(source, target, langMap!['frozen'], 0, layers);
-            modifyStatusLayer(source, target, langMap!['moisturize'], -layers);
-            // targetChara.status[langMap!['moisturize']]![1] -= layers;
+            addStatus(source, target, StatusId.frozen.id, 0, layers);
+            modifyStatusLayer(source, target, StatusId.moisturize.id, -layers);
           }
         }
         else {
@@ -4204,7 +4625,7 @@ class Game extends ChangeNotifier{
         }
       }
       // 方塔索【神游】
-      else if (trait == langMap!['astral_projection']) { 
+      else if (trait == TraitId.astralProjection.id) { 
         int type = traitData['type'];
         if (type == 0) {          
           addHiddenStatus(source, 'astral', 0, 1);
@@ -4218,15 +4639,15 @@ class Game extends ChangeNotifier{
         }
       }
       // 龙宇澈【光耀】
-      else if (trait == langMap!['radiance']) { 
+      else if (trait == TraitId.radiance.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           if (!sourceChara.hasHiddenStatus('light')) {
             addHiddenStatus(source, 'light', 2, -1);
           }
-          addAttribute(source, AttributeType.card, -1);
+          modifyCardCount(source, source, 1, CardEventType.discard);
           addHiddenStatus(source, 'light_elf', 1, -1);
-          castTrait(source, [source], langMap!['soul_burning']);
+          castTrait(source, [source], TraitId.soulBurning.id);
         }
         else if (type == 1) { 
           int intensity = (sourceChara.maxHealth - sourceChara.health) ~/ 200 + 2 - sourceChara.getHiddenStatusIntData('light', StatusData.intensity);
@@ -4236,6 +4657,7 @@ class Game extends ChangeNotifier{
           String dmgSource = traitData['dmgSource'];
           int damage = traitData['damage'];
           int point = traitData['point'];
+          throwDice(source, source, point, 10, DiceType.trait);
           if (point <= sourceChara.getHiddenStatusIntData('light_elf', StatusData.intensity)) {
             addAttribute(source, AttributeType.health, damage);
             addAttribute(source, AttributeType.dmgreceived, -damage);
@@ -4252,20 +4674,21 @@ class Game extends ChangeNotifier{
         }
       }
       // 龙宇澈【燃魂】
-      else if (trait == langMap!['soul_burning']) { 
+      else if (trait == TraitId.soulBurning.id) { 
         if (sourceChara.hasHiddenStatus('light')) {
           addHiddenStatus(source, 'soul_burning', 0, -1);
         }        
       }
       // 祝言夙【精神干扰】
-      else if (trait == langMap!['mental_disruption']) { 
+      else if (trait == TraitId.mentalDisruption.id) { 
         int point = traitData['point'];
+        throwDice(target, target, point, 6, DiceType.trait);
         if ({3, 4}.contains(point)) {
           addHiddenStatus(target, 'disruption', 0, 1);
         }
       }
       // 星惑【众人的乌托邦】
-      else if (trait == langMap!['collective_utopia']) { 
+      else if (trait == TraitId.collectiveUtopia.id) { 
         int type = traitData['type'];
         if (type == 0) {
           List<int> pointRef = traitData['pointRef'];
@@ -4274,7 +4697,7 @@ class Game extends ChangeNotifier{
             if (isTeammate(source, chara.id) && !chara.isDead) {              
               pointPlus += 1;
             }
-            if (chara.id == langMap!['long_yuche'] && chara.hasHiddenStatus('light_elf')) {
+            if (chara.id == CharacterId.longYuche.id && chara.hasHiddenStatus('light_elf')) {
               pointPlus += chara.getHiddenStatusIntData('light_elf', StatusData.intensity);
             }
           }
@@ -4288,7 +4711,7 @@ class Game extends ChangeNotifier{
         }        
       }
       // 唐亚德【清心的乌托邦】
-      else if (trait == langMap!['utopia_of_clarity']) { 
+      else if (trait == TraitId.utopiaOfClarity.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           addHiddenStatus(source, 'clarity', 1, -1);
@@ -4299,14 +4722,12 @@ class Game extends ChangeNotifier{
         }
         else {
           for (var skill in sourceChara.skill.keys) {
-            if (sourceChara.skill[skill]! > 0) {
-              sourceChara.skill[skill] =  sourceChara.skill[skill]! - 1;
-            }            
+            modifySkillCooldown(source, source, skill, -1);         
           }
         }
       }
       // 雷刚【决意的乌托邦】
-      else if (trait == langMap!['utopia_of_resolve']) { 
+      else if (trait == TraitId.utopiaOfResolve.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           addAttribute(source, AttributeType.armor, 100);
@@ -4317,16 +4738,16 @@ class Game extends ChangeNotifier{
           List<String> cardList = traitData['cardList'];
           if (sourceChara.health < 300) {
             for (String card in cardList) {
-              List<String> tagList = tagData![card];
-              if (tagList.contains(langMap!['vital'])){
+              List<String> tagList = cardTags[card]!;
+              if (tagList.contains(TagId.vital.id)){
                 addAttribute(source, AttributeType.armor, 50);
               }
             }
           }
           else {
             for (String card in cardList) {
-              List<String> tagList = tagData![card];
-              if (tagList.contains(langMap!['vital']) || tagList.contains(langMap!['sharp'])){
+              List<String> tagList = cardTags[card]!;
+              if (tagList.contains(TagId.vital.id) || tagList.contains(TagId.sharp.id)){
                 damagePlayer('empty', source, 100, DamageType.lost);
               }
             }
@@ -4337,11 +4758,11 @@ class Game extends ChangeNotifier{
         }
       }
       // 陆风【追猎的乌托邦】
-      else if (trait == langMap!['utopia_of_celerity']) { 
+      else if (trait == TraitId.utopiaOfCelerity.id) { 
         int type = traitData['type'];
         if (type == 0) { 
-          addStatus(source, target, langMap!['prey'], 0, -1);
-          addAttribute(source, AttributeType.card, -1);
+          addStatus(source, target, StatusId.prey.id, 0, -1);
+          modifyCardCount(source, source, 1, CardEventType.discard);
         }
         else if (type == 1) { 
           List<double> damageMultiRef = traitData['damageMultiRef'];
@@ -4350,16 +4771,16 @@ class Game extends ChangeNotifier{
         }
         else { 
           addHiddenStatus(target, 'prey', 0, 1);
-          removeStatus(source, target, langMap!['prey']);
+            removeStatus(source, target, StatusId.prey.id);
         }
       }
       // 安山定【后发的乌托邦】
-      else if (trait == langMap!['utopia_of_upspring']) { 
+      else if (trait == TraitId.utopiaOfUpspring.id) { 
         int type = traitData['type'];
         if (type == 0) {
-          addStatus(source, source, langMap!['poised'], 0, 1);
-          //sourceChara.status[langMap!['poised']]![2] += 1;
-          sourceChara.increaseStatusData(langMap!['poised'], layerFraction: 1);
+          addStatus(source, source, StatusId.poised.id, 0, 1);
+          //sourceChara.status[StatusId.poised.id]![2] += 1;
+          sourceChara.increaseStatusData(StatusId.poised.id, layerFraction: 1);
           addHiddenStatus(source, 'upspring', 0, -1);
         }
         else {
@@ -4368,14 +4789,14 @@ class Game extends ChangeNotifier{
         }        
       }
       // 颜若卿【调和的乌托邦】
-      else if (trait == langMap!['utopia_of_concord']) { 
+      else if (trait == TraitId.utopiaOfConcord.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           List<int> costRef = traitData['costRef'];
           List<String> cardList = traitData['cardList'];
           for (String card in cardList) {
-            List<String> tagList = tagData![card];
-            if (tagList.contains(langMap!['vital'])){
+            List<String> tagList = cardTags[card]!;
+            if (tagList.contains(TagId.vital.id)){
               costRef[0] -= 1;
             }
           }          
@@ -4385,126 +4806,127 @@ class Game extends ChangeNotifier{
           costRef[0] = 0;
         }
         else { 
-          addStatus(source, source, langMap!['regeneration'], 3, 1);
-          addAttribute(source, AttributeType.card, 1);
+          addStatus(source, source, StatusId.regeneration.id, 3, 1);
+          modifyCardCount(source, source, 1, CardEventType.draw);
         }
       }
       // 亭歆雨【彼岸之金】
-      else if (trait == langMap!['aurelysium']) { 
+      else if (trait == TraitId.aurelysium.id) { 
         List<String> cardList = traitData['cardList'];
         Set<String> tagSet = {};        
         for (var card in cardList) { 
-          List<String> tagList = tagData![card];
+          List<String> tagList = cardTags[card]!;
           tagSet.addAll(tagList);
         }
         if (tagSet.length < 5) {
           for (var card in cardList) {
-            List<String> tagList = tagData![card];
-            for (var tag in tagList) { 
-              if (tag == langMap!['sharp']) {
+            List<String> tagList = cardTags[card]!;
+            for (var tag in tagList) {
+              if (tag == TagId.sharp.id) {
                 addAttribute(source, AttributeType.attack, 5);
               }
-              else if (tag == langMap!['protect']) {
+              else if (tag == TagId.protect.id) {
                 addAttribute(source, AttributeType.defence, 5);
               }
-              else if (tag == langMap!['vital']) {
+              else if (tag == TagId.vital.id) {
                 healPlayer(source, source, 50, DamageType.heal);
               }
-              else if (tag == langMap!['destiny']) {
+              else if (tag == TagId.destiny.id) {
                 addHiddenStatus(source, 'destiny', 1, 1);
               }
-              else if (tag == langMap!['mystique']) {
+              else if (tag == TagId.mystique.id) {
                 for (var stat in sourceChara.status.keys) {
-                  if (statusInfo![stat][0] == 0) {
+                  if (statusToType[stat]!.buffType == BuffType.positive) {
                     modifyStatusLayer(source, source, stat, 1);
                   }
                 }
               }
-              else if (tag == langMap!['phantom']) {
-                addAttribute(source, AttributeType.card, 1);
+              else if (tag == TagId.phantom.id) {
+                modifyCardCount(source, source, 1, CardEventType.draw);
               }
-              else if (tag == langMap!['magic']) {
-                removeStatus(source, target, langMap!['dodge']);
+              else if (tag == TagId.magic.id) {
+                removeStatus(source, target, StatusId.dodge.id);
                 addAttribute(target, AttributeType.armor, -targetChara.armor);
               }
-              else if (tag == langMap!['weird']) {
+              else if (tag == TagId.weird.id) {
                 addHiddenStatus(target, 'weird', 0, 1);
               }
-              else if (tag == langMap!['disorder']) {
+              else if (tag == TagId.disorder.id) {
                 addAttribute(target, AttributeType.movepoint, -1);
               }
-              else if (tag == langMap!['sense']) {
+              else if (tag == TagId.sense.id) {
                 addAttribute(source, AttributeType.movepoint, 1);
               }
-              else if (tag == langMap!['heat']) {
+              else if (tag == TagId.heat.id) {
                 damagePlayer(source, target, 30, DamageType.magical);
               }
-              else if (tag == langMap!['chill']) {
-                addStatus(source, target, langMap!['frost'], 1, 1);
+              else if (tag == TagId.chill.id) {
+                addStatus(source, target, StatusId.frost.id, 1, 1);
               }
             }
           }
         }
         else {
           for (var card in cardList) {
-            List<String> tagList = tagData![card];
-            for (var tag in tagList) { 
-              if (tag == langMap!['sharp']) {
+            List<String> tagList = cardTags[card]!;
+            for (var tag in tagList) {
+              if (tag == TagId.sharp.id) {
                 addAttribute(source, AttributeType.attack, 10);
               }
-              else if (tag == langMap!['protect']) {
+              else if (tag == TagId.protect.id) {
                 addAttribute(source, AttributeType.defence, 10);
               }
-              else if (tag == langMap!['vital']) {
+              else if (tag == TagId.vital.id) {
                 healPlayer(source, source, 100, DamageType.heal);
               }
-              else if (tag == langMap!['destiny']) {
+              else if (tag == TagId.destiny.id) {
                 addHiddenStatus(source, 'destiny', 2, 1);
               }
-              else if (tag == langMap!['mystique']) {
+              else if (tag == TagId.mystique.id) {
                 for (var stat in sourceChara.status.keys) {
-                  if (statusInfo![stat][0] == 0) {
+                  if (statusToType[stat]!.buffType == BuffType.positive) {
                     modifyStatusLayer(source, source, stat, 2);
                   }
                 }
               }
-              else if (tag == langMap!['phantom']) {
-                addAttribute(source, AttributeType.card, 2);
+              else if (tag == TagId.phantom.id) {
+                modifyCardCount(source, source, 2, CardEventType.draw);
               }
-              else if (tag == langMap!['magic']) {
-                removeStatus(source,target, langMap!['dodge']);
+              else if (tag == TagId.magic.id) {
+                removeStatus(source, target, StatusId.dodge.id);
                 addAttribute(target, AttributeType.armor, -targetChara.armor);
                 for (var stat in targetChara.status.keys.toList()) {
-                  if (statusInfo![stat][0] == 0) {
+                  if (statusToType[stat]!.buffType == BuffType.positive) {
                     removeStatus(source, target, stat);
                   }
                 }
               }
-              else if (tag == langMap!['weird']) {
+              else if (tag == TagId.weird.id) {
                 addHiddenStatus(target, 'weird', 0, 1);
                 addHiddenStatus(target, 'strange', 0, 1);
               }
-              else if (tag == langMap!['disorder']) {
+              else if (tag == TagId.disorder.id) {
                 addAttribute(target, AttributeType.movepoint, -2);
               }
-              else if (tag == langMap!['sense']) {
+              else if (tag == TagId.sense.id) {
                 addAttribute(source, AttributeType.movepoint, 2);
               }
-              else if (tag == langMap!['heat']) {
+              else if (tag == TagId.heat.id) {
                 damagePlayer(source, target, 60, DamageType.magical);
               }
-              else if (tag == langMap!['chill']) {
-                addStatus(source, target, langMap!['frost'], 2, 1);
+              else if (tag == TagId.chill.id) {
+                addStatus(source, target, StatusId.frost.id, 2, 1);
               }
             }
           }
         }
       }
       // 白谢【极寒环域】
-      else if (trait == langMap!['glacial_circle']) { 
+      else if (trait == TraitId.glacialCircle.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           int point = traitData['point'];
+          throwDice(source, source, point, 6, DiceType.trait);
           if ({2, 4, 5}.contains(point)) {
             List<DamageRecord> damageRecords = _recordProvider!.getFilteredRecords(type: RecordType.damage, 
               target: source, startTurn: getGameTurn(), endTurn: getGameTurn()).cast<DamageRecord>();
@@ -4519,7 +4941,7 @@ class Game extends ChangeNotifier{
             }
 
             for (var tar in targets) {
-              addStatus(source, tar, langMap!['frost'], 3, 1);
+              addStatus(source, tar, StatusId.frost.id, 3, 1);
             }
           }
         }
@@ -4533,17 +4955,17 @@ class Game extends ChangeNotifier{
         }
       }
       // 沈姝华【纯洁之爱】
-      else if (trait == langMap!['innocent_love']) { 
+      else if (trait == TraitId.innocentLove.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           List<String> cardList = traitData['cardList'];
           int cardOverlapped = 0;
           int maxOverlapped = 0;
-          for (var tag in Tag.values) {
+          for (var tag in TagId.values) {
             cardOverlapped = 0;
             for (var card in cardList) {
-              List<String> tagList = tagData![card];
-              if (tagList.contains(tag.tagId)) {
+              List<String> tagList = cardTags[card]!;
+              if (tagList.contains(tag.id)) {
                 cardOverlapped += 1;
               }
             }
@@ -4555,11 +4977,11 @@ class Game extends ChangeNotifier{
           costRef[0] -= (maxOverlapped - 1);
         }
         else {
-          addAttribute(source, AttributeType.card, 1);
+          modifyCardCount(source, source, 1, CardEventType.draw);
         }
       }
       // 翠灵【生息】
-      else if (trait == langMap!['life_breath']) { 
+      else if (trait == TraitId.lifeBreath.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           addHiddenStatus(source, 'breath', 0, 1);
@@ -4573,60 +4995,60 @@ class Game extends ChangeNotifier{
         }
       }
       // 翠灵【破土】
-      else if (trait == langMap!['earth_break']) { 
+      else if (trait == TraitId.earthBreak.id) { 
         List<String> cardList = traitData['cardList'];
         for (String card in cardList) {
-          List<String> tagList = tagData![card];
-          if (tagList.contains(langMap!['vital'])) {
+          List<String> tagList = cardTags[card]!;
+          if (tagList.contains(TagId.vital.id)) {
             for (var tar in targets) {
-              addStatus(source, tar, langMap!['tear'], 5, 1);
+              addStatus(source, tar, StatusId.tear.id, 5, 1);
             }
           }
         }
       }
       // 湍云【屏息】
-      else if (trait == langMap!['hold_breath']) { 
+      else if (trait == TraitId.holdBreath.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           addHiddenStatus(source, 'hold', 0, 1);
         }
         else if (type == 1) { 
-          addStatus(source, source, langMap!['charge'], 0, 1);
-          modifyStatusIntensity(source, source, langMap!['charge'], 3);
+          addStatus(source, source, StatusId.charge.id, 0, 1);
+          modifyStatusIntensity(source, source, StatusId.charge.id, 3);
           removeHiddenStatus(source, 'hold');
         }
         else if (type == 2) {
           addHiddenStatus(source, 'holding', 0, 1);
         }
         else { 
-          addStatus(source, source, langMap!['charge'], 0, 1);
-          modifyStatusIntensity(source, source, langMap!['charge'], 5);
+          addStatus(source, source, StatusId.charge.id, 0, 1);
+          modifyStatusIntensity(source, source, StatusId.charge.id, 5);
           removeHiddenStatus(source, 'holding');
         }
       }
       // 湍云【惊弓】
-      else if (trait == langMap!['gun_shy']) { 
+      else if (trait == TraitId.gunShy.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           addHiddenStatus(source, 'gun_shy', 0, 1);
         }
         else if (type == 1) { 
-          addStatus(source, source, langMap!['uneasiness'], 1, 1);
+          addStatus(source, source, StatusId.uneasiness.id, 1, 1);
           removeHiddenStatus(source, 'gun_shy');
         }
       }
       // ReFre-3【<06>自卫协议】
-      else if (trait == langMap!['defensive_protocol']) { 
+      else if (trait == TraitId.defensiveProtocol.id) { 
         damagePlayer(source, target, sourceChara.attack - targetChara.defence, DamageType.physical);
-        addStatus(source, target, langMap!['frost'], 5, 1);
+        addStatus(source, target, StatusId.frost.id, 5, 1);
         addHiddenStatus(source, 'protocol', 1, 1);
       }
       // ReFre-3【<0C>热能回收】
-      else if (trait == langMap!['thermal_recovery']) { 
-        addStatus(source, source, langMap!['charge'], targetChara.getStatusIntData(langMap!['frost'], StatusData.intensity), 1);
+      else if (trait == TraitId.thermalRecovery.id) { 
+        addStatus(source, source, StatusId.charge.id, targetChara.getStatusIntData(StatusId.frost.id, StatusData.intensity), 1);
       }
       // 洛尔【不断燃烧的愤怒】
-      else if (trait == langMap!['smoldering_rage']) { 
+      else if (trait == TraitId.smolderingRage.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           int rageIntensity = targetChara.getHiddenStatusIntData('rage', StatusData.intensity) == -1 
@@ -4635,55 +5057,55 @@ class Game extends ChangeNotifier{
           addHiddenStatus(source, 'rage', ((targetChara.maxHealth - targetChara.health) ~/ 200 - rageIntensity), -1);
         }
         else { 
-          addStatus(source, source, langMap!['wounded'], 5, 1);
+          addStatus(source, source, StatusId.wounded.id, 5, 1);
         }
       }
       // 洛尔【毫无章法的进攻】
-      else if (trait == langMap!['chaotic_strikes']) { 
+      else if (trait == TraitId.chaoticStrikes.id) { 
         int type = traitData['type'];
         if (type == 0) { 
-          addStatus(source, target, langMap!['unbalanced'], targetChara.attack * 3, 1);
+          addStatus(source, target, StatusId.unbalanced.id, targetChara.attack * 3, 1);
         }
         else { 
-          addAttribute(target, AttributeType.maxhp, -targetChara.getStatusIntData(langMap!['unbalanced'], StatusData.intensity));
-          modifyStatusLayer(source, target, langMap!['unbalanced'], -1);
+          addAttribute(target, AttributeType.maxhp, -targetChara.getStatusIntData(StatusId.unbalanced.id, StatusData.intensity));
+          modifyStatusLayer(source, target, StatusId.unbalanced.id, -1);
           if (targetChara.maxHealth < targetChara.health) {
             damagePlayer('empty', target, targetChara.health - targetChara.maxHealth, DamageType.lost);
-            addStatus(source, target, langMap!['confusion'], 0, 1);
+            addStatus(source, target, StatusId.confusion.id, 0, 1);
             addHiddenStatus(source, 'unbalanced', 0, 1);
           }
         }
       }
       // 奥菲莉娅【控水】
-      else if (trait == langMap!['hydromancy']) { 
+      else if (trait == TraitId.hydromancy.id) { 
         int type = traitData['type'];
         if (type == 0) { 
-          addStatus(source, target, langMap!['dehydration'], 1, 2);
+          addStatus(source, target, StatusId.dehydration.id, 1, 2);
         }
         else { 
-          addStatus(source, target, langMap!['submerged'], 1, 2);
+          addStatus(source, target, StatusId.submerged.id, 1, 2);
         }
       }
       // 奥菲莉娅【水之刑】
-      else if (trait == langMap!['water_torture']) { 
+      else if (trait == TraitId.waterTorture.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           int point = traitData['point'];
-          addStatus(source, target, langMap!['asphyxia'], point, 1);
-          removeStatus(source, target, langMap!['dehydration']);
-          removeStatus(source, target, langMap!['submerged']);
+          addStatus(source, target, StatusId.asphyxia.id, point, 1);
+          removeStatus(source, target, StatusId.dehydration.id);
+          removeStatus(source, target, StatusId.submerged.id);
         }
         else { 
-          damagePlayer('empty', target, 50 * targetChara.getStatusIntData(langMap!['asphyxia'], StatusData.intensity), DamageType.lost);
-          removeStatus(source, target, langMap!['asphyxia']);
+          damagePlayer('empty', target, 50 * targetChara.getStatusIntData(StatusId.asphyxia.id, StatusData.intensity), DamageType.lost);
+          removeStatus(source, target, StatusId.asphyxia.id);
         }
       }
       // 符楹【光暗双生】
-      else if (trait == langMap!['lumen_umbra_gemini']) { 
+      else if (trait == TraitId.lumenUmbraGemini.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           modifyHiddenStatusIntensity(source, 'gemini', 1);
-          addAttribute(source, AttributeType.card, -1);
+          modifyCardCount(source, source, 1, CardEventType.discard);
         }
         else if (type == 1) { 
           healPlayer(source, source, sourceChara.maxHealth ~/ 20, DamageType.heal);
@@ -4693,7 +5115,7 @@ class Game extends ChangeNotifier{
         }
       }
       // EnGine-4【<04>质能转换】
-      else if (trait == langMap!['mass_energy_conversion']) { 
+      else if (trait == TraitId.massEnergyConversion.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           int damage = traitData['damage'];
@@ -4713,17 +5135,14 @@ class Game extends ChangeNotifier{
           addHiddenStatus(source, 'conversion', 0, 1);
         }
         else if (type == 2){
-          addAttribute(source, AttributeType.card, 2);
+          modifyCardCount(source, source, 2, CardEventType.draw);
         }
         else {
-          if (targetChara.cardCount > 0) {
-            addAttribute(source, AttributeType.card, 1);
-            addAttribute(target, AttributeType.card, -1);
-          }
+          modifyCardCount(source, target, 1, CardEventType.grab);
         }
       }
       // 兰斯洛特【针锋相对】
-      else if (trait == langMap!['tit_for_tat']) { 
+      else if (trait == TraitId.titForTat.id) { 
         int sourcePoint = traitData['sourcePoint'];
         int targetPoint = traitData['targetPoint'];
         if (sourceChara.hasHiddenStatus('tit_for_tat')) {
@@ -4739,17 +5158,17 @@ class Game extends ChangeNotifier{
         }
       }
       // 祝烨诚【凛息】
-      else if (trait == langMap!['icy_stillness']) {
+      else if (trait == TraitId.icyStillness.id) {
         int type = traitData['type'];
         if (type == 0) { 
-          addStatus(source, target, langMap!['frost'], 2, 1);
+          addStatus(source, target, StatusId.frost.id, 2, 1);
         }
         else if (type == 1) {
           List<String> cardList = traitData['cardList'];
           List<int> costRef = traitData['costRef'];
           for (String card in cardList) {
-            List<String> tagList = tagData![card];
-            if (tagList.contains(langMap!['chill']) || tagList.contains(langMap!['mystique'])) {
+            List<String> tagList = cardTags[card]!;
+            if (tagList.contains(TagId.chill.id) || tagList.contains(TagId.mystique.id)) {
               costRef[0] -= 1;
             }
           }
@@ -4757,31 +5176,30 @@ class Game extends ChangeNotifier{
         else {
           List<String> cardList = traitData['cardList'];
           for (String card in cardList) {
-            List<String> tagList = tagData![card];
-            if (tagList.contains(langMap!['chill']) || tagList.contains(langMap!['mystique'])) {
-              modifyStatusLayer(source, target, langMap!['frost'], 1);
-              modifyStatusIntensity(source,target, langMap!['frost'], 1);
+            List<String> tagList = cardTags[card]!;
+            if (tagList.contains(TagId.chill.id) || tagList.contains(TagId.mystique.id)) {
+              modifyStatusLayer(source, target, StatusId.frost.id, 1);
+              modifyStatusIntensity(source,target, StatusId.frost.id, 1);
             }
           }
         }
       }
       // 蓝文策【探囊取物】
-      else if (trait == langMap!['plucking_pouch']) {
+      else if (trait == TraitId.pluckingPouch.id) {
         int type = traitData['type'];
         addHiddenStatus(target, 'pluck_tar', 0, 0);
         if (type == 0) { 
           addHiddenStatus(source, 'costminus', 1, 0);
-          addAttribute(source, AttributeType.card, 1);
-          addAttribute(target, AttributeType.card, -1);
+          modifyCardCount(source, target, 1, CardEventType.grab);
         }
       }
       // DeFen-5【<15>力场模拟】
-      else if (trait == langMap!['force_field_simulation']) { 
+      else if (trait == TraitId.forceFieldSimulation.id) { 
         addAttribute(source, AttributeType.defence, 3);
-        addAttribute(source, AttributeType.card, -1);
+        modifyCardCount(source, source, 1, CardEventType.discard);
       }
       // 染序【五采】
-      else if (trait == langMap!['iridescent_hue']) { 
+      else if (trait == TraitId.iridescentHue.id) { 
         if (!sourceChara.hasHiddenStatus('iris')) {
           addHiddenStatus(source, 'iris', 0, -1);
         }
@@ -4829,7 +5247,7 @@ class Game extends ChangeNotifier{
         }
       }
       // 卡拉卡【友情防守】
-      else if (trait == langMap!['buddy_block']) { 
+      else if (trait == TraitId.buddyBlock.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           List<int> costRef = traitData['costRef'];
@@ -4842,7 +5260,7 @@ class Game extends ChangeNotifier{
             if ((isTeammate(source, chara.id) || chara.id == source) && chara.id != 'empty') {
               List<String> statusKeys = chara.status.keys.toList();
               for (String stat in statusKeys) {
-                if (statusInfo![stat][0] == 1) {
+                if (statusToType[stat]!.buffType == BuffType.negative) {
                   removeStatus(source, chara.id, stat);
                 }
               }
@@ -4855,7 +5273,7 @@ class Game extends ChangeNotifier{
         }
       }
       // 观风【气象万千】
-      else if (trait == langMap!['weathers_unfold']) { 
+      else if (trait == TraitId.weathersUnfold.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           modifyHiddenStatusIntensity(source, 'wind', 1);
@@ -4863,68 +5281,37 @@ class Game extends ChangeNotifier{
         else if (type == 1) { 
           modifyHiddenStatusIntensity(source, 'cloud', 1);
         }        
-        else if (type == 2) { 
-          List<StatusRecord> statusRecords = _recordProvider!.getFilteredRecords(type: RecordType.status, target: target).cast<StatusRecord>();
-          String stat = statusRecords.lastWhere((e) => statusInfo![e.name][0] == 1 && e.changeType == StatusChange.add
-            && targetChara.hasStatus(e.name)).name;
-          modifyStatusLayer(source, target, stat, sourceChara.getHiddenStatusIntData('cloud', StatusData.intensity));
-          if (statusInfo![stat][1] == 1) {
-            modifyStatusIntensity(source, target, stat, 2 * sourceChara.getHiddenStatusIntData('wind', StatusData.intensity));
-          }
-          else {
-            modifyStatusLayer(source, target, stat, sourceChara.getHiddenStatusIntData('wind', StatusData.intensity));
-          }
-          modifyHiddenStatusIntensity(source, 'wind', -sourceChara.getHiddenStatusIntData('wind', StatusData.intensity));
-          modifyHiddenStatusIntensity(source, 'cloud', -sourceChara.getHiddenStatusIntData('cloud', StatusData.intensity));
-        }
-        else if (type == 3) { 
-          List<StatusRecord> statusRecords = _recordProvider!.getFilteredRecords(type: RecordType.status, target: source).cast<StatusRecord>();
-          String stat = statusRecords.lastWhere((e) => statusInfo![e.name][0] == 0 && e.changeType == StatusChange.add
-            && sourceChara.hasStatus(e.name)).name;
-          modifyStatusLayer(source, source, stat, sourceChara.getHiddenStatusIntData('cloud', StatusData.intensity));
-          if (statusInfo![stat][1] == 1) {
-            modifyStatusIntensity(source, source, stat, 2 * sourceChara.getHiddenStatusIntData('wind', StatusData.intensity));
-          }
-          else {
-            modifyStatusLayer(source, source, stat, sourceChara.getHiddenStatusIntData('wind', StatusData.intensity));
-          }
-          modifyHiddenStatusIntensity(source, 'wind', -sourceChara.getHiddenStatusIntData('wind', StatusData.intensity));
-          modifyHiddenStatusIntensity(source, 'cloud', -sourceChara.getHiddenStatusIntData('cloud', StatusData.intensity));
+        else { 
+          addHiddenStatus(source, 'weather', 0, 0);
         }
       }
       // 安提忒斯【冰与火之歌】
-      else if (trait == langMap!['ice_and_fire']) { 
+      else if (trait == TraitId.iceAndFire.id) { 
         int type = traitData['type'];
         if (type == 0) { 
-          modifyStatusLayer(source, source, langMap!['flaming'], 2);
-          modifyStatusIntensity(source, source, langMap!['flaming'], 2);
+          modifyStatusLayer(source, source, StatusId.flaming.id, 2);
+          modifyStatusIntensity(source, source, StatusId.flaming.id, 2);
         }
         else if (type == 1) { 
-          modifyStatusLayer(source, source, langMap!['frost'], 2);
-          modifyStatusIntensity(source, source, langMap!['frost'], 2);
+          modifyStatusLayer(source, source, StatusId.frost.id, 2);
+          modifyStatusIntensity(source, source, StatusId.frost.id, 2);
         }
         else {
           String status = traitData['status'];
-          if (statusInfo![status][1] == 1) {
-            addStatus(source, target, status, 2 * sourceChara.getStatusIntData(status, StatusData.intensity), 
-              sourceChara.getStatusIntData(status, StatusData.layer));
-          }
-          else {
-            addStatus(source, target, status, 0, sourceChara.getStatusIntData(status, StatusData.layer));
-          }
-          removeStatus(source, source, status);
+          addHiddenStatus(source, 'ice_and_fire', 0, 0);
+          sourceChara.setHiddenStatusData('ice_and_fire', strData: status);
         }
       }
       // 守塔人【潮海明灯】
-      else if (trait == langMap!['tide_beacon']) { 
+      else if (trait == TraitId.tideBeacon.id) { 
         List<StatusRecord> statusRecords = _recordProvider!.getFilteredRecords(type: RecordType.status, target: target).cast<StatusRecord>();
-        String status = statusRecords.lastWhere((e) => statusInfo![e.name][0] == 1 && e.changeType == StatusChange.add
+        String status = statusRecords.lastWhere((e) => statusToType[e.name]!.buffType == BuffType.negative && e.changeType == StatusChange.add
           && targetChara.hasStatus(e.name)).name;
         removeStatus(source, target, status);
-        addStatus(source, target, langMap!['impassioned'], 2, 1);
+        addStatus(source, target, StatusId.impassioned.id, 2, 1);
       }
       // 焰心剑【陨光之刃】
-      else if (trait == langMap!['lightfall_blade']) { 
+      else if (trait == TraitId.lightfallBlade.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           damagePlayer(source, target, 40, DamageType.magical);
@@ -4932,8 +5319,8 @@ class Game extends ChangeNotifier{
         else if (type == 1) { 
           List<String> cardList = traitData['cardList'];
           for (String card in cardList) {
-            List<String> tagList = tagData![card];
-            if (tagList.contains(langMap!['sharp'])) {
+            List<String> tagList = cardTags[card]!;
+            if (tagList.contains(TagId.sharp.id)) {
               addAttribute(source, AttributeType.attack, 5);
               damagePlayer(source, target, 20, DamageType.physical);
             }
@@ -4941,50 +5328,53 @@ class Game extends ChangeNotifier{
         }
       }
       // 焰心剑【山河剑意】
-      else if (trait == langMap!['lands_grace_swords_soul']) { 
+      else if (trait == TraitId.landsGraceSwordsSoul.id) { 
         List<String> cardList = traitData['cardList'];
         int cardOverlapped = 0;
-        for (var tag in Tag.values) {
+        for (var tag in TagId.values) {
           cardOverlapped = 0;
           for (var card in cardList) {
-            List<String> tagList = tagData![card];
-            if (tagList.contains(tag.tagId)) {
+            List<String> tagList = cardTags[card]!;
+            if (tagList.contains(tag.id)) {
               cardOverlapped++;
             }            
           }
           if (cardOverlapped >= 3) {
-            addStatus(source, source, langMap!['sword_heart'], 5, 1);
+            addStatus(source, source, StatusId.swordHeart.id, 5, 1);
             break;
           }
         }
       }
       // 曙光【不容质疑的信任】
-      else if (trait == langMap!['unquestioning_trust']) { 
+      else if (trait == TraitId.unquestioningTrust.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           int point = traitData['point'];
-          addStatus(source, source, langMap!['shelter'], point, 1);
+          addStatus(source, source, StatusId.shelter.id, point, 1);
           addHiddenStatus(source, 'trust', 0, 1);
         }
         else if (type == 1) { 
           addHiddenStatus(target, 'support_def', 0, -1);
         }
-        else {
+        else if (type == 2) {
           String supportAttackSource = traitData['source'];
-          int point = traitData['point'];
-          addHiddenStatus(target, 'support_atk', 0, -1);
+          addHiddenStatus(supportAttackSource, 'support_atk', 0, -1);
           addHiddenStatus(supportAttackSource, 'unquestion', 0, 0);
-          playCards(supportAttackSource, [target], point, [], []);
+          addHiddenStatus(supportAttackSource, 'costminus', 1, 0);
+          addAttribute(supportAttackSource, AttributeType.actiontime, 1);          
+          // playCards(supportAttackSource, [target], point, [], []);
+        }
+        else {
+          modifySkillCooldown(source, source, SkillId.unwaveringGuard.id,-1);
         }
       }
       // 奥赛罗【黑白棋】
-      else if (trait == langMap!['reversi']) { 
+      else if (trait == TraitId.reversi.id) { 
         int type = traitData['type'];
         if (type == 0) { 
           if (targetChara.hasHiddenStatus('black_piece')) {
             addHiddenStatus(target, 'black_piece', 1, -1);
-          }
-          else {
+          } else {
             addHiddenStatus(target, 'white_piece', 1, -1);
           }
         }
@@ -4992,8 +5382,7 @@ class Game extends ChangeNotifier{
           if (targetChara.hasHiddenStatus('black_piece') && targetChara.cardCount % 2 == 0) {
             addHiddenStatus(target, 'white_piece', targetChara.getHiddenStatusIntData('black_piece', StatusData.intensity), -1);
             removeHiddenStatus(target, 'black_piece');
-          }
-          else if (targetChara.hasHiddenStatus('white_piece') && targetChara.cardCount % 2 == 1) {
+          } else if (targetChara.hasHiddenStatus('white_piece') && targetChara.cardCount % 2 == 1) {
             addHiddenStatus(target, 'black_piece', targetChara.getHiddenStatusIntData('white_piece', StatusData.intensity), -1);
             removeHiddenStatus(target, 'white_piece');
           }
@@ -5003,8 +5392,7 @@ class Game extends ChangeNotifier{
           for (var chara in players.values) {
             if (chara.hasHiddenStatus('black_piece')) {
               pieceCount += chara.getHiddenStatusIntData('black_piece', StatusData.intensity);
-            }
-            else if (chara.hasHiddenStatus('white_piece')) {
+            } else if (chara.hasHiddenStatus('white_piece')) {
               pieceCount += chara.getHiddenStatusIntData('white_piece', StatusData.intensity);
             }
           }
@@ -5017,15 +5405,15 @@ class Game extends ChangeNotifier{
         }
       }
       // 石蹄【蹦蹦咒语】
-      else if (trait == langMap!['boing_spell']) { 
+      else if (trait == TraitId.boingSpell.id) { 
         int type = traitData['type'];
         if (type == 0) { 
-          modifyStatusIntensity(source, target, langMap!['swift'], 1);
-          modifyStatusLayer(source, target, langMap!['swift'], 1);
+          modifyStatusIntensity(source, target, StatusId.swift.id, 1);
+          modifyStatusLayer(source, target, StatusId.swift.id, 1);
         }
         else if (type == 1) { 
-          modifyStatusIntensity(source, target, langMap!['slowness'], 1);
-          modifyStatusLayer(source, target, langMap!['slowness'], 1);          
+          modifyStatusIntensity(source, target, StatusId.slowness.id, 1);
+          modifyStatusLayer(source, target, StatusId.slowness.id, 1);          
         }
         else if (type == 2) { 
           List<int> layerRef = traitData['layerRef'];
@@ -5033,34 +5421,108 @@ class Game extends ChangeNotifier{
         }
         else { 
           List<int> pointRef = traitData['pointRef'];
-          pointRef[0] += (sourceChara.getStatusIntData(langMap!['swift'], StatusData.layer) + 
-          sourceChara.getStatusIntData(langMap!['swift'], StatusData.intensity)) ~/ 4 * 2;
+          pointRef[0] += (sourceChara.getStatusIntData(StatusId.swift.id, StatusData.layer) + 
+          sourceChara.getStatusIntData(StatusId.swift.id, StatusData.intensity)) ~/ 4 * 2;
+        }
+      }
+      // 埃诺雅【原初时计】
+      else if (trait == TraitId.primordialHorologe.id) { 
+        int point = traitData['point'];    
+        String card = traitData['card'];
+        int horologeSpace = sourceChara.getHiddenStatusIntData('horologe', StatusData.intensity);
+        int emptyIndex = -1;
+        for (int i = 0; i < 5; i++) {
+          if (horologeSpace & (1 << i) == 0) {
+            emptyIndex = i;
+            break;
+          }
+        }
+        addHiddenStatus(source, 'action_$emptyIndex', point, -1);
+        sourceChara.setHiddenStatusData('action_$emptyIndex',strData: card);
+        modifyHiddenStatusIntensity(source, 'horologe', 1 << emptyIndex);
+      }
+      // 向月【心灵魔术】
+      else if (trait == TraitId.mentalSorcery.id) {
+        if (targetChara.cardCount >= 2) {
+          addHiddenStatus(target, 'sorcery', 0, 1);
+        }
+        else {
+          damagePlayer(source, target, 150, DamageType.magical);
+        }
+      }
+      // 司库【断、舍、离】
+      else if (trait == TraitId.danshari.id) { 
+        int type = traitData['type'];
+        if (type == 0) { 
+          addAttribute(source, AttributeType.armor, 35 * (sourceChara.cardCount + sourceChara.movePoint));
+          addHiddenStatus(source, 'danshari', sourceChara.movePoint, 2);
+          addAttribute(source, AttributeType.movepoint, -sourceChara.movePoint);
+          modifyCardCount(source, source, sourceChara.cardCount, CardEventType.discard);
+        }
+        else {
+          if (sourceChara.hasHiddenStatus('danshari')) {
+            modifyCardCount(source, source, sourceChara.getHiddenStatusIntData('danshari', StatusData.intensity), CardEventType.draw);
+            removeHiddenStatus(source, 'danshari');
+          }
+        }
+      }
+      // 司库【裁虚留要】
+      else if (trait == TraitId.essenceOverIllusion.id) { 
+        List<bool> skillAbleRef = traitData['skillAbleRef'];
+        List<int> costRef = traitData['costRef'];
+        int cooldown = traitData['cooldown'];
+        skillAbleRef[0] = false;
+        costRef[0] = 0;
+        addAttribute(source, AttributeType.movepoint, cooldown ~/ 3);
+      }
+      // π123【二进制成对】
+      else if (trait == TraitId.binaryDyad.id) { 
+        List<int> points = traitData['points'];
+        for (int i = 0; i < points.length; i++) {
+          throwDice(source, target, points[i], 2, DiceType.trait);
+          modifyHiddenStatusIntensity(source, 'dyad', points[i]);
+        }
+        modifyHiddenStatusIntensity(source, 'dyad', 2048 * (points.length + 1));
+      }
+      // 蓝文曦【盈亏相济】
+      else if (trait == TraitId.lossGainEquilibrium.id) { 
+        int type = traitData['type'];
+        if (type == 0) { 
+          addAttribute(source, AttributeType.defence, 5);
+        } 
+        else if (type == 1) { 
+          addAttribute(source, AttributeType.attack, 5);
+        } 
+        else {
+          modifyCardCount(source, source, 2, CardEventType.draw);
         }
       }
 
       // 特质结算
       // 阿波菲斯【毁灭暗影】
-      if (isCharacterInGame(langMap!['apophis']) && sourceChara.hasStatus(langMap!['nightmare']) 
+      if (isCharacterInGame(CharacterId.apophis.id) && sourceChara.hasStatus(StatusId.nightmare.id) 
         && sourceChara.getHiddenStatusIntData('night', StatusData.intensity) < 3) {
-        Character chara = players[langMap!['apophis']]!;
-        if (sourceChara.hasStatus(langMap!['eden'])) {
-          damagePlayer(chara.id, source, 20 + 40 * sourceChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity), DamageType.magical);
-          healPlayer(chara.id, chara.id, 10 + 20 * sourceChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity), DamageType.heal);
-        }
-        else { 
-          damagePlayer(chara.id, source, 10 + 20 * sourceChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity), DamageType.magical);
-          healPlayer(chara.id, chara.id, 5 + 10 * sourceChara.getStatusIntData(langMap!['nightmare'], StatusData.intensity), DamageType.heal);
+        Character chara = players[CharacterId.apophis.id]!;
+        if (sourceChara.hasStatus(StatusId.eden.id)) {
+          damagePlayer(chara.id, source, 20 + 40 * sourceChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity), DamageType.magical);
+          healPlayer(chara.id, chara.id, 10 + 20 * sourceChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity), DamageType.heal);
+        } else { 
+          damagePlayer(chara.id, source, 10 + 20 * sourceChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity), DamageType.magical);
+          healPlayer(chara.id, chara.id, 5 + 10 * sourceChara.getStatusIntData(StatusId.nightmare.id, StatusData.intensity), DamageType.heal);
         }
         addHiddenStatus(source, 'night', 1, -1);
         addHiddenStatus(chara.id, 'night', 1, -1);
-        castTrait(chara.id, [source], langMap!['ruinous_shade'], {'type': 1});
+        castTrait(chara.id, [source], TraitId.ruinousShade.id, {'type': 1});
       }
 
       // 记录特质
       _recordProvider!.addTraitRecord(GameTurn(round: round, turn: turn, extra: extra), source, targets, 
       trait, traitData);
       _gameLogger!.addTraitLog(getGameTurn(), source, targets.toString(), trait, traitData.toString());
+      refresh();
     }
+
+    return traitAble;
   }
 
   void damagePlayer(String source, String target, int damage, DamageType type, {String tag = '', bool isAOE = false}){ 
@@ -5071,25 +5533,23 @@ class Game extends ChangeNotifier{
 
     // 伤害转移
     // 余梦得【梦的守护】
-    if (isCharacterInGame(langMap!['yu_mengde']) && isTeammate(langMap!['yu_mengde'], target) 
+    if (isCharacterInGame(CharacterId.yuMengde.id) && isTeammate(CharacterId.yuMengde.id, target) 
       && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
-      String yuMengdeId = langMap!['yu_mengde'];
-      Character yuMengdeChara = players[langMap!['yu_mengde']]!;
-      castTrait(yuMengdeId, [yuMengdeId], langMap!['guardian_of_dreams'], {'type': 1});
+      Character yuMengdeChara = players[CharacterId.yuMengde.id]!;
+      castTrait(CharacterId.yuMengde.id, [CharacterId.yuMengde.id], TraitId.guardianOfDreams.id, {'type': 1});
       if (yuMengdeChara.hasHiddenStatus('dream_guard')) {
-        target = yuMengdeId;
+        target = CharacterId.yuMengde.id;
         targetChara = yuMengdeChara;
-        removeHiddenStatus(yuMengdeId, 'dream_guard');
+        removeHiddenStatus(CharacterId.yuMengde.id, 'dream_guard');
       }
     }
     // 曙光【不容置疑的信任】
-    if (isCharacterInGame(langMap!['daybreak']) && isTeammate(langMap!['daybreak'], target) 
+    if (isCharacterInGame(CharacterId.daybreak.id) && isTeammate(CharacterId.daybreak.id, target) 
       && {DamageType.action}.contains(type)) {
-      String daybreakId = langMap!['daybreak'];
-      Character daybreakChara = players[langMap!['daybreak']]!;
-      castTrait(daybreakId, [target], langMap!['unquestioning_trust'], {'type': 1});
+      Character daybreakChara = players[CharacterId.daybreak.id]!;
+      castTrait(CharacterId.daybreak.id, [target], TraitId.unquestioningTrust.id, {'type': 1});
       if (targetChara.hasHiddenStatus('support_def')) {
-        target = daybreakChara.id;
+        target = CharacterId.daybreak.id;
         targetChara = daybreakChara;
       }
     }
@@ -5121,54 +5581,54 @@ class Game extends ChangeNotifier{
       removeHiddenStatus(target, 'penetrate');
     }
     // 图西乌【凌日】
-    if (target == langMap!['tussiu'] && type == DamageType.action) {
+    if (target == CharacterId.tussiu.id && type == DamageType.action) {
       List<int> damagePlusRef = [damagePlus];
       List<double> damageMultiRef = [damageMulti];
-      castTrait(target, [target], langMap!['transit'], {'damagePlusRef': damagePlusRef, 'damageMultiRef': damageMultiRef});
+      castTrait(target, [target], TraitId.transit.id, {'damagePlusRef': damagePlusRef, 'damageMultiRef': damageMultiRef});
       damagePlus = damagePlusRef[0];
       damageMulti = damageMultiRef[0];
     }
 
     // 状态【氤氲】
-    if (targetChara.hasStatus(langMap!['nebula']) && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
-      damageMulti *= (1.0 + 0.5 * targetChara.getStatusIntData(langMap!['nebula'], StatusData.intensity));
+    if (targetChara.hasStatus(StatusId.nebula.id) && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
+      damageMulti *= (1.0 + 0.5 * targetChara.getStatusIntData(StatusId.nebula.id, StatusData.intensity));
     }
     // 状态【灵曜】
-    if (targetChara.hasStatus(langMap!['soul_flare']) && {DamageType.action, DamageType.physical}.contains(type)) {
-      damagePlus -= 80 * targetChara.getStatusIntData(langMap!['soul_flare'], StatusData.intensity);
-      damagePlayer(target, source, 105 * targetChara.getStatusIntData(langMap!['soul_flare'], StatusData.intensity), DamageType.magical);
-      removeStatus(target, target, langMap!['soul_flare']);
+    if (targetChara.hasStatus(StatusId.soulFlare.id) && {DamageType.action, DamageType.physical}.contains(type)) {
+      damagePlus -= 80 * targetChara.getStatusIntData(StatusId.soulFlare.id, StatusData.intensity);
+      damagePlayer(target, source, 105 * targetChara.getStatusIntData(StatusId.soulFlare.id, StatusData.intensity), DamageType.magical);
+      removeStatus(target, target, StatusId.soulFlare.id);
     }
     // 状态【骑虎难下】
-    if(targetChara.hasStatus(langMap!['tigris_dilemma']) && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)){
+    if(targetChara.hasStatus(StatusId.tigrisDilemma.id) && {DamageType.action}.contains(type)){
       damageMulti *= 1.2;
     }
     // 状态【润化】
-    if (targetChara.hasStatus(langMap!['moisturize']) && type == DamageType.action) {
+    if (targetChara.hasStatus(StatusId.moisturize.id) && type == DamageType.action) {
       damagePlus -= 50;
     }
     // 状态【撕裂】
-    if (targetChara.hasStatus(langMap!['tear']) && type == DamageType.action) {
-      damagePlayer(source, target, 10 * targetChara.getStatusIntData(langMap!['tear'], StatusData.intensity), DamageType.lost);
-      modifyStatusLayer(target, target, langMap!['tear'], -1);
+    if (targetChara.hasStatus(StatusId.tear.id) && type == DamageType.action) {
+      damagePlayer(source, target, 10 * targetChara.getStatusIntData(StatusId.tear.id, StatusData.intensity), DamageType.lost);
+      modifyStatusLayer(target, target, StatusId.tear.id, -1);
     }
     // 状态【蓄力】
-    if (sourceChara.hasStatus(langMap!['charge']) && type == DamageType.action) {
-      damagePlus += 10 * sourceChara.getStatusIntData(langMap!['charge'], StatusData.intensity);
-      modifyStatusLayer(source, source, langMap!['charge'], -1);
+    if (sourceChara.hasStatus(StatusId.charge.id) && type == DamageType.action) {
+      damagePlus += 10 * sourceChara.getStatusIntData(StatusId.charge.id, StatusData.intensity);
+      modifyStatusLayer(source, source, StatusId.charge.id, -1);
     }
     // 状态【造梦】
-    if (targetChara.hasStatus(langMap!['dream_crafting']) && type == DamageType.action) {
+    if (targetChara.hasStatus(StatusId.dreamCrafting.id) && type == DamageType.action) {
       damageMulti *= 0.75;
     }
     // 状态【剑心】
-    if (sourceChara.hasStatus(langMap!['sword_heart']) && type == DamageType.action) {
-      damageMulti *= (1 + 0.2 * sourceChara.getStatusIntData(langMap!['sword_heart'], StatusData.intensity));
+    if (sourceChara.hasStatus(StatusId.swordHeart.id) && type == DamageType.action) {
+      damageMulti *= (1 + 0.2 * sourceChara.getStatusIntData(StatusId.swordHeart.id, StatusData.intensity));
     }
     // 状态【加护】
-    if (targetChara.hasStatus(langMap!['shelter']) && type == DamageType.action) {
-      damageMulti *= (1 - 0.1 * targetChara.getStatusIntData(langMap!['shelter'], StatusData.intensity));
-      modifyStatusLayer(target, target, langMap!['shelter'], -1);
+    if (targetChara.hasStatus(StatusId.shelter.id) && type == DamageType.action) {
+      damageMulti *= (1 - 0.1 * targetChara.getStatusIntData(StatusId.shelter.id, StatusData.intensity));
+      modifyStatusLayer(target, target, StatusId.shelter.id, -1);
     }
 
     // 技能【恐吓】
@@ -5186,7 +5646,7 @@ class Game extends ChangeNotifier{
     // 斯威芬【造梦者】
     if (sourceChara.hasHiddenStatus('dream_weave') && type == DamageType.action) {
       damagePlayer(source, target, 50, DamageType.magical);
-      addStatus(source, target, langMap!['dreaming'], 0, 1);
+      addStatus(source, target, StatusId.dreaming.id, 0, 1);
       removeHiddenStatus(source, 'dream_weave');
     }
     // 科亚特尔【天启之庭】
@@ -5196,100 +5656,102 @@ class Game extends ChangeNotifier{
     }
     
     // 岚【天魔体】
-    if (source == langMap!['windflutter'] && type == DamageType.action) {
+    if (sourceChara.hasTrait(TraitId.demonicAvatar.id)) {
       List<double> damageMultiRef = [damageMulti];
-      castTrait(source, [source], langMap!['demonic_avatar'], {'damageMultiRef': damageMultiRef});
+      castTrait(source, [source], TraitId.demonicAvatar.id, {'damageMultiRef': damageMultiRef, 'dmgType': type});
       damageMulti = damageMultiRef[0];
     }
     // 恋慕【勿忘我】
-    if (source == langMap!['loveless'] && type == DamageType.action) {
+    if (sourceChara.hasTrait(TraitId.dontForgetMe.id)) {
       List<double> damageMultiRef = [damageMulti];
-      castTrait(source, [source], langMap!['dont_forget_me'], {'damageMultiRef': damageMultiRef, 'type': 0});
+      castTrait(source, [source], TraitId.dontForgetMe.id, {'type': 0, 'damageMultiRef': damageMultiRef, 'dmgType': type});
       damageMulti = damageMultiRef[0];
     }    
-    if (target == langMap!['loveless'] && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
+    if (targetChara.hasTrait(TraitId.dontForgetMe.id)) {
       List<double> damageMultiRef = [damageMulti];
-      castTrait(target, [target], langMap!['dont_forget_me'], {'damageMultiRef': damageMultiRef, 'type': 1});
-      damageMulti = damageMultiRef[0];
-    }
-    // K97【二进制】
-    if (target == langMap!['k97'] && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
-      List<double> damageMultiRef = [damageMulti];
-      castTrait(target, [target], langMap!['binary'], {'damageMultiRef': damageMultiRef, 'type': 2});
+      castTrait(target, [target], TraitId.dontForgetMe.id, {'type': 1, 'damageMultiRef': damageMultiRef, 'dmgType': type});
       damageMulti = damageMultiRef[0];
     }
     // 卿别【夜魇游吟】
-    if (source == langMap!['valedictus'] && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
+    if (source == CharacterId.valedictus.id && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
       List<double> damageMultiRef = [damageMulti];
-      if (targetChara.hasStatus(langMap!['dreaming'])) {
-        castTrait(source, [source], langMap!['nightmare_refrain'], {'type': 2, 'damageMultiRef': damageMultiRef});
+      if (targetChara.hasStatus(StatusId.dreaming.id)) {
+        castTrait(source, [source], TraitId.nightmareRefrain.id, {'type': 2, 'damageMultiRef': damageMultiRef});
       }
       damageMulti = damageMultiRef[0];
     }
     // 时雨【寒冰血脉】
-    if (target == langMap!['shigure'] && {DamageType.action, DamageType.physical}.contains(type)) {
+    if (targetChara.hasTrait(TraitId.icyBlood.id) && {DamageType.action, DamageType.physical}.contains(type)) {
       List<int> damagePlusRef = [damagePlus];
-      castTrait(target, [source], langMap!['icy_blood'], {'type': 1, 'damagePlusRef': damagePlusRef});
+      castTrait(target, [source], TraitId.icyBlood.id, {'type': 1, 'damagePlusRef': damagePlusRef});
       damagePlus = damagePlusRef[0];
     }
     // 舸灯【引渡】
-    if (source == langMap!['gentou'] && type == DamageType.action) {
+    if (source == CharacterId.gentou.id && type == DamageType.action) {
       if (sourceChara.hasHiddenStatus('ferry')) {
         damagePlus += 45;
         removeHiddenStatus(source, 'ferry');
       }
     }
     // 沫【湮灭性轮回】
-    if (source == langMap!['froth'] && type == DamageType.action) {
+    if (source == CharacterId.froth.id && type == DamageType.action) {
       List<double> damageMultiRef = [damageMulti];
-      castTrait(source, [target], langMap!['annihilative_cycle'], {'type': 0, 'damageMultiRef': damageMultiRef});
+      castTrait(source, [target], TraitId.annihilativeCycle.id, {'type': 0, 'damageMultiRef': damageMultiRef});
       damageMulti = damageMultiRef[0];
     }
     // 斯威芬【梦的塑造】
-    if (source == langMap!['sweven'] && type == DamageType.action) {
+    if (source == CharacterId.sweven.id && type == DamageType.action) {
       List<double> damageMultiRef = [damageMulti];
-      if (targetChara.hasStatus(langMap!['dreaming'])) {
-        castTrait(source, [source], langMap!['crafting_of_dreams'], {'type': 4, 'damageMultiRef': damageMultiRef});
+      if (targetChara.hasStatus(StatusId.dreaming.id)) {
+        castTrait(source, [source], TraitId.craftingOfDreams.id, {'type': 4, 'damageMultiRef': damageMultiRef});
       }
       damageMulti = damageMultiRef[0];
     }
     // 余梦得【梦的守护】
-    if (targetChara.hasStatus(langMap!['dream_guarding']) && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
+    if (targetChara.hasStatus(StatusId.dreamGuarding.id) && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
       damageMulti *= 0.8;
     }
     // 红黎【冰火相融】
-    if (source == langMap!['dimpsy'] && type == DamageType.action) {
+    if (source == CharacterId.dimpsy.id && type == DamageType.action) {
       List<double> damageMultiRef = [damageMulti];
-      castTrait(source, [target], langMap!['ice_fire_fusion'], {'damageMultiRef': damageMultiRef});
+      castTrait(source, [target], TraitId.iceFireFusion.id, {'damageMultiRef': damageMultiRef});
       damageMulti = damageMultiRef[0];
     }
     // 方塔索【神游】
-    if (target == langMap!['phantos'] && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
+    if (target == CharacterId.phantos.id && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
       List<int> damagePlusRef = [damagePlus];
-      castTrait(target, [target], langMap!['astral_projection'], {'type': 1, 'damagePlusRef': damagePlusRef});
+      castTrait(target, [target], TraitId.astralProjection.id, {'type': 1, 'damagePlusRef': damagePlusRef});
       damagePlus = damagePlusRef[0];
     }
     // 陆风【追猎的乌托邦】
-    if (source == langMap!['lu_feng'] && targetChara.hasStatus(langMap!['prey']) && type == DamageType.action) {
+    if (source == CharacterId.luFeng.id && targetChara.hasStatus(StatusId.prey.id) && type == DamageType.action) {
       List<double> damageMultiRef = [damageMulti];
-      castTrait(source, [target], langMap!['utopia_of_celerity'], {'type': 1, 'damageMultiRef': damageMultiRef});
+      castTrait(source, [target], TraitId.utopiaOfCelerity.id, {'type': 1, 'damageMultiRef': damageMultiRef});
       damageMulti = damageMultiRef[0];
     }
     if (sourceChara.hasHiddenStatus('prey')) {
       damageMulti *= 0.8;
       removeHiddenStatus(source, 'prey');
     }
+    // 樊求【精准】
+    for (var chara in players.values) {
+      if (chara.hasTrait(TraitId.precision.id) && type == DamageType.action) {
+        List<double> damageMultiRef = [damageMulti];
+        castTrait(chara.id, [source], TraitId.precision.id, {'damageMultiRef': damageMultiRef});
+        damageMulti = damageMultiRef[0];
+      }
+    }    
     // 安山定【后发的乌托邦】
-    if (source == langMap!['an_shanding'] && type == DamageType.action && sourceChara.hasStatus(langMap!['poised'])) {
+    if (source == CharacterId.anShanding.id && type == DamageType.action && sourceChara.hasStatus(StatusId.poised.id)) {
       damageMulti *= 2;
     }
-    if (target == langMap!['an_shanding'] && targetChara.hasHiddenStatus('upspring')) {
+    if (target == CharacterId.anShanding.id && targetChara.hasHiddenStatus('upspring')) {
       List<double> damageMultiRef = [damageMulti];
-      castTrait(target, [target], langMap!['utopia_of_upspring'], {'type': 1, 'damageMultiRef': damageMultiRef});
+      castTrait(target, [target], TraitId.utopiaOfUpspring.id, {'type': 1, 'damageMultiRef': damageMultiRef});
       damageMulti = damageMultiRef[0];
     }
     // 洛尔【毫无章法的进攻】
-    if (source == langMap!['lor'] && sourceChara.hasHiddenStatus('unbalanced') && type == DamageType.action) {
+    if (source == CharacterId.lor.id && sourceChara.hasHiddenStatus('unbalanced') && type == DamageType.action) {
       damageMulti *= 0.5;
     }
     
@@ -5298,60 +5760,60 @@ class Game extends ChangeNotifier{
     
     // 无视伤害效果
     // 状态【闪避】
-    if (targetChara.hasStatus(langMap!['dodge']) && {DamageType.action, DamageType.physical}.contains(type)) {
+    if (targetChara.hasStatus(StatusId.dodge.id) && {DamageType.action, DamageType.physical}.contains(type)) {
       addHiddenStatus(source, 'void', 0, 1);
-      removeStatus(target, target, langMap!['dodge']);
+      removeStatus(target, target, StatusId.dodge.id);
     }
     // 状态【咕咕】
-    if (targetChara.hasStatus(langMap!['gugu'])) {
+    if (targetChara.hasStatus(StatusId.gugu.id) && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
       addHiddenStatus(source, 'void', 0, 1);
     }
     // 状态【梦境】
-    if (targetChara.hasStatus(langMap!['dreaming'])) {
+    if (targetChara.hasStatus(StatusId.dreaming.id)) {
       // 卿别【夜魇游吟】
-      if (source == langMap!['valedictus']) {
-        castTrait(source, [target], langMap!['nightmare_refrain'], {'type': 1});
+      if (source == CharacterId.valedictus.id) {
+        castTrait(source, [target], TraitId.nightmareRefrain.id, {'type': 1});
       }
       // 斯威芬【梦的塑造】
-      if (source == langMap!['sweven']) {
-        castTrait(source, [target], langMap!['crafting_of_dreams'], {'type': 3});
+      if (source == CharacterId.sweven.id) {
+        castTrait(source, [target], TraitId.craftingOfDreams.id, {'type': 3});
       }
       // 方塔索【神游】
-      if (source == langMap!['phantos']) {
-        castTrait(source, [target], langMap!['astral_projection'], {'type': 2});
+      if (source == CharacterId.phantos.id) {
+        castTrait(source, [target], TraitId.astralProjection.id, {'type': 2});
       }
       if (!sourceChara.hasHiddenStatus('nightmare') && {DamageType.action, DamageType.physical}.contains(type)) {
         addHiddenStatus(source, 'void', 0, 1);
       }
     }
     // 太夕【谜渊漩涡】
-    if (target == langMap!['nyxumbra'] && targetChara.hasHiddenStatus('abyss')){
-      int absorbedDamage = damage - 300;
+    if (target == CharacterId.nyxumbra.id && targetChara.hasHiddenStatus('abyss')){
+      final int absorbedDamage = damage - 400;
       if (absorbedDamage > 0) {
-        damage = 300;
+        damage = 400;
         addHiddenStatus(target, 'dark', absorbedDamage ~/ 50, -1);
       }
     }
     // 奈普斯特【幽魂化】
-    if (target == langMap!['nepst'] && isAOE && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
+    if (target == CharacterId.nepst.id && isAOE && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
       List<int> damageRef = [damage];
-      castTrait(target, [target], langMap!['spectralization'], {'type': 0, 'damageRef': damageRef});
+      castTrait(target, [target], TraitId.spectralization.id, {'type': 0, 'damageRef': damageRef});
       damage = damageRef[0];      
     }
     // 方塔索【神游】
-    if (target == langMap!['phantos'] && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
-      castTrait(target, [target], langMap!['astral_projection'], {'type': 0});
+    if (target == CharacterId.phantos.id && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
+      castTrait(target, [target], TraitId.astralProjection.id, {'type': 0});
       if (targetChara.hasHiddenStatus('astral')) {        
         addHiddenStatus(source, 'void', 0, 1);
         removeHiddenStatus(target, 'astral');
       }
     }
     // 符楹【秩序结界】
-    if (targetChara.hasStatus(langMap!['luminance'])) {
+    if (targetChara.hasStatus(StatusId.luminance.id)) {
       damage = 0;
     }
     // DeFen-5【<15>力场模拟】
-    if (target == langMap!['defen_5']) {
+    if (target == CharacterId.defen5.id) {
       addAttribute(target, AttributeType.defence, -damage ~/ 50);
       damage = 0;
     }
@@ -5376,7 +5838,7 @@ class Game extends ChangeNotifier{
         removeHiddenStatus(fissionChara.id, 'fission_target');
         damagePlayer(source, fissionChara.id, damage, DamageType.physical, isAOE: true);
       }
-      if (targetChara.hasStatus(langMap!['fractured'])) {
+      if (targetChara.hasStatus(StatusId.fractured.id)) {
         addAttribute(target, AttributeType.health, -damage);
       }
       else {
@@ -5401,7 +5863,7 @@ class Game extends ChangeNotifier{
       }
     }
     else if (type == DamageType.physical) {
-      if (targetChara.hasStatus(langMap!['fractured'])) {
+      if (targetChara.hasStatus(StatusId.fractured.id)) {
         addAttribute(target, AttributeType.health, -damage);
       }
       else {
@@ -5435,29 +5897,33 @@ class Game extends ChangeNotifier{
     // 技能【镜像】
     if (targetChara.hasHiddenStatus('mirror')) {
       if (targetChara.damageReceivedTotal - targetChara.getHiddenStatusIntData('mirror', StatusData.intensity) > 300) {
-        removeStatus(target, target, langMap!['mirror']);
+        removeStatus(target, target, StatusId.mirror.id);
         removeHiddenStatus(target, 'mirror');
       }
     }
     // 沫【湮灭性轮回】
-    if (source == langMap!['froth'] && type == DamageType.action) {
-      castTrait(source, [target], langMap!['annihilative_cycle'], {'type': 1, 'damage': damage});
+    if (source == CharacterId.froth.id && type == DamageType.action) {
+      castTrait(source, [target], TraitId.annihilativeCycle.id, {'type': 1, 'damage': damage});
     }
     // 长霾【我还能喝】
-    if (target == langMap!['sumoggu']) {
-      castTrait(target, [source], langMap!['im_drunk'], {'type': 1, 'damage': damage});
+    if (target == CharacterId.sumoggu.id) {
+      castTrait(target, [source], TraitId.imDrunk.id, {'type': 1, 'damage': damage});
     }
     // 祝烨明【八裂】
-    if (source == langMap!['zhu_yeming']) {
-      castTrait(source, [target], langMap!['cryo_fissuring'], {'type': 0, 'damage': damage});
+    if (source == CharacterId.zhuYeming.id) {
+      castTrait(source, [target], TraitId.cryoFissuring.id, {'type': 0, 'damage': damage});
     }
     // 颜若卿【调和的乌托邦】
-    if (target == langMap!['yan_ruoqing']) {
-      castTrait(target, [target], langMap!['utopia_of_concord'], {'type': 2, 'damage': damage});
+    if (target == CharacterId.yanRuoqing.id) {
+      castTrait(target, [target], TraitId.utopiaOfConcord.id, {'type': 2, 'damage': damage});
     }
     // EnGine-4【<04>质能转换】
-    if (source == langMap!['engine_4']) {
-      castTrait(source, [target], langMap!['mass_energy_conversion'], {'type': 0, 'damage': damage});
+    if (source == CharacterId.engine4.id) {
+      castTrait(source, [target], TraitId.massEnergyConversion.id, {'type': 0, 'damage': damage});
+    }
+    // 曙光【不容质疑的信任】
+    if (targetChara.hasTrait(TraitId.unquestioningTrust.id)) {
+      castTrait(target, [target], TraitId.unquestioningTrust.id, {'type': 3, 'damage': damage, 'dmgType': type});
     }
 
     // 伤害统计
@@ -5479,32 +5945,31 @@ class Game extends ChangeNotifier{
     double healMulti = 1;
     bool healAble = true;
 
-    if (targetChara.hasStatus(langMap!['dissociated'])) {
-      healMulti *= (1 - 0.1 * targetChara.getStatusIntData(langMap!['dissociated'], StatusData.intensity));
+    if (targetChara.hasStatus(StatusId.dissociated.id)) {
+      healMulti *= (1 - 0.1 * targetChara.getStatusIntData(StatusId.dissociated.id, StatusData.intensity));
     }
 
     heal = ((heal + healPlus) * healMulti).toInt();
 
     if (type == DamageType.heal){
       // 龙宇澈【燃魂】
-      if (target == langMap!['long_yuche'] && targetChara.hasHiddenStatus('soul_burning')) {                
+      if (target == CharacterId.longYuche.id && targetChara.hasHiddenStatus('soul_burning')) {                
         healAble = false;        
       }
       // 雷刚【决意的乌托邦】
-      if (target == langMap!['lei_gang']) {
+      if (target == CharacterId.leiGang.id) {
         healAble = false;
       }
       if (healAble) {
-        if (targetChara.hasStatus(langMap!['wounded'])) {
-          modifyStatusLayer(target, target, langMap!['wounded'], -1);
+        if (targetChara.hasStatus(StatusId.wounded.id)) {
+          modifyStatusLayer(target, target, StatusId.wounded.id, -1);
         }
         addAttribute(target, AttributeType.health, heal);
 
         // 守塔人【潮海明灯】
-        if (isCharacterInGame(langMap!['tower_guardian'])) {
-          final towerGuardianId = langMap!['tower_guardian'];
-          if (isTeammate(target, towerGuardianId) || target == towerGuardianId) {
-            castTrait(towerGuardianId, [target], langMap!['tide_beacon']);
+        if (isCharacterInGame(CharacterId.towerGuardian.id)) {          
+          if (isTeammate(target, CharacterId.towerGuardian.id) || target == CharacterId.towerGuardian.id) {
+            castTrait(CharacterId.towerGuardian.id, [target], TraitId.tideBeacon.id);
           }
         }
       }
@@ -5515,8 +5980,8 @@ class Game extends ChangeNotifier{
 
     // 治疗统计
     if (heal > 0 && healAble) {
-      addAttribute(source, AttributeType.dmgdealt, heal);
-      addAttribute(target, AttributeType.dmgreceived, heal);
+      addAttribute(source, AttributeType.curdealt, heal);
+      addAttribute(target, AttributeType.curreceived, heal);
       _recordProvider!.addHealRecord(GameTurn(round: round, turn: turn, extra: extra), 
         source, target, heal, type, tag);
       _gameLogger!.addHealLog(getGameTurn(), source, target, heal);
@@ -5570,121 +6035,127 @@ class Game extends ChangeNotifier{
 
     // 状态结算
     // 霜冻
-    if (currentChara.hasStatus(langMap!['frost'])) {
-      damagePlayer('empty', currentCharaId, 6 * currentChara.getStatusIntData(langMap!['frost'], StatusData.intensity), 
+    if (currentChara.hasStatus(StatusId.frost.id)) {
+      damagePlayer('empty', currentCharaId, 6 * currentChara.getStatusIntData(StatusId.frost.id, StatusData.intensity), 
         DamageType.magical, tag: 'frost');
       // 白谢【极寒环域】
-      if (isCharacterInGame(langMap!['bai_xie'])) {
-        castTrait(langMap!['bai_xie'], [currentCharaId], langMap!['glacial_circle'], {'type': 1});
+      if (isCharacterInGame(CharacterId.baiXie.id)) {
+        castTrait(CharacterId.baiXie.id, [currentCharaId], TraitId.glacialCircle.id, {'type': 1});
       }
       // ReFre-3【<0C>热能回收】
-      if (isCharacterInGame(langMap!['refre_3'])) {
-        castTrait(langMap!['refre_3'], [currentCharaId], langMap!['thermal_recovery']);
+      if (isCharacterInGame(CharacterId.refre3.id)) {
+        castTrait(CharacterId.refre3.id, [currentCharaId], TraitId.thermalRecovery.id);
       }
     }
     // 灼炎
-    if (currentChara.hasStatus(langMap!['flaming'])) {
-      damagePlayer('empty', currentCharaId, 10 * currentChara.getStatusIntData(langMap!['flaming'], StatusData.intensity), 
+    if (currentChara.hasStatus(StatusId.flaming.id)) {
+      damagePlayer('empty', currentCharaId, 10 * currentChara.getStatusIntData(StatusId.flaming.id, StatusData.intensity), 
         DamageType.magical, tag: 'flaming');
     }
     // 狱焱
-    if (currentChara.hasStatus(langMap!['inferno_fire'])) {
-      damagePlayer('empty', currentCharaId, 15 * currentChara.getStatusIntData(langMap!['inferno_fire'], StatusData.intensity), 
+    if (currentChara.hasStatus(StatusId.infernoFire.id)) {
+      damagePlayer('empty', currentCharaId, 15 * currentChara.getStatusIntData(StatusId.infernoFire.id, StatusData.intensity), 
         DamageType.magical, tag: 'inferno_fire');
     }
     // 脱水
-    if (currentChara.hasStatus(langMap!['dehydration'])) {
-      damagePlayer('empty', currentCharaId, 30 * currentChara.getStatusIntData(langMap!['dehydration'], StatusData.intensity), 
+    if (currentChara.hasStatus(StatusId.dehydration.id)) {
+      damagePlayer('empty', currentCharaId, 30 * currentChara.getStatusIntData(StatusId.dehydration.id, StatusData.intensity), 
         DamageType.magical, tag: 'dehydration');
     }
     // 再生
-    if (currentChara.hasStatus(langMap!['regeneration'])) {
-      healPlayer(currentCharaId, currentCharaId, 20 * currentChara.getStatusIntData(langMap!['regeneration'], StatusData.intensity), 
+    if (currentChara.hasStatus(StatusId.regeneration.id)) {
+      healPlayer(currentCharaId, currentCharaId, 20 * currentChara.getStatusIntData(StatusId.regeneration.id, StatusData.intensity), 
         DamageType.heal);
     }
 
-    // 特质结算
-    // 茵竹【自勉】
-    if (isCharacterInGame(langMap!['chinro'])) {
-      final chinroId = langMap!['chinro']!;
-      castTrait(chinroId, [chinroId], langMap!['self_encouragement'], {'type': 0});
+    // 特质结算    
+    for (var chara in players.values) {
+      // 茵竹【自勉】
+      if (chara.hasTrait(TraitId.selfEncouragement.id)) {
+        castTrait(chara.id, [chara.id], TraitId.selfEncouragement.id, {'type': 0});
+      }
+
+      
     }
     // 龙宇澈【光耀】
-    if (isCharacterInGame(langMap!['long_yuche'])) {
-      final longYucheId = langMap!['long_yuche']!;
-      castTrait(longYucheId, [longYucheId], langMap!['radiance'], {'type': 1});
+    if (isCharacterInGame(CharacterId.longYuche.id)) {      
+      castTrait(CharacterId.longYuche.id, [CharacterId.longYuche.id], TraitId.radiance.id, {'type': 1});
     }
     // 雷刚【决意的乌托邦】
-    if (isCharacterInGame(langMap!['lei_gang'])) {
-      final leiGangId = langMap!['lei_gang']!;
-      castTrait(leiGangId, [leiGangId], langMap!['utopia_of_resolve'], {'type': 0});
+    if (isCharacterInGame(CharacterId.leiGang.id)) {      
+      castTrait(CharacterId.leiGang.id, [CharacterId.leiGang.id], TraitId.utopiaOfResolve.id, {'type': 0});
     }
     // 翠灵【生息】
-    if (isCharacterInGame(langMap!['turbach']) && turn == gameSequence.length && countdown.extraTurn == 0) {
-      final turbachId = langMap!['turbach']!;
-      castTrait(turbachId, [turbachId], langMap!['life_breath'], {'type': 0});
+    if (isCharacterInGame(CharacterId.turbach.id) && turn == gameSequence.length && countdown.extraTurn == 0) {      
+      castTrait(CharacterId.turbach.id, [CharacterId.turbach.id], TraitId.lifeBreath.id, {'type': 0});
     }
-    // 湍云【屏息】
-    if (isCharacterInGame(langMap!['zephyr']) && turn == gameSequence.length && countdown.extraTurn == 0) {
-      final zephyrId = langMap!['zephyr']!;
-      castTrait(zephyrId, [zephyrId], langMap!['hold_breath'], {'type': 0});
-      castTrait(zephyrId, [zephyrId], langMap!['hold_breath'], {'type': 2});
-    }
-    // 湍云【惊弓】
-    if (isCharacterInGame(langMap!['zephyr']) && turn == gameSequence.length && countdown.extraTurn == 0) {
-      final zephyrId = langMap!['zephyr']!;
-      castTrait(zephyrId, [zephyrId], langMap!['gun_shy'], {'type': 0});      
+    // 湍云【屏息】【惊弓】
+    if (isCharacterInGame(CharacterId.zephyr.id) && turn == gameSequence.length && countdown.extraTurn == 0) {      
+      castTrait(CharacterId.zephyr.id, [CharacterId.zephyr.id], TraitId.holdBreath.id, {'type': 0});
+      castTrait(CharacterId.zephyr.id, [CharacterId.zephyr.id], TraitId.holdBreath.id, {'type': 2});
+      castTrait(CharacterId.zephyr.id, [CharacterId.zephyr.id], TraitId.gunShy.id, {'type': 0});
     }
     // EnGine-4【<04>质能转换】
-    if (isCharacterInGame(langMap!['engine_4']) && turn == gameSequence.length && countdown.extraTurn == 0) {
-      final engine4Id = langMap!['engine_4']!;
-      castTrait(engine4Id, [engine4Id], langMap!['mass_energy_conversion'], {'type': 1});
+    if (isCharacterInGame(CharacterId.engine4.id) && turn == gameSequence.length && countdown.extraTurn == 0) {
+      castTrait(CharacterId.engine4.id, [CharacterId.engine4.id], TraitId.massEnergyConversion.id, {'type': 1});
     }
     // 奥赛罗【黑白棋】
-    if (isCharacterInGame(langMap!['othello'])) {
-      final othelloId = langMap!['othello']!;
-      castTrait(othelloId, [currentCharaId], langMap!['reversi'], {'type': 1});
+    if (isCharacterInGame(CharacterId.othello.id)) {      
+      castTrait(CharacterId.othello.id, [currentCharaId], TraitId.reversi.id, {'type': 1});
     }
 
     // 安德宁【回旋曲】
-    if (currentCharaId == langMap!['andrenin']) {
-      castTrait(currentCharaId, [currentCharaId], langMap!['rondo']);
+    if (currentChara.hasTrait(TraitId.rondo.id)) {
+      castTrait(currentCharaId, [currentCharaId], TraitId.rondo.id);
     }
     // 沫 行动点
-    else if (currentCharaId == langMap!['froth']) {
+    else if (currentCharaId == CharacterId.froth.id) {
       if (currentChara.damageDealtTurn >= 300) {
         addAttribute(currentCharaId, AttributeType.movepoint, -currentChara.damageDealtTurn ~/ 300);
       }
     }
     // 卿别 行动点
-    else if (currentCharaId == langMap!['valedictus']) {
+    else if (currentCharaId == CharacterId.valedictus.id) {
       for (var chara in players.values) {
-        if (chara.hasStatus(langMap!['dreaming'])) {
+        if (chara.hasStatus(StatusId.dreaming.id)) {
           addAttribute(currentCharaId, AttributeType.movepoint, 1);
         }
       }
     }
+    // 埃诺雅 行动点
+    else if (isCharacterInGame(CharacterId.ennoia.id)) {
+      final Character ennoiaChara = players[CharacterId.ennoia.id]!;
+      modifyHiddenStatusIntensity(CharacterId.ennoia.id, 'ennoia', 1);      
+      if (ennoiaChara.getHiddenStatusIntData('ennoia', StatusData.intensity) % 2 == 0 &&
+      ennoiaChara.getHiddenStatusIntData('ennoia', StatusData.intensity) ~/ 1024 < 3) {
+        addAttribute(CharacterId.ennoia.id, AttributeType.movepoint, 1);
+        modifyHiddenStatusIntensity(CharacterId.ennoia.id, 'ennoia', 1024);
+      }
+      if (turn == gameSequence.length && !currentChara.hasHiddenStatus('extra')) {
+        modifyHiddenStatusIntensity(CharacterId.ennoia.id, 'ennoia', -(ennoiaChara.getHiddenStatusIntData('ennoia', StatusData.intensity) ~/ 1024) * 1024);
+      }
+    }
     // 余梦得【梦的守护】
-    else if (currentCharaId == langMap!['yu_mengde']) {
-      castTrait(currentCharaId, [currentCharaId], langMap!['guardian_of_dreams'], {'type': 0});
-      castTrait(currentCharaId, [currentCharaId], langMap!['guardian_of_dreams'], {'type': 2});
+    else if (currentCharaId == CharacterId.yuMengde.id) {
+      castTrait(currentCharaId, [currentCharaId], TraitId.guardianOfDreams.id, {'type': 0});
+      castTrait(currentCharaId, [currentCharaId], TraitId.guardianOfDreams.id, {'type': 2});
     }
     // 太夕 行动点
-    else if (currentCharaId == langMap!['nyxumbra']) {
+    else if (currentCharaId == CharacterId.nyxumbra.id) {
       if (currentChara.cureReceivedTurn >= 100) {
         addAttribute(currentCharaId, AttributeType.movepoint, 1);
       }
     }
     // 科亚特尔【拟造“伊甸园”】
-    else if (currentCharaId == langMap!['quetzalcoatl']) {
-      castTrait(currentCharaId, [currentCharaId], langMap!['artificial_eden']);
+    else if (currentCharaId == CharacterId.quetzalcoatl.id) {
+      castTrait(currentCharaId, [currentCharaId], TraitId.artificialEden.id);
     }
     // 安山定【后发的乌托邦】
-    else if (currentCharaId == langMap!['an_shanding']) {
-      castTrait(currentCharaId, [currentCharaId], langMap!['utopia_of_upspring'], {'type': 0});
+    else if (currentCharaId == CharacterId.anShanding.id) {
+      castTrait(currentCharaId, [currentCharaId], TraitId.utopiaOfUpspring.id, {'type': 0});
     }
     // 奥赛罗【黑白棋】
-    else if (currentCharaId == langMap!['othello']) {
+    else if (currentCharaId == CharacterId.othello.id) {
       List<String> reversiTargets = [];
       if (currentChara.hasHiddenStatus('black_piece')) {
         reversiTargets = players.values.where((e) => e.hasHiddenStatus('white_piece') && isEnemy(currentCharaId, e.id) 
@@ -5694,7 +6165,16 @@ class Game extends ChangeNotifier{
         reversiTargets = players.values.where((e) => e.hasHiddenStatus('black_piece') && isEnemy(currentCharaId, e.id) 
           && !e.isDead && e.id != 'empty').map((e) => e.id).toList();
       }
-      castTrait(currentCharaId, reversiTargets, langMap!['reversi'], {'type': 2});
+      castTrait(currentCharaId, reversiTargets, TraitId.reversi.id, {'type': 2});
+    }
+    // 司库【断、舍、离】
+    if (currentChara.hasTrait(TraitId.danshari.id)) {
+      castTrait(currentCharaId, [currentCharaId], TraitId.danshari.id, {'type': 0});
+    }
+    // 蓝文曦【盈亏相济】
+    if (currentChara.hasTrait(TraitId.lossGainEquilibrium.id)) {
+      final int cardCount = currentChara.cardCount;
+      castTrait(currentCharaId, [currentCharaId], TraitId.lossGainEquilibrium.id, {'type': 2, 'count': cardCount});      
     }
     // 阿波菲斯【毁灭暗影】
     if (currentChara.hasHiddenStatus('night')) {
@@ -5703,17 +6183,15 @@ class Game extends ChangeNotifier{
 
     // 弃牌
     if (currentChara.cardCount > currentChara.maxCard) {
-      currentChara.cardCount = currentChara.maxCard;
+      modifyCardCount(currentCharaId, currentCharaId, currentChara.cardCount - currentChara.maxCard, CardEventType.discard);
     }
 
     // 状态层数削减
     if (countdown.extraTurn == 0) {
     for (var chara in players.values){
       List<String> statusKeys = chara.status.keys.toList();
-      for (String status in statusKeys){
-        if (!{langMap!['teroxis'], langMap!['dodge'], langMap!['lumen_flare'], langMap!['erode_gelid'], langMap!['dream_crafting'], 
-        langMap!['tear'], langMap!['wounded'], langMap!['unbalanced'], langMap!['uneasiness'], langMap!['charge'], 
-        langMap!['prey'], langMap!['sanctify'], langMap!['impassioned'], langMap!['shelter']}.contains(status)) {
+      for (String status in statusKeys){        
+        if (statusToType[status]!.decayOverTurn) {
           chara.increaseStatusData(status, layerFraction: -1);
         }
         if (chara.getStatusIntData(status, StatusData.layerFraction) <= 0) {
@@ -5743,37 +6221,34 @@ class Game extends ChangeNotifier{
     // 技能CD减少
     if (countdown.extraTurn == 0) {
       for (String skill in currentChara.skill.keys){
-        if(currentChara.skill[skill]! > 0){
-          currentChara.skill[skill] = currentChara.skill[skill]! - 1;
-        }
+        modifySkillCooldown(currentCharaId, currentCharaId, skill, -1);
       }
     }
 
     // 玩家死亡
     for (var chara in players.values) {
       // 恋慕【勿忘我】
-      if (chara.id == langMap!['loveless'] && chara.health <= 0 && round == 1) {
-        castTrait(chara.id, [chara.id], langMap!['dont_forget_me'], {'type': 2});
+      if (chara.hasTrait(TraitId.dontForgetMe.id)) {
+        castTrait(chara.id, [chara.id], TraitId.dontForgetMe.id, {'type': 2});
       }
       // 赐弥【在云端】
-      if (chara.id == langMap!['cimme'] && chara.health <= 0) {
-        castTrait(chara.id, [chara.id], langMap!['upon_the_clouds']);
+      if (chara.id == CharacterId.cimme.id && chara.health <= 0) {
+        castTrait(chara.id, [chara.id], TraitId.uponTheClouds.id);
       }
-      if (chara.health <= 0 && !({langMap!['darkstar'], langMap!['defen_5']}.contains(chara.id)) ) {
+      if (chara.health <= 0 && !chara.isDead && !chara.hasTrait(TraitId.resolution.id) 
+      && !chara.hasTrait(TraitId.forceFieldSimulation.id)) {
         chara.isDead = true;
         playerDiedCount++;
       }
       // 黯星【决心】
-      if (chara.id == langMap!['darkstar'] && chara.hasHiddenStatus('res_failed')) {
+      if (chara.hasTrait(TraitId.resolution.id) && chara.hasHiddenStatus('res_failed')) {
         chara.isDead = true;
         playerDiedCount++;
       }
       // DeFen-5【<15>力场模拟】
-      if (chara.id == langMap!['defen_5']) {
-        if (chara.defence <= 0) {
-          chara.isDead = true;
-          playerDiedCount++;
-        }
+      if (chara.id == CharacterId.defen5.id && chara.defence <= 0) {        
+        chara.isDead = true;
+        playerDiedCount++;        
       }
     }
     // 好好先生【深重情谊】
@@ -5791,6 +6266,7 @@ class Game extends ChangeNotifier{
         for (var chara2 in players.values) {
           if (isEnemy(chara1.id, chara2.id) && !chara2.isDead && !chara1.isDead) {
             teamGameOver = false;
+            break;
           }
         }
       }
@@ -5850,169 +6326,166 @@ class Game extends ChangeNotifier{
       }
     }
 
-    // 特质结算
-    // 恪玥【咕尘散】
-    if (isCharacterInGame(langMap!['pigeon'])) {
-      final String piegonId = langMap!['pigeon'];
-      if (round == 1 && turn == 1) {
-        addHiddenStatus(piegonId, 'gugu', 0, -1);
+    // 行动次数恢复
+    bool actionAble = true;
+    if (actionAble) {
+      currentChara.actionTime = 1;
+    }
+
+    // 特质使用次数恢复
+    bool traitRecoverAble = false;
+    if (turn == 1) {
+      traitRecoverAble = true;
+    }
+    if (traitRecoverAble) {
+      for (var chara in players.values) {
+        for (var tr in chara.trait.keys) {
+          if (chara.trait[tr]!.maxCast > 0) {
+            modifyTraitCastCount(chara.id, chara.id, tr, -chara.trait[tr]!.castCount);
+          }
+        }
       }
     }
-    // 恋慕【勿忘我】
-    if (isCharacterInGame(langMap!['loveless'])) {
-      final String lovelessId = langMap!['loveless'];
-      final Character lovelessChara = players[lovelessId]!;
-      if (!lovelessChara.isDead && lovelessChara.hasHiddenStatus('forget_me') && round >= 2) {
-        removeHiddenStatus(lovelessId, 'forget_me');
-        lovelessChara.isDead = true;
-        playerDiedCount++;
+
+    // 特质结算  
+    for (var chara in players.values) {
+      // 恋慕【勿忘我】
+      if (chara.hasTrait(TraitId.dontForgetMe.id)) {
+        if (!chara.isDead && chara.hasHiddenStatus('forget_me') && round >= 2) {
+          removeHiddenStatus(chara.id, 'forget_me');
+          chara.isDead = true;
+          playerDiedCount++;
+        }
       }      
     }
-    // 扶风【大预言】
-    if (isCharacterInGame(langMap!['flowwind'])) {
-      final String flowwindId = langMap!['flowwind'];
-      final Character flowwindChara = players[flowwindId]!;
-      if (!flowwindChara.isDead && flowwindChara.hasHiddenStatus('grand_prophecy') && turn == 1) {
-        removeHiddenStatus(flowwindId, 'grand_prophecy');
-      }
-    }
     // 奈普斯特【小惊吓】
-    if (isCharacterInGame(langMap!['nepst'])) {
-      final String nepstId = langMap!['nepst'];
-      final Character nepstChara = players[nepstId]!;
+    if (isCharacterInGame(CharacterId.nepst.id)) {      
+      final Character nepstChara = players[CharacterId.nepst.id]!;
       if (!nepstChara.isDead && turn == 1 && extra == 0 && round > 1) {
-        castTrait(nepstId, [nepstId], langMap!['little_spook']);
+        castTrait(CharacterId.nepst.id, [CharacterId.nepst.id], TraitId.littleSpook.id);
       }
     }
     // 太夕【黯灭】
-    if (isCharacterInGame(langMap!['nyxumbra'])) {
-      final String nyxumbraId = langMap!['nyxumbra'];
+    if (isCharacterInGame(CharacterId.nyxumbra.id)) {      
       if (round == 1 && turn == 1) {
-        addHiddenStatus(nyxumbraId, 'dark', 0, -1);
+        addHiddenStatus(CharacterId.nyxumbra.id, 'dark', 0, -1);
       }
     }
     // 科亚特尔【善恶天平】
-    if (isCharacterInGame(langMap!['quetzalcoatl'])) {
-      final String quetzalcoatlId = langMap!['quetzalcoatl'];
-      final Character quetzalcoatlChara = players[quetzalcoatlId]!;
-      castTrait(quetzalcoatlId, [quetzalcoatlId], langMap!['balance_of_light_and_shadow']);
+    if (isCharacterInGame(CharacterId.quetzalcoatl.id)) {      
+      final Character quetzalcoatlChara = players[CharacterId.quetzalcoatl.id]!;
+      castTrait(CharacterId.quetzalcoatl.id, [CharacterId.quetzalcoatl.id], TraitId.balanceOfLightAndShadow.id);
       if (quetzalcoatlChara.hasHiddenStatus('balance_change') && !quetzalcoatlChara.hasHiddenStatus('balance')) {
-        addHiddenStatus(quetzalcoatlId, 'balance', 0, -1);
-        removeHiddenStatus(quetzalcoatlId, 'balance_change');
-        addAttribute(quetzalcoatlId, AttributeType.attack, 15);
+        addHiddenStatus(CharacterId.quetzalcoatl.id, 'balance', 0, -1);
+        removeHiddenStatus(CharacterId.quetzalcoatl.id, 'balance_change');
+        addAttribute(CharacterId.quetzalcoatl.id, AttributeType.attack, 15);
       }
       else if (quetzalcoatlChara.hasHiddenStatus('balance') && !quetzalcoatlChara.hasHiddenStatus('balance_change')) {
-        removeHiddenStatus(quetzalcoatlId, 'balance');
-        addAttribute(quetzalcoatlId, AttributeType.attack, -15);
+        removeHiddenStatus(CharacterId.quetzalcoatl.id, 'balance');
+        addAttribute(CharacterId.quetzalcoatl.id, AttributeType.attack, -15);
       }
     }
     // 翠灵【生息】
-    if (isCharacterInGame(langMap!['turbach'])) {
-      final String turbachId = langMap!['turbach'];
-      final targets = [...players.keys.where((tar) => !players[tar]!.isDead && tar != langMap!['turbach'])];
-      castTrait(turbachId, targets, langMap!['life_breath'], {'type': 1});
+    if (isCharacterInGame(CharacterId.turbach.id)) {      
+      final targets = [...players.keys.where((tar) => !players[tar]!.isDead && tar != CharacterId.turbach.id)];
+      castTrait(CharacterId.turbach.id, targets, TraitId.lifeBreath.id, {'type': 1});
     }
-    // 湍云【屏息】
-    if (isCharacterInGame(langMap!['zephyr'])) {
-      final String zephyrId = langMap!['zephyr'];      
-      castTrait(zephyrId, [zephyrId], langMap!['hold_breath'], {'type': 1});
-      castTrait(zephyrId, [zephyrId], langMap!['hold_breath'], {'type': 3});
-    }
-    // 湍云【惊弓】
-    if (isCharacterInGame(langMap!['zephyr'])) {
-      final String zephyrId = langMap!['zephyr'];
-      castTrait(zephyrId, [zephyrId], langMap!['gun_shy'], {'type': 1});
+    // 湍云【屏息】【惊弓】
+    if (isCharacterInGame(CharacterId.zephyr.id)) {      
+      castTrait(CharacterId.zephyr.id, [CharacterId.zephyr.id], TraitId.holdBreath.id, {'type': 1});
+      castTrait(CharacterId.zephyr.id, [CharacterId.zephyr.id], TraitId.holdBreath.id, {'type': 3});
+      castTrait(CharacterId.zephyr.id, [CharacterId.zephyr.id], TraitId.gunShy.id, {'type': 1});
     }
     // 洛尔【不断燃烧的愤怒】
-    if (isCharacterInGame(langMap!['lor'])) {
-      final String lorId = langMap!['lor'];      
+    if (isCharacterInGame(CharacterId.lor.id)) {            
       if (round == 1 && turn == 1) {
-        castTrait(lorId, [lorId], langMap!['smoldering_rage'], {'type': 1});
+        castTrait(CharacterId.lor.id, [CharacterId.lor.id], TraitId.smolderingRage.id, {'type': 1});
       }
     }
     // 符楹【光暗双生】
-    if (isCharacterInGame(langMap!['fu_ying'])) {
-      final String fuYingId = langMap!['fu_ying'];
+    if (isCharacterInGame(CharacterId.fuYing.id)) {      
       if (round == 1 && turn == 1) {
-        addHiddenStatus(fuYingId, 'gemini', 0, -1);
+        addHiddenStatus(CharacterId.fuYing.id, 'gemini', 0, -1);
       }      
     }
     // 观风【气象万千】
-    if (isCharacterInGame(langMap!['viento'])) {
-      final String vientoId = langMap!['viento'];
+    if (isCharacterInGame(CharacterId.viento.id)) {      
       if (round == 1 && turn == 1) {
-        addHiddenStatus(vientoId, 'wind', 0, -1);
-        addHiddenStatus(vientoId, 'cloud', 1, -1);
+        addHiddenStatus(CharacterId.viento.id, 'wind', 0, -1);
+        addHiddenStatus(CharacterId.viento.id, 'cloud', 1, -1);
       }
     }
     // 奥赛罗【黑白棋】
-    if (isCharacterInGame(langMap!['othello'])) {
-      final String othelloId = langMap!['othello'];
+    if (isCharacterInGame(CharacterId.othello.id)) {      
       if (round == 1 && turn == 1) {
-        addHiddenStatus(othelloId, 'black_piece', 0, -1);
-        castTrait(othelloId, [othelloId], langMap!['reversi'], {'type': 3});
+        addHiddenStatus(CharacterId.othello.id, 'black_piece', 0, -1);
+        castTrait(CharacterId.othello.id, [CharacterId.othello.id], TraitId.reversi.id, {'type': 3});
       }      
     }
 
     for (var chara in players.values) {
       // 沫【湮灭性轮回】
-      if (isCharacterInGame(langMap!['froth']) && chara.hasHiddenStatus('cycle') && turn == playerCount) {
+      if (isCharacterInGame(CharacterId.froth.id) && chara.hasHiddenStatus('cycle') && turn == playerCount) {
         addAttribute(chara.id, AttributeType.armor, chara.getHiddenStatusIntData('cycle', StatusData.intensity));
         removeHiddenStatus(chara.id, 'cycle');
       }
     }
-    // K97【二进制】
-    if (currentCharaId == langMap!['k97']) {
-      castTrait(currentCharaId, [currentCharaId], langMap!['binary'], {'type': (round + 1) % 2});
+    // K97【二进制噪声】
+    if (currentChara.hasTrait(TraitId.binary.id)) {
+      castTrait(currentCharaId, [currentCharaId], TraitId.binary.id, {'type': (round + 1) % 2});
     }
     // 奈普斯特【幽魂化】
-    else if (currentCharaId == langMap!['nepst']) {
-      castTrait(currentCharaId, [currentCharaId], langMap!['spectralization'], {'type': 1});
+    else if (currentCharaId == CharacterId.nepst.id) {
+      castTrait(currentCharaId, [currentCharaId], TraitId.spectralization.id, {'type': 1});
     }
     // 赐弥【在云端】
-    else if (currentCharaId == langMap!['cimme']) {
+    else if (currentCharaId == CharacterId.cimme.id) {
       if (currentChara.hasHiddenStatus('cloud')) {
         removeHiddenStatus(currentCharaId, 'cloud');
       }
     }
     // 长霾【我还能喝】
-    else if (currentCharaId == langMap!['sumoggu']) {
-      castTrait(currentCharaId, [currentCharaId], langMap!['im_drunk'], {'type': 0});
+    else if (currentCharaId == CharacterId.sumoggu.id) {
+      castTrait(currentCharaId, [currentCharaId], TraitId.imDrunk.id, {'type': 0});
     }
     // 樊求【游侠】
-    else if (currentCharaId == langMap!['fan_qiu']) {
-      castTrait(currentCharaId, [currentCharaId], langMap!['ranger'], {'type': 0});
-      castTrait(currentCharaId, [currentCharaId], langMap!['ranger'], {'type': 1});
+    else if (currentChara.hasTrait(TraitId.ranger.id)) {
+      castTrait(currentCharaId, [currentCharaId], TraitId.ranger.id, {'type': 0});
+      castTrait(currentCharaId, [currentCharaId], TraitId.ranger.id, {'type': 1});
     }
     // 洛尔【不断燃烧的愤怒】
-    else if (currentCharaId == langMap!['lor']) {
-      castTrait(currentCharaId, [currentCharaId], langMap!['smoldering_rage'], {'type': 0});
+    else if (currentCharaId == CharacterId.lor.id) {
+      castTrait(currentCharaId, [currentCharaId], TraitId.smolderingRage.id, {'type': 0});
     }
 
     // 抽牌
     bool drawAble = true;
     // 状态【冰封】【咕咕】【星牢】【梦境】【束缚】【窒息】
-    if (currentChara.hasStatus(langMap!['frozen']) || currentChara.hasStatus(langMap!['gugu']) 
-        || currentChara.hasStatus(langMap!['stellar_cage']) || currentChara.hasStatus(langMap!['dreaming']) 
-        || currentChara.hasStatus(langMap!['constraint']) || currentChara.hasStatus(langMap!['asphyxia'])) {
+    if (currentChara.hasStatus(StatusId.frozen.id) || currentChara.hasStatus(StatusId.gugu.id) 
+        || currentChara.hasStatus(StatusId.stellarCage.id) || currentChara.hasStatus(StatusId.dreaming.id) 
+        || currentChara.hasStatus(StatusId.constraint.id) || currentChara.hasStatus(StatusId.asphyxia.id)) {
       drawAble = false;
     }
     if (currentChara.isDead) {
       drawAble = false;
     }
-    if (drawAble) {
-      addAttribute(currentCharaId, AttributeType.card, 2);
+    if (drawAble) {      
+      modifyCardCount(currentCharaId, currentCharaId, 2, CardEventType.draw);
       // 技能【天国邮递员】
       if (currentChara.hasHiddenStatus('heaven')) {
-        addAttribute(currentCharaId, AttributeType.card, 1);
+        modifyCardCount(currentCharaId, currentCharaId, 2, CardEventType.draw);
         removeHiddenStatus(currentCharaId, 'heaven');
+      }
+      // 司库【断、舍、离】
+      if (currentChara.hasTrait(TraitId.danshari.id)) {
+        castTrait(currentCharaId, [currentCharaId], TraitId.danshari.id, {'type': 1});
       }
     }    
 
     // 行动点回复
     bool recoverAble = true;
-    if (currentChara.hasStatus(langMap!['stellar_cage']) || currentChara.hasStatus(langMap!['dreaming'])) {
-      drawAble = false;
+    if (currentChara.hasStatus(StatusId.stellarCage.id) || currentChara.hasStatus(StatusId.dreaming.id)) {
+      recoverAble = false;
     }
     if (currentChara.isDead) {
       recoverAble = false;
@@ -6032,14 +6505,17 @@ class Game extends ChangeNotifier{
       if (round == 1) {moveRegen = currentChara.maxMove;}
       else {moveRegen = currentChara.moveRegen;}
       }
-      if (currentChara.hasStatus(langMap!['swift'])) {
-        moveRegen++;
+      // 状态【迅捷】
+      if (currentChara.hasStatus(StatusId.swift.id)) {
+        moveRegen += currentChara.getStatusIntData(StatusId.swift.id, StatusData.intensity);
       }
-      if (currentChara.hasStatus(langMap!['slowness'])) {
-        moveRegen--;
+      // 状态【迟缓】
+      if (currentChara.hasStatus(StatusId.slowness.id)) {
+        moveRegen -= currentChara.getStatusIntData(StatusId.slowness.id, StatusData.intensity);
       }
-      if (currentChara.hasStatus(langMap!['submerged'])) {
-        moveRegen--;
+      // 状态【浸没】
+      if (currentChara.hasStatus(StatusId.submerged.id)) {
+        moveRegen -= currentChara.getStatusIntData(StatusId.submerged.id, StatusData.intensity);
       }
       if (moveRegen < 0) {
         moveRegen = 0;
@@ -6054,12 +6530,6 @@ class Game extends ChangeNotifier{
         addAttribute(currentCharaId, AttributeType.movepoint, moveRegen);
       }
     }
-
-    // 行动次数恢复
-    bool actionAble = true;
-    if (actionAble) {
-      currentChara.actionTime = 1;
-    }    
 
     refresh();
   }  

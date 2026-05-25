@@ -11,15 +11,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sns_calculator/history.dart';
 import 'package:sns_calculator/record.dart';
 import 'package:sns_calculator/game.dart';
-import 'package:sns_calculator/assets.dart';
+//import 'package:sns_calculator/assets.dart';
 import 'package:sns_calculator/core.dart';
 import 'package:sns_calculator/logger.dart';
+import 'package:sns_calculator/localized_ids.dart';
 import 'package:sns_calculator/widgets/add_action.dart';
 import 'package:sns_calculator/widgets/history_page.dart';
 import 'package:sns_calculator/widgets/attribute_settings.dart';
 import 'package:sns_calculator/widgets/game_logger.dart';
 import 'package:sns_calculator/widgets/skill_rolling.dart';
-import 'package:sns_calculator/widgets/richtext.dart';
+//import 'package:sns_calculator/widgets/richtext.dart';
 import 'package:lpinyin/lpinyin.dart';
 
 class InfoPage extends StatefulWidget {
@@ -40,13 +41,14 @@ class _InfoPageState extends State<InfoPage> {
   // 游戏数据
   late Game game;
   // 语言数据
-  Map<String, dynamic>? langMap;
+  //String locale = 'zh_cn';
+  //Map<String, dynamic>? langMap;
   // 角色数据
-  Map<String, dynamic>? characterData;
+  /*Map<String, dynamic>? characterData;
   Map<String, dynamic>? characterTypeData;
-  Map<String, dynamic>? regenerateTypeData;
+  Map<String, dynamic>? regenerateTypeData;*/
   // 下拉框选项
-  List<String> dropdownItems = [];
+  //List<String> dropdownItems = [];
   // 固定列数
   final int columnCount = 7;
   // 自动加载标志
@@ -59,18 +61,18 @@ class _InfoPageState extends State<InfoPage> {
   @override
   void initState() {
     super.initState();
-    // 使用全局注入的 AssetsManager（在 app 启动时已加载）
-    final assets = Provider.of<AssetsManager>(context, listen: false);
+    // 使用全局注入的 AssetsManager
+    /*final assets = Provider.of<AssetsManager>(context, listen: false);
     langMap = assets.langMap;
     characterData = assets.characterData;
     characterTypeData = assets.characterTypeData;
     regenerateTypeData = assets.regenerateTypeData;
     dropdownItems = characterData?.keys.toList() ?? [];
-    dropdownItems.remove('角色');
+    dropdownItems.remove('角色');*/
     game = GameManager().game;
     final recordProvider = Provider.of<RecordProvider>(context, listen: false);
     final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
-    final gameLogger = Provider.of<GameLogger>(context, listen: false);
+    final gameLogger = Provider.of<GameLogger>(context, listen: false);    
     GameManager().game.setRecordProvider(recordProvider);
     GameManager().game.setHistoryProvider(historyProvider);
     GameManager().game.setGameLogger(gameLogger);
@@ -84,7 +86,6 @@ class _InfoPageState extends State<InfoPage> {
 
   // 处理游戏状态变化的回调函数
   void _handleGameChange() {
-    // 使用 setState 来触发 UI 更新
     setState(() {
       // 这里不需要做任何事情，只需要触发重建    
     });
@@ -163,7 +164,8 @@ String _serializeGameState() {
       'status': character.status.map((k, v) => MapEntry(k, v.toJson())),
       'hiddenStatus': character.hiddenStatus.map((k, v) => MapEntry(k, v.toJson())),
       'skill': character.skill,
-      'skillStatus': character.skillStatus,
+      //'skillStatus': character.skillStatus,
+      'trait': character.trait.map((k, v) => MapEntry(k, v.toJson())),
     };
   });
   
@@ -262,7 +264,7 @@ void _restoreGameState(String stateJson) {
     if (playerData['status'] is Map) {
       (playerData['status'] as Map).forEach((k, v) {
         try {
-          character.status[k.toString()] = CharacterStatus.fromJson(Map<String, dynamic>.from(v));
+          character.status[k.toString()] = CharaStatus.fromJson(Map<String, dynamic>.from(v));
         } catch (e) {
           //
         }
@@ -273,14 +275,34 @@ void _restoreGameState(String stateJson) {
     if (playerData['hiddenStatus'] is Map) {
       (playerData['hiddenStatus'] as Map).forEach((k, v) {
         try {
-          character.hiddenStatus[k.toString()] = CharacterStatus.fromJson(Map<String, dynamic>.from(v));
+          character.hiddenStatus[k.toString()] = CharaStatus.fromJson(Map<String, dynamic>.from(v));
         } catch (e) {
           //
         }
       });
     }
-    character.skill = Map<String, int>.from(playerData['skill']);
-    character.skillStatus = Map<String, int>.from(playerData['skillStatus']);
+    character.skill = {};
+    if (playerData['skill'] is Map) {
+      (playerData['skill'] as Map).forEach((k, v) {
+        try {
+          character.skill[k.toString()] = CharaSkill.fromJson(Map<String, dynamic>.from(v));
+        } catch (e) {
+          //
+        }
+      });
+    }
+    //character.skillStatus = Map<String, int>.from(playerData['skillStatus']);
+
+    character.trait = {};
+    if (playerData['trait'] is Map) {
+      (playerData['trait'] as Map).forEach((k, v) {
+        try {
+          character.trait[k.toString()] = CharaTrait.fromJson(Map<String, dynamic>.from(v));
+        } catch (e) {
+          //
+        }
+      });
+    }
     
     game.players[id] = character;
   });
@@ -306,6 +328,45 @@ void _restoreGameState(String stateJson) {
           onSaveSelected: _onSaveFileSelected,
         ),
       ),
+    );
+  }
+
+  // 语言切换对话框
+  void _showLanguageDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) {
+        return AlertDialog(
+          title: const Text('选择语言'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: const Text('中文'),
+                onTap: () {                  
+                  final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+                  setState(() {                    
+                    localeProvider.setLocale(Locale("zh", "CN"));                    
+                    try { game.refresh(); } catch (_) {}
+                  });
+                  Navigator.of(ctx).pop();
+                },
+              ),
+              ListTile(
+                title: const Text('English'),
+                onTap: () {                  
+                  final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+                  setState(() {                    
+                    localeProvider.setLocale(Locale("en", "US"));                    
+                    try { game.refresh(); } catch (_) {}
+                  });
+                  Navigator.of(ctx).pop();
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -388,13 +449,7 @@ void _restoreGameState(String stateJson) {
       // 恢复当前游戏状态
       if (currentHistoryIndex >= 0 && currentHistoryIndex < history.length) {
         String currentState = history[currentHistoryIndex];
-        _restoreGameState(currentState);      
-        
-        // 重新构建表格数据
-        /*tableData.clear();
-        for (var playerId in game.gameSequence) {
-          tableData.add({"column1": playerId});
-        }*/
+        _restoreGameState(currentState);
         
         setState(() {
           _autoLoadingInProgress = false;
@@ -602,10 +657,26 @@ void _restoreGameState(String stateJson) {
         });
       }
     });
+    // 获取全局 LocaleProvider 的当前 locale 字符串（格式: zh_CN -> zh_cn）
+    final localeProvider = Provider.of<LocaleProvider>(context);
+    final String localeStr = localeProvider.getLocaleNameWithCountry().toLowerCase();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('SnS Info'),
         actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
+            child: ElevatedButton(
+              onPressed: () => _showLanguageDialog(),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                textStyle: const TextStyle(fontSize: 16),
+                minimumSize: const Size(44, 36),
+              ),
+              child: const Icon(Icons.public),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 12.0, horizontal: 8.0),
             child: ElevatedButton(
@@ -815,9 +886,9 @@ void _restoreGameState(String stateJson) {
                       int movePoint = character.movePoint;
                       int maxMovePoint = character.maxMove;
                       int cardCount = character.cardCount;
-                      Map<String, CharacterStatus> status = character.status;
-                      Map<String, CharacterStatus> hiddenStatus = character.hiddenStatus;
-                      Map<String, int> skill = character.skill;
+                      Map<String, CharaStatus> status = character.status;
+                      Map<String, CharaStatus> hiddenStatus = character.hiddenStatus;
+                      Map<String, CharaSkill> skill = character.skill;
                       Color teamColor = (game.getPlayerTeam(roleName) != null) ? _getTeamColor(game.getPlayerTeam(roleName)) : Colors.blue;
 
                       final bool isSelected = selectedIndex == roleName;
@@ -860,13 +931,14 @@ void _restoreGameState(String stateJson) {
                                             ),
                                             const SizedBox(width: 6),
                                           ],
-                                          Text(
-                                            roleName,
+                                          Text(                                            
+                                            LocalizedIDs.labelFor(roleName, localeStr),
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.bold,
-                                              color: character.isDead ? Colors.grey : Colors.black,),
-                                              ),
+                                              color: character.isDead ? Colors.grey : Colors.black,
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
@@ -949,7 +1021,7 @@ void _restoreGameState(String stateJson) {
                                         final double smallItemW = (innerW - smallSpacing * 3) / 4;
                                         List<Widget> pills = [];
                                         skill.forEach((k, v) {
-                                          pills.add(_buildSkillPill(k, v.toString(), smallItemW));
+                                          pills.add(_buildSkillPill(k, v.cooldown.toString(), smallItemW));
                                         });
                                         return Wrap(
                                           spacing: smallSpacing,
@@ -979,14 +1051,16 @@ void _restoreGameState(String stateJson) {
 
   // 2. 弹出添加角色对话框（长列表：按拼音首字母分组、每组内矩阵排列、可滚动）
   void _showAddCharacterDialog() {
-    // 准备数据源：所有可添加的角色名（来自 characterData keys），剔除已在游戏中的
-    final allNames = characterData?.keys.toList() ?? [];
-    allNames.remove('角色');
+    // 准备数据：所有可添加的角色名（来自core.dart），去除已在游戏中的
+    final allNames = characterToPanel.keys.toList();
     final available = allNames.where((name) => !game.players.keys.contains(name)).toList();
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    final String localeStr = localeProvider.getLocaleNameWithCountry().toLowerCase();
+    final availableLocalized = available.map((name) => LocalizedIDs.labelFor(name, localeStr)).toList();
 
     // 生成分组 map：首字母 -> list of names
     Map<String, List<String>> groups = {};
-    for (var name in available) {
+    for (var name in availableLocalized) {
       String initial;
       try {
         final short = PinyinHelper.getShortPinyin(name);
@@ -1080,17 +1154,19 @@ void _restoreGameState(String stateJson) {
                                         onPressed: () {
                                           // 添加角色并关闭对话框
                                           setState(() {
-                                            int health = characterTypeData?[characterData?[name][0]][0] ?? 0;
-                                            int attack = characterTypeData?[characterData?[name][0]][1] ?? 0;
-                                            int defence = characterTypeData?[characterData?[name][0]][2] ?? 0;
-                                            int movePoint = 0;
-                                            int maxMove = regenerateTypeData?[characterData?[name][1]][0] ?? 0;
-                                            int moveRegen = regenerateTypeData?[characterData?[name][1]][1] ?? 0;
-                                            int regenType = regenerateTypeData?[characterData?[name][1]][2] ?? 0;
-                                            int regenTurn = regenerateTypeData?[characterData?[name][1]][3] ?? 0;
-                                            Character character = Character(name, health, attack, defence, movePoint, maxMove, moveRegen, regenType, regenTurn);
+                                            final String charaId = LocalizedIDs.idForLabel(name, localeStr)!;                                            
+                                            int health = characterToPanel[charaId]!.panelType.maxHealth;
+                                            int attack = characterToPanel[charaId]!.panelType.attack;
+                                            int defence = characterToPanel[charaId]!.panelType.defence;
+                                            int movePoint = 0;                                            
+                                            int maxMove = characterToPanel[charaId]!.regenType.maxMove;
+                                            int moveRegen = characterToPanel[charaId]!.regenType.moveRegen;
+                                            int regenType = characterToPanel[charaId]!.regenType.regenType;
+                                            int regenTurn = characterToPanel[charaId]!.regenType.regenTurn;
+                                            //Character character = Character(charaId, health, attack, defence, movePoint, maxMove, moveRegen, regenType, regenTurn);
+                                            Character character = Character(charaId, health, attack, defence, movePoint, maxMove, moveRegen, regenType, regenTurn);
                                             game.addPlayer(character);
-                                            tableData.add(<String, dynamic>{'column1': name});
+                                            tableData.add(<String, dynamic>{'column1': charaId});
                                           });
                                           Navigator.of(ctx).pop();
                                         },
@@ -1116,43 +1192,11 @@ void _restoreGameState(String stateJson) {
     );
   }
 
-  /*
-  void _showDropdownMenu() {
-    showMenu(
-      context: context,
-      // 菜单位置（相对于“添加行”按钮）
-      position: const RelativeRect.fromLTRB(0, 0, 0, 0),
-      items: dropdownItems.map((String item) {
-        return PopupMenuItem(
-          value: item,
-          child: Text(item),
-        );
-      }).toList(),
-    ).then((String? selectedValue) {
-      if (selectedValue != null && !game.players.keys.contains(selectedValue)) {
-        setState(() {
-          // 初始化角色数据
-          int health = characterTypeData?[characterData?[selectedValue][0]][0];
-          int attack = characterTypeData?[characterData?[selectedValue][0]][1];
-          int defence = characterTypeData?[characterData?[selectedValue][0]][2];
-          int movePoint = 0;
-          int maxMove = regenerateTypeData?[characterData?[selectedValue][1]][0];
-          int moveRegen = regenerateTypeData?[characterData?[selectedValue][1]][1];
-          int regenType = regenerateTypeData?[characterData?[selectedValue][1]][2];
-          int regenTurn = regenerateTypeData?[characterData?[selectedValue][1]][3];
-          // 新建角色
-          Character character = Character(selectedValue, health, attack, defence, movePoint, maxMove, moveRegen, regenType, regenTurn);
-          game.addPlayer(character);
-          // 向表格添加一行（第一列为选中的下拉值）
-          tableData.add({'column1': selectedValue});          
-        });
-      }
-    });
-  }
-  */
-
   // 队伍管理弹窗
   void _showTeamManagerDialog(){
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    final String localeStr = localeProvider.getLocaleNameWithCountry().toLowerCase();
+
     showDialog(
       context: context,
       builder: (BuildContext context){
@@ -1173,7 +1217,7 @@ void _restoreGameState(String stateJson) {
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Expanded(child: Text('  队伍管理', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                          const Expanded(child: Text('队伍管理', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
                           ElevatedButton.icon(
                             onPressed: (){
                               setStateDialog((){
@@ -1266,7 +1310,7 @@ void _restoreGameState(String stateJson) {
                                                   });
                                                   game.refresh();
                                                 },
-                                                child: Text(p, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14)),
+                                                child: Text(LocalizedIDs.labelFor(p, localeStr), textAlign: TextAlign.center, style: const TextStyle(fontSize: 14)),
                                               ),
                                             );
                                           }).toList(),
@@ -1450,6 +1494,8 @@ void _restoreGameState(String stateJson) {
 
   // 小卡片：状态展示（右上角圈点表示层数，卡片内部右侧显示强度；hidden 为 true 时文字灰色）
   Widget _buildStatusPill(String name, int layers, String intensity, double width, {bool hidden = false}) {
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    final String localeStr = localeProvider.getLocaleNameWithCountry().toLowerCase();
     return SizedBox(
       width: width,
       child: Stack(
@@ -1467,7 +1513,7 @@ void _restoreGameState(String stateJson) {
               children: [
                 Expanded(
                   child: Text(
-                    name,
+                    hidden ? name : LocalizedIDs.labelFor(name, localeStr),
                     style: TextStyle(fontSize: 12, color: hidden ? Colors.grey : Colors.black87,),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1496,6 +1542,8 @@ void _restoreGameState(String stateJson) {
 
   // 小卡片：技能展示（卡片内部右侧显示数值）
   Widget _buildSkillPill(String name, String value, double width) {
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    final String localeStr = localeProvider.getLocaleNameWithCountry().toLowerCase();
     return SizedBox(
       width: width,
       child: Container(
@@ -1508,7 +1556,13 @@ void _restoreGameState(String stateJson) {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(child: Text(name, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
+            Expanded(
+              child: Text(
+                LocalizedIDs.labelFor(name, localeStr),
+                style: const TextStyle(fontSize: 12), 
+                overflow: TextOverflow.ellipsis
+              )
+            ),
             const SizedBox(width: 6),
             Text(value, style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.bold)),
             const SizedBox(width: 6),

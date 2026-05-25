@@ -71,7 +71,7 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
     // 初始化技能控制器
     skillControllers = {};
     widget.character.skill.forEach((key, value) {
-      skillControllers[key] = TextEditingController(text: value.toString());
+      skillControllers[key] = TextEditingController(text: value.cooldown.toString());
     });
 
     // 初始化状态控制器
@@ -177,13 +177,16 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
       // 保存技能
       widget.character.skill.clear();
       skillControllers.forEach((key, controller) {
-        widget.character.skill[key] = int.parse(controller.text);
+        widget.character.skill[key] = CharaSkill(
+          name: key, 
+          cooldown: int.parse(controller.text), 
+          isAble: true);
       });
 
       // 保存状态
       widget.character.status.clear();
       statusControllers.forEach((key, controllers) {
-        widget.character.status[key] = CharacterStatus(
+        widget.character.status[key] = CharaStatus(
           name: key,
           intensity: int.parse(controllers[0].text),
           layer: int.parse(controllers[1].text),
@@ -196,7 +199,7 @@ class _AttributeSettingsDialogState extends State<AttributeSettingsDialog> {
       // 保存隐藏状态
       widget.character.hiddenStatus.clear();
       hiddenStatusControllers.forEach((key, controllers) {
-        widget.character.hiddenStatus[key] = CharacterStatus(
+        widget.character.hiddenStatus[key] = CharaStatus(
           name: key,
           intensity: int.parse(controllers[0].text),
           layer: int.parse(controllers[1].text),

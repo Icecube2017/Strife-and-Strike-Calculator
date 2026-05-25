@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:logger/logger.dart';
+import 'package:sns_calculator/core.dart';
 import 'package:sns_calculator/game.dart';
-import 'package:sns_calculator/assets.dart';
+//import 'package:sns_calculator/assets.dart';
 import 'package:sns_calculator/settings.dart';
+import 'package:sns_calculator/localized_ids.dart';
 
 // 道具卡设置对话框组件
 class CardSettingsDialog extends StatefulWidget {
@@ -61,26 +63,11 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
   final List<String> _amethystOptions = ['1', '2'];
   int _amethystPoint = 1;
 
-  Future<void> _loadAssetsData() async {
-    // 首选从全局 Provider 获取已加载的 AssetsManager（在 main 已预加载）
-    final assets = Provider.of<AssetsManager>(context, listen: false);
-    if (assets.langMap == null) {
-      // 兼容：如果 provider 中尚未加载，再进行加载
-      await assets.loadData();
-    }
-    setState(() {
-      langMap = assets.langMap;
-    });
-  }
-
   @override
   void initState() {
     super.initState();    
     final cardSettingsManager = Provider.of<CardSettingsManager>(context, listen: false);
     _settings = cardSettingsManager.getCardSettings(widget.cardIndex);
-    // 从 Provider 获取已加载的语言映射（避免重复异步加载）
-    final assets = Provider.of<AssetsManager>(context, listen: false);
-    langMap = assets.langMap;
 
     // 根据不同卡牌类型初始化设置
     if (_settings is EndCrystalSetting) {
@@ -120,44 +107,73 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
 
     // 创建并保存特定卡牌设置
     CardSetting newSetting;
-    switch (widget.cardName) {
-      case "破片水晶":
+    if (widget.cardName == CardId.endCrystal.id) {
+      newSetting = EndCrystalSetting()
+        ..crystalMagic = _crystalMagic
+        ..crystalSelf = _crystalSelf;
+    } else if (widget.cardName == CardId.bow.id) {
+      newSetting = BowSetting()
+        ..ammoCount = _ammoCount;
+    } else if (widget.cardName == CardId.redstone.id) {
+      newSetting = RedstoneSetting()
+        ..statusProlonged = _statusProlonged
+        ..playerProlonged = _playerProlonged;
+    } else if (widget.cardName == CardId.ascensionStair.id) {
+      newSetting = AscensionStairSetting()
+        ..ascensionPoints = Map<String, int>.from(_ascensionPoints);
+    } else if (widget.cardName == CardId.refreshment.id) {
+      newSetting = RefreshmentSetting()
+        ..refreshmentChoice = _refreshmentChoice;
+    } else if (widget.cardName == CardId.auroraConcussion.id) {
+      newSetting = AuroraConcussionSetting()
+        ..auroraPoints = Map<String, int>.from(_auroraPoints);
+    } else if (widget.cardName == CardId.pandoraBox.id) {
+      newSetting = PandoraBoxSetting()
+        ..pandoraPoint = _pandoraPoint;
+    } else if (widget.cardName == CardId.amethyst.id) {
+      newSetting = AmethystSetting()
+        ..amethystPoint = _amethystPoint;
+    } else {
+      newSetting = EndCrystalSetting(); // 默认情况
+    }
+    /*switch (widget.cardName) {
+      case "end_crystal":
         newSetting = EndCrystalSetting()
           ..crystalMagic = _crystalMagic
           ..crystalSelf = _crystalSelf;
         break;
-      case "复合弓":
+      case "bow":
         newSetting = BowSetting()
           ..ammoCount = _ammoCount;
         break;
-      case "后日谈":
+      case "redstone":
         newSetting = RedstoneSetting()
           ..statusProlonged = _statusProlonged
           ..playerProlonged = _playerProlonged;
         break;
-      case "混乱力场":
+      case "ascension_stair":
         newSetting = AscensionStairSetting()
           ..ascensionPoints = Map<String, int>.from(_ascensionPoints);
         break;
-      case "刷新":
+      case "refreshment":
         newSetting = RefreshmentSetting()
           ..refreshmentChoice = _refreshmentChoice;
         break;
-      case "极光震荡":
+      case "aurora_concussion":
         newSetting = AuroraConcussionSetting()
           ..auroraPoints = Map<String, int>.from(_auroraPoints);
         break;
-      case "潘多拉魔盒":
+      case "pandora_box":
         newSetting = PandoraBoxSetting()
           ..pandoraPoint = _pandoraPoint;
         break;
-      case "折射水晶":
+      case "amethyst":
         newSetting = AmethystSetting()
           ..amethystPoint = _amethystPoint;
         break;
       default:
         newSetting = EndCrystalSetting(); // 默认情况
-    }
+    }*/
     
     cardSettingsManager.updateCardSettings(widget.cardIndex, newSetting);
     Navigator.of(context).pop();
@@ -170,244 +186,232 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
         _redstoneOptions = game.players[_playerProlonged]!.status.keys.toList();
       } else {
         _redstoneOptions = [];
-      }
+       }
     });
+  }
+
+  List<Widget> _buildIntDropdownGroup({
+    required String label,
+    required int value,
+    required List<String> options,
+    required ValueChanged<int?> onChanged,
+    double spacing = 16,
+  }) {
+    return [
+      Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
+      DropdownButtonFormField<int>(
+        initialValue: value,
+        hint: Text(label),
+        items: options.map((String item) {
+          final int parsed = int.parse(item);
+          return DropdownMenuItem(
+            value: parsed,
+            child: Text(item),
+          );
+        }).toList(),
+        onChanged: onChanged,
+        isExpanded: true,
+      ),
+      SizedBox(height: spacing),
+    ];
+  }
+
+  List<Widget> _buildStringDropdownGroup({
+    required String label,
+    required String value,
+    required List<String> options,
+    required ValueChanged<String?> onChanged,
+    double spacing = 16,
+  }) {
+    return [
+      Text(label, style: TextStyle(fontWeight: FontWeight.bold)),
+      DropdownButtonFormField<String>(
+        initialValue: value.isEmpty ? null : value,
+        hint: Text(label),
+        items: options.map((String item) {
+          return DropdownMenuItem(
+            value: item,
+            child: Text(item),
+          );
+        }).toList(),
+        onChanged: onChanged,
+        isExpanded: true,
+      ),
+      SizedBox(height: spacing),
+    ];
+  }
+
+  List<Widget> _buildPlayerPointGroups({
+    required String title,
+    required Map<String, int> points,
+    required List<String> options,
+    required void Function(String playerId, int? newValue) onChanged,
+  }) {
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    final String localeStr = localeProvider.getLocaleNameWithCountry().toLowerCase();
+
+    return [
+      Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
+      SizedBox(height: 8),
+      ...points.keys.map((playerId) {
+        //final player = game.players[playerId]!;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(LocalizedIDs.labelFor(playerId, localeStr), style: TextStyle(fontSize: 12)),
+            DropdownButtonFormField<int>(
+              initialValue: points[playerId],
+              hint: Text('选择点数'),
+              items: options.map((option) {
+                final int value = int.parse(option);
+                return DropdownMenuItem(
+                  value: value,
+                  child: Text('$value'),
+                );
+              }).toList(),
+              onChanged: (int? newValue) => onChanged(playerId, newValue),
+              isExpanded: true,
+            ),
+            SizedBox(height: 8),
+          ],
+        );
+      }),
+    ];
+  }
+
+  List<Widget> _buildCardWidgets(String cardName) {
+    if (cardName == CardId.endCrystal.id) {
+      return [
+        ..._buildIntDropdownGroup(
+          label: '水晶2d4损血',
+          value: _crystalSelf,
+          options: _endCrystalOptions,
+          onChanged: (int? newValue) {
+            setState(() {
+              _crystalSelf = newValue ?? 1;
+            });
+          },
+        ),
+        ..._buildIntDropdownGroup(
+          label: '水晶d8伤害',
+          value: _crystalMagic,
+          options: _endCrystalOptions,
+          onChanged: (int? newValue) {
+            setState(() {
+              _crystalMagic = newValue ?? 1;
+            });
+          },
+        ),
+      ];
+    } else if (cardName == CardId.bow.id) {
+      return _buildIntDropdownGroup(
+        label: '弃牌张数',
+        value: _ammoCount,
+        options: _bowOptions,
+        onChanged: (int? newValue) {
+          setState(() {
+            _ammoCount = newValue ?? 1;
+          });
+        },
+      );
+    } else if (cardName == CardId.redstone.id) {
+      return [
+        ..._buildStringDropdownGroup(
+          label: '延长目标',
+          value: _playerProlonged,
+          options: _redstonePlayerOptions,
+          onChanged: (String? newValue) {
+            setState(() {
+              _playerProlonged = newValue ?? '';
+              _statusProlonged = game.players[newValue]!.status.isEmpty ? '' : game.players[newValue]!.status.keys.first;
+              _updateRedstoneOptions();
+            });
+          },
+        ),
+        ..._buildStringDropdownGroup(
+          label: '状态延长',
+          value: _statusProlonged,
+          options: _playerProlonged.isEmpty ? [] : _redstoneOptions,
+          onChanged: (String? newValue) {
+            setState(() {
+              _statusProlonged = newValue ?? '';
+            });
+          },
+        ),
+      ];
+    } else if (cardName == CardId.ascensionStair.id) {
+      return _buildPlayerPointGroups(
+        title: '混乱点数',
+        points: _ascensionPoints,
+        options: _ascensionStairOptions,
+        onChanged: (playerId, newValue) {
+          setState(() {
+            _ascensionPoints[playerId] = newValue ?? 1;
+          });
+        },
+      );
+    } else if (cardName == CardId.refreshment.id) {
+      return [
+        ..._buildStringDropdownGroup(
+          label: '冷却技能',
+          value: _refreshmentChoice,
+          options: _refreshmentOptions,
+          onChanged: (String? newValue) {
+            setState(() {
+              _refreshmentChoice = newValue ?? '';
+            });
+          },
+          spacing: 0,
+        ),
+      ];
+    } else if (cardName == CardId.auroraConcussion.id) {
+      return _buildPlayerPointGroups(
+        title: '极光点数',
+        points: _auroraPoints,
+        options: _auroraOptions,
+        onChanged: (playerId, newValue) {
+          setState(() {
+            _auroraPoints[playerId] = newValue ?? 1;
+          });
+        },
+      );
+    } else if (cardName == CardId.pandoraBox.id) {
+      return _buildIntDropdownGroup(
+        label: '魔盒点数',
+        value: _pandoraPoint,
+        options: _pandoraBoxOptions,
+        onChanged: (int? newValue) {
+          setState(() {
+            _pandoraPoint = newValue ?? 1;
+          });
+        },
+      );
+    } else if (cardName == CardId.amethyst.id) {
+      return _buildIntDropdownGroup(
+        label: '折射点数',
+        value: _amethystPoint,
+        options: _amethystOptions,
+        onChanged: (int? newValue) {
+          setState(() {
+            _amethystPoint = newValue ?? 1;
+          });
+        },
+      );
+    }
+    return [];
   }
 
   @override
   Widget build(BuildContext context) {
+    final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
+    final String localeStr = localeProvider.getLocaleNameWithCountry().toLowerCase();
     return AlertDialog(
-      title: Text('${widget.cardName} 设置'),
+      title: Text('${LocalizedIDs.labelFor(widget.cardName, localeStr)} 设置'),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (widget.cardName == "破片水晶") ...[
-              Text('水晶2d4损血', style: TextStyle(fontWeight: FontWeight.bold)),
-              DropdownButtonFormField<int>(
-                initialValue: _crystalSelf,
-                hint: Text('水晶2d4损血'),
-                items: _endCrystalOptions.map((String item) {
-                  int value = int.parse(item);
-                  return DropdownMenuItem(
-                    value: value,
-                    child: Text(item),
-                  );
-                }).toList(),
-                onChanged: (int? newValue) {
-                  setState(() {
-                    _crystalSelf = newValue ?? 1;
-                  });
-                },
-                isExpanded: true,
-              ),
-              SizedBox(height: 16),
-              Text('水晶d8伤害', style: TextStyle(fontWeight: FontWeight.bold)),
-              DropdownButtonFormField<int>(
-                initialValue: _crystalMagic,
-                hint: Text('水晶d8伤害'),
-                items: _endCrystalOptions.map((String item) {
-                  int value = int.parse(item);
-                  return DropdownMenuItem(
-                    value: value,
-                    child: Text(item),
-                  );
-                }).toList(),
-                onChanged: (int? newValue) {
-                  setState(() {
-                    _crystalMagic = newValue ?? 1;
-                  });
-                },
-                isExpanded: true,
-              ),
-              SizedBox(height: 16),
-            ]
-            else if (widget.cardName == "复合弓")...[
-              Text('弃牌张数', style: TextStyle(fontWeight: FontWeight.bold)),
-              DropdownButtonFormField<int>(
-                initialValue: _ammoCount,
-                hint: Text('弃牌张数'),
-                items: _bowOptions.map((String item) {
-                  int value = int.parse(item);
-                  return DropdownMenuItem(
-                    value: value,
-                    child: Text(item),
-                  );
-                }).toList(),
-                onChanged: (int? newValue) {
-                  setState(() {
-                    _ammoCount = newValue ?? 1;
-                  });
-                },
-                isExpanded: true,
-              ),
-              SizedBox(height: 16),
-            ]
-            else if(widget.cardName == "后日谈")...[
-              Text('延长目标', style: TextStyle(fontWeight: FontWeight.bold)),
-              DropdownButtonFormField<String>(
-                initialValue: _playerProlonged.isEmpty ? null : _playerProlonged,
-                hint: Text('延长目标'),
-                items: _redstonePlayerOptions.map((String item) {
-                  return DropdownMenuItem(
-                    value: item,
-                    child: Text(item),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _playerProlonged = newValue ?? '';
-                    _statusProlonged = game.players[newValue]!.status.isEmpty ? '' : game.players[newValue]!.status.keys.first;
-                    _updateRedstoneOptions();
-                  });
-                },
-                isExpanded: true,
-              ),
-              SizedBox(height: 16),
-              Text('状态延长', style: TextStyle(fontWeight: FontWeight.bold)),
-              DropdownButtonFormField<String>(
-                initialValue: _statusProlonged.isEmpty ? null : _statusProlonged,
-                hint: Text('状态延长'),
-                items: (_playerProlonged.isEmpty) ? [] :
-                _redstoneOptions.map((String item) {
-                  return DropdownMenuItem(
-                    value: item,
-                    child: Text(item),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _statusProlonged = newValue ?? '';
-                  });
-                },
-                isExpanded: true,
-              ),
-              SizedBox(height: 16),
-            ]
-            else if (widget.cardName == '混乱力场')...[
-              Text('混乱点数', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),              
-              ..._ascensionPoints.keys.map((playerId) {
-              final player = game.players[playerId]!;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${player.id}:'),
-                  DropdownButtonFormField<int>(
-                    initialValue: _ascensionPoints[playerId],
-                    hint: Text('选择点数'),
-                    items: _ascensionStairOptions.map((option) {
-                      int value = int.parse(option);
-                      return DropdownMenuItem(
-                        value: value,
-                        child: Text('$value'),
-                      );
-                    }).toList(),
-                    onChanged: (int? newValue) {
-                      setState(() {
-                        _ascensionPoints[playerId] = newValue ?? 1;
-                      });
-                    },
-                    isExpanded: true,
-                  ),
-                 SizedBox(height: 8),
-                ],
-              );
-             }),
-            ]
-            else if(widget.cardName == '刷新')...[
-              Text('冷却技能', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              DropdownButtonFormField<String>(
-                initialValue: _refreshmentChoice.isEmpty ? null : _refreshmentChoice,
-                hint: Text('选择技能'),
-                items: _refreshmentOptions.map((String item) {
-                  return DropdownMenuItem(
-                    value: item,
-                    child: Text(item),
-                  );
-                }).toList(),
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _refreshmentChoice = newValue ?? '';
-                  });
-                }
-              )
-            ]
-            else if(widget.cardName == '极光震荡')...[
-              Text('极光点数', style: TextStyle(fontWeight: FontWeight.bold)),
-              SizedBox(height: 8),
-              ..._auroraPoints.keys.map((playerId) {
-              final player = game.players[playerId]!;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('${player.id}:'),
-                  DropdownButtonFormField<int>(
-                    initialValue: _auroraPoints[playerId],
-                    hint: Text('选择点数'),
-                    items: _auroraOptions.map((option) {
-                      int value = int.parse(option);
-                      return DropdownMenuItem(
-                        value: value,
-                        child: Text('$value'),
-                      );
-                    }).toList(),
-                    onChanged: (int? newValue) {
-                      setState(() {
-                        _auroraPoints[playerId] = newValue ?? 1;
-                      });
-                    },
-                    isExpanded: true,
-                  ),
-                 SizedBox(height: 8),
-                ],
-              );
-             }),
-            ]
-            else if(widget.cardName == '潘多拉魔盒')...[
-              Text('魔盒点数', style: TextStyle(fontWeight: FontWeight.bold)),
-              DropdownButtonFormField<int>(
-                initialValue: _pandoraPoint,
-                hint: Text('魔盒点数'),
-                items: _pandoraBoxOptions.map((String item) {
-                  int value = int.parse(item);
-                  return DropdownMenuItem(
-                    value: value,
-                    child: Text(item),
-                  );
-                }).toList(),
-                onChanged: (int? newValue) {
-                  setState(() {
-                    _pandoraPoint = newValue ?? 1;
-                  });
-                },
-                isExpanded: true,
-              ),
-              SizedBox(height: 16),
-            ] else if(widget.cardName == '折射水晶')...[
-              Text('折射点数', style: TextStyle(fontWeight: FontWeight.bold)),
-              DropdownButtonFormField<int>(
-                initialValue: _amethystPoint,
-                hint: Text('折射点数'),
-                items: _amethystOptions.map((String item) {
-                  int value = int.parse(item);
-                  return DropdownMenuItem(
-                    value: value,
-                    child: Text(item),
-                  );
-                }).toList(),
-                onChanged: (int? newValue) {
-                  setState(() {
-                    _amethystPoint = newValue ?? 1;
-                  });
-                },
-                isExpanded: true,
-              ),
-              SizedBox(height: 16),
-            ],
-          ],
+          children: _buildCardWidgets(widget.cardName),
         ),
       ),
       actions: [

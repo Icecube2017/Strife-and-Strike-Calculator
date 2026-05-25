@@ -104,9 +104,11 @@ class _HistoryPageState extends State<HistoryPage> {
                   if (await file.exists()) {
                     await file.delete();
                     await _loadSaveFiles(); // 重新加载列表
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(content: Text('已删除存档: ${saveFile.filename}')),
                     );
+                    }                    
                   }
                 } catch (e) {
                   _logger.e('Failed to delete save file: $e');
