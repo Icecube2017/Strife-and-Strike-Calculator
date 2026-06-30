@@ -1000,12 +1000,14 @@ class _AddActionDialogState extends State<AddActionDialog> {
                           child: Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               mainAxisSize: MainAxisSize.max,
                               children: [
-                                Text(LocalizedIDs.labelFor(cardName, localeStr)),
+                                Expanded(
+                                  child: Text(LocalizedIDs.labelFor(cardName, localeStr))
+                                ),
                                 const SizedBox(width: 12),
-                                Spacer(),
+                                //Spacer(),
                                 IconButton(
                                   icon: Icon(Icons.settings, size: 18),
                                   onPressed: () => _showCardSettingsDialog(index, cardName),
@@ -2549,14 +2551,14 @@ class _AddActionDialogState extends State<AddActionDialog> {
               bool skillAble = true;
               if (skillAble) {                
                 // 相转移 天国邮递员 净化 外星人 追击 沉默 镭射 止杀 镜像 分裂 交易 太阴 奇点 侵蚀 逆转乾坤 空袭 背水一战
-                // 氤氲 安魂乐章 冰芒 护梦者 谜渊漩涡 灵魂震荡 补给 邪能侵袭 礼尚往来 怒海引路
+                // 氤氲 安魂乐章 冰芒 护梦者 谜渊漩涡 灵魂震荡 补给 邪能侵袭 礼尚往来 怒海引路 余裕手
                 if ({SkillId.phaseTransition.id, SkillId.heavenDelivery.id, SkillId.purification.id, 
                   SkillId.stellar.id, SkillId.chase.id, SkillId.reticence.id, SkillId.laser.id, 
                   SkillId.killCeasing.id, SkillId.inversion.id, SkillId.fission.id, SkillId.trading.id, SkillId.lunar.id, 
-                  SkillId.singularity.id, SkillId.corrosion.id, SkillId.karmaReversal.id, SkillId.airstrike.id, 
-                  SkillId.nebulaField.id, SkillId.requiem.id, SkillId.iceSplinter.id, SkillId.dreamKeeper.id,
-                  SkillId.abyssalWhirl.id, SkillId.soulTremor.id, SkillId.replenishment.id, SkillId.chaosIncursion.id,
-                  SkillId.giveAndTake.id, SkillId.ragePilot.id
+                  SkillId.singularity.id, SkillId.corrosion.id, SkillId.karmaReversal.id, SkillId.airstrike.id, SkillId.lastStand.id,
+                  SkillId.nebulaField.id, SkillId.requiem.id, SkillId.iceSplinter.id, SkillId.dreamKeeper.id, 
+                  SkillId.abyssalWhirl.id, SkillId.soulTremor.id, SkillId.replenishment.id, SkillId.chaosIncursion.id, 
+                  SkillId.giveAndTake.id, SkillId.ragePilot.id, SkillId.spareMove.id
                   }.contains(_selectedSkill)) {
                   game.castSkill(_source!, [_target!], _selectedSkill!, {});
                 }
@@ -2565,7 +2567,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 else if ({SkillId.bloodThirst.id, SkillId.threshold.id, SkillId.reinforcement.id, 
                   SkillId.barrier.id, SkillId.undying.id, SkillId.psionia.id, SkillId.overdraw.id, 
                   SkillId.mizar.id, SkillId.perusing.id, SkillId.antiGravity.id, SkillId.flashShade.id, 
-                  SkillId.velocity.id, SkillId.finaleHope.id,
+                  SkillId.velocity.id, SkillId.finaleHope.id, 
                   SkillId.massacre.id, SkillId.deconstruction.id, SkillId.sacrifice.id, SkillId.deicide.id, 
                   SkillId.kindleEye.id, SkillId.unwaveringGuard.id
                   }.contains(_selectedSkill)) {
@@ -2584,7 +2586,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 }
                 // 恐吓
                 else if (_selectedSkill == SkillId.intimidation.id) {
-                  game.castSkill(_source!, [_source!], _selectedSkill!, {'point': _intimidationPoint});
+                  game.castSkill(_source!, [_target!], _selectedSkill!, {'point': _intimidationPoint});
                 }
                 // 奉献
                 else if (_selectedSkill == SkillId.devotion.id) {

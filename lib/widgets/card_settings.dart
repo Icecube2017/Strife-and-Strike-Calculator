@@ -48,7 +48,7 @@ class _CardSettingsDialogState extends State<CardSettingsDialog> {
   String _statusProlonged = '';
   String _playerProlonged = '';
   // 混乱力场
-  final List<String> _ascensionStairOptions = ['1', '2', '3', '4', '5', '6'];
+  final List<String> _ascensionStairOptions = ['1', '2', '3', '4'];
   Map<String, int> _ascensionPoints = {};
   // 刷新
   List<String> _refreshmentOptions = [];

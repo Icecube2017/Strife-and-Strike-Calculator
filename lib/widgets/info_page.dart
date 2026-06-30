@@ -789,9 +789,9 @@ void _restoreGameState(String stateJson) {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('当前回合       ${game.round}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              Text('当前轮次       ${game.turn}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              Text('额外回合       ${game.extra}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('当前回合     ${game.round}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('当前轮次     ${game.turn}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('额外回合     ${game.extra}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),

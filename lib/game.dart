@@ -31,7 +31,7 @@ class GlobalCountdown{
 class Character{
   String id;
   int maxHealth, attack, defence, maxMove, moveRegen, regenType, regenTurn;
-  int health = 0, armor = 0, movePoint = 0, cardCount = 2, maxCard = 6, actionTime = 0;
+  int health = 0, armor = 0, movePoint = 0, cardCount = 2, maxCard = 6, actionTime = 0, jumpedTurn = 0;
   int damageReceivedTotal = 0, damageDealtTotal = 0, damageDealtRound = 0, damageReceivedRound = 0,
   damageReceivedTurn = 0, damageDealtTurn = 0;
   int cureReceivedTotal = 0, cureDealtTotal = 0, cureReceivedRound = 0, cureDealtRound = 0,
@@ -1310,7 +1310,7 @@ class Game extends ChangeNotifier{
       else if (card == CardId.apolloArrow.id) {
         int minDefence = targetChara.defence;
         for (Character chara in players.values) {
-          if (chara.defence < minDefence && chara.id != 'empty' && !chara.isDead) {
+          if (chara.defence < minDefence && isEnemy(source, chara.id) && chara.id != 'empty' && !chara.isDead) {
             minDefence = chara.defence;
           }
         }
@@ -1382,12 +1382,12 @@ class Game extends ChangeNotifier{
       }
       // 鼓舞
       else if (card == CardId.heroLegend.id) {
-        healPlayer(source, source, 100 * reinforcementMulti, DamageType.heal);
+        healPlayer(source, source, sourceChara.maxHealth ~/ 10 * reinforcementMulti, DamageType.heal);
         addHiddenStatus(source, 'hero_legend', 1 * reinforcementMulti, 1);
       }
       // 过往凝视
       else if (card == CardId.passingGaze.id) {
-        addHiddenStatus(target, 'damageplus', 100 * reinforcementMulti, 0);
+        damagePlayer(source, target, 70 * reinforcementMulti, DamageType.magical);
         addStatus(source, target, StatusId.dissociated.id, 10, 1);
       }
       // 寒绝凝冰
@@ -1419,7 +1419,7 @@ class Game extends ChangeNotifier{
       // 混乱力场
       else if (card == CardId.ascensionStair.id) {
         Map<String, int> ascensionPoints = cardArgs['ascensionPoints'] ?? {};
-        int minPoint = 6;
+        int minPoint = 4;
         int maxPoint = 1;
         List<String> ascensionChara = [];
         for (String chara in ascensionPoints.keys) { 
@@ -1434,8 +1434,9 @@ class Game extends ChangeNotifier{
             maxPoint = ascensionPoints[chara]!;
           }
         }
+        damagePlayer('empty', source, sourceChara.health ~/ 10, DamageType.lost);
         for (String chara in ascensionChara) {
-          damagePlayer(source, chara, 50 * maxPoint * reinforcementMulti, DamageType.physical, isAOE: true);
+          damagePlayer(source, chara, 50 * (maxPoint + 1) * reinforcementMulti, DamageType.physical, isAOE: true);
         }
       }
       // 极北之心
@@ -1457,7 +1458,8 @@ class Game extends ChangeNotifier{
       }
       // 加护
       else if (card == CardId.dreamShelter.id) {
-        healPlayer(source, source, 100 * reinforcementMulti, DamageType.heal);
+        healPlayer(source, source, (sourceChara.maxHealth - sourceChara.health) ~/ 20 * reinforcementMulti, DamageType.heal);
+        addAttribute(source, AttributeType.maxhp, 200 * reinforcementMulti);
         addHiddenStatus(source, 'dream_shelter', 1 * reinforcementMulti, 1);
       }
       // 箭
@@ -1466,7 +1468,7 @@ class Game extends ChangeNotifier{
       }
       // 狼牙棒
       else if (card == CardId.mace.id) {
-        addHiddenStatus(target, 'damageplus', 90 * reinforcementMulti, 0);
+        addHiddenStatus(target, 'damageplus', 60 * reinforcementMulti, 0);
         addStatus(source, target, StatusId.fractured.id, 0, 2);
       }
       // 猎魔灵刃
@@ -1688,7 +1690,7 @@ class Game extends ChangeNotifier{
     int attack = 0, attackPlus = 0, defence = 0, defencePlus = 0, cost = 0, cardCost = 1, point = dicePoint;
     Map<String, dynamic> cardsArgs = args ?? {};    
     double attackMulti = 1.0, defenceMulti = 1.0;
-    bool actionAble = true;
+    bool actionAble = true;    
     // 设置强化道具
     if (sourceChara.hasHiddenStatus('reinforcement')) {
       sourceChara.setHiddenStatusData('reinforcement', strData: cards.first);
@@ -1739,7 +1741,7 @@ class Game extends ChangeNotifier{
     if (sourceChara.hasHiddenStatus('velocity')) {
       cost -= 3;
     }
-    if (sourceChara.hasHiddenStatus('anti_velocity')) {
+    if (sourceChara.hasHiddenStatus('anti_velocity') && cards.isNotEmpty) {
       cost += 3;
     }
     // 舸灯【引渡】
@@ -1779,7 +1781,7 @@ class Game extends ChangeNotifier{
         cost = costRef[0];
       }
     }
-    // 行动点不足
+    // 行动点不足    
     if (cost > sourceChara.movePoint && !{CharacterId.engine4.id}.contains(source)) {
       actionAble = false;
     }
@@ -1789,6 +1791,10 @@ class Game extends ChangeNotifier{
       if (sourceChara.health <= 24 * cost) {
         actionAble = false;
       }
+    }
+    // 行动点消耗修正 
+    if (cost < 0) {
+      cost = 0;
     }
     // 状态【冰封】【梦境】【星牢】【造梦】【窒息】
     if (sourceChara.hasStatus(StatusId.frozen.id) || sourceChara.hasStatus(StatusId.dreaming.id) || 
@@ -1827,7 +1833,7 @@ class Game extends ChangeNotifier{
       actionAble = false;
     }
     // 蓝文策【探囊取物】
-    if (source == CharacterId.lanWence.id && !targetChara.hasHiddenStatus('pluck_tar')) {
+    if (sourceChara.hasHiddenStatus('pluck') && !targetChara.hasHiddenStatus('pluck_tar')) {
       actionAble = false;
     }
     // K97【二进制噪声】
@@ -1940,7 +1946,7 @@ class Game extends ChangeNotifier{
         addStatus(source, target, StatusId.wounded.id, 5, 2);
       }
       if (sourceChara.hasHiddenStatus('kindle_black')) {
-        addStatus(source, target, StatusId.fragility.id, 5, 2);
+        addStatus(source, target, StatusId.fragility.id, 2, 2);
       }
       if (sourceChara.hasHiddenStatus('kindle_red')) {
         addStatus(source, target, StatusId.uneasiness.id, 2, 2);
@@ -1990,7 +1996,7 @@ class Game extends ChangeNotifier{
         &&!sourceChara.hasHiddenStatus('rest')) {
         String status = sourceChara.getHiddenStatusStringData('ice_and_fire', StatusData.strData);
         if (statusToType[status]!.hasIntensity) {
-          addStatus(source, target, status, 2 * sourceChara.getStatusIntData(status, StatusData.intensity), 
+          addStatus(source, target, status, 2 + sourceChara.getStatusIntData(status, StatusData.intensity), 
           sourceChara.getStatusIntData(status, StatusData.layer));
         }
         else {
@@ -2171,9 +2177,12 @@ class Game extends ChangeNotifier{
             'attackMulti': attackMulti, 'point': point, 'damageTypeRef': damageTypeRef});
           baseDamage = baseDamageRef[0];
           DamageType damageType = damageTypeRef[0];
+          if (sourceChara.hasHiddenStatus('critical')) {
+            damageType = DamageType.lost;
+          }
           damagePlayer(source, target, baseDamage.toInt(), damageType);    
         }
-        if (sourceChara.hasHiddenStatus('critical')) {
+        else if (sourceChara.hasHiddenStatus('critical')) {
           damagePlayer(source, target, baseDamage.toInt(), DamageType.lost);
         }
         else {
@@ -2283,10 +2292,6 @@ class Game extends ChangeNotifier{
     }
     // 瞬影
     else if (skill == SkillId.flashShade.id) {
-      movePointCost = 1;
-    }
-    // 侵蚀
-    else if (skill == SkillId.corrosion.id) {
       movePointCost = 1;
     }
     // 逆转乾坤
@@ -2580,11 +2585,13 @@ class Game extends ChangeNotifier{
       }
       // 恐吓
       else if (skill == SkillId.intimidation.id) {
-        int point = skillData['point'];
+        /*int point = skillData['point'];
         throwDice(source, source, point, 6, DiceType.skill);
         if ({3, 6}.contains(point)) {
           addHiddenStatus(source, 'intimidation', 0, 1);
-        }
+        }*/
+        addHiddenStatus(source, 'intimidation', 0, 0);
+        addStatus(source, target, StatusId.uneasiness.id, 1, 1);
       }
       // 阈限
       else if (skill == SkillId.threshold.id) {
@@ -2834,7 +2841,7 @@ class Game extends ChangeNotifier{
         String status = skillData['status'];
         int point = skillData['point'];
         modifyStatusLayer(source, target, status, point);        
-        modifyCardCount(source, target, point, CardEventType.discard);
+        modifyCardCount(source, source, point, CardEventType.discard);
       }
       // 太夕【谜渊漩涡】
       else if (skill == SkillId.abyssalWhirl.id) {
@@ -2978,14 +2985,26 @@ class Game extends ChangeNotifier{
       }
       // 奥赛罗【余裕手】
       else if (skill == SkillId.spareMove.id) {
-        int whitePieceCount = 0;
+        /*int whitePieceCount = 0;
         for (var chara in players.values) {
           if (chara.hasHiddenStatus('white_piece') && chara.id != 'empty' && !chara.isDead) {
             whitePieceCount += chara.getHiddenStatusIntData('white_piece', StatusData.intensity);
             removeHiddenStatus(chara.id, 'white_piece');
           }
         }
-        addAttribute(source, AttributeType.armor, 5 * whitePieceCount);
+        addAttribute(source, AttributeType.armor, 5 * whitePieceCount);*/
+        if (targetChara.hasHiddenStatus( 'white_piece')) {
+          addHiddenStatus(target, 'black_piece', targetChara.getHiddenStatusIntData('white_piece', StatusData.intensity), -1);
+          removeHiddenStatus(target, 'white_piece');
+        } else if (targetChara.hasHiddenStatus( 'black_piece')) {
+          addHiddenStatus(target, 'white_piece', targetChara.getHiddenStatusIntData('black_piece', StatusData.intensity), -1);
+          removeHiddenStatus(target, 'black_piece');
+        }
+        if (sourceChara.hasHiddenStatus('white_piece')) {
+          modifyHiddenStatusIntensity(source, 'white_piece', 1);          
+        } else if (sourceChara.hasHiddenStatus('black_piece')) {
+          modifyHiddenStatusIntensity(source, 'black_piece', 1);
+        }
       }
       // 埃诺雅【溯洄】
       else if (skill == SkillId.anabasis.id) {
@@ -3033,7 +3052,7 @@ class Game extends ChangeNotifier{
       // 叶姬【永恒】
       if (skill == SkillId.eternity.id) {
         int point = skillData['point'];
-        modifySkillCooldown(source, source, skill, point + 1);        
+        modifySkillCooldown(source, source, skill, point + 1);
       }
       // 斯威芬【造梦者】
       if (skill == SkillId.dreamWeaver.id) {
@@ -3054,8 +3073,8 @@ class Game extends ChangeNotifier{
       // 卡拉卡【木头羊】
       else if (skill == SkillId.timberSheep.id) {
         int point = skillData['point'];
-        modifySkillCooldown(source, source, skill, point + 1);
-      }      
+        modifySkillCooldown(source, source, skill, point);
+      }
 
       // 道具结算
       // 失乐园
@@ -3203,16 +3222,16 @@ class Game extends ChangeNotifier{
     // K97【二进制噪声】
     else if (trait == TraitId.binary.id) {
       int type = traitData['type'];
-      if (type == 0 && sourceChara.health < 1) {
+      /*if (type == 0 && sourceChara.armor > 0) {
         traitAble = false;
       }
       else if (type == 1 && sourceChara.armor <= 0) {
         traitAble = false;
-      }
-      else if (type == 2) {
+      }*/
+      if (type == 2) {
         int armor = traitData['armor'];
-        // int attValue = traitData['attValue'];
-        if (armor != 0) {
+        int attValue = traitData['attValue'];
+        if (armor == 0 || attValue != armor) {
           traitAble = false;
         }        
       }
@@ -3256,7 +3275,7 @@ class Game extends ChangeNotifier{
       }
     }
     // 舸灯【引渡】
-    else if (trait == TraitId.ghostFerry.id) {
+    else if (trait == TraitId.ghostFerry.id) { 
       int type = traitData['type'];
       if (type == 1) {
         movePointCost = 2;
@@ -3513,9 +3532,9 @@ class Game extends ChangeNotifier{
       }
       else if (type == 2) {
         DamageType damageType = traitData['dmgType'];
-        if (!{DamageType.physical, DamageType.magical}.contains(damageType)) {
+        if (!{DamageType.action, DamageType.physical, DamageType.magical}.contains(damageType)) {
           traitAble = false;
-        }        
+        }
       }
     }
     // 龙宇澈【燃魂】
@@ -3886,7 +3905,7 @@ class Game extends ChangeNotifier{
     // 使用次数不足
     if (sourceChara.trait[trait]!.castCount >= sourceChara.trait[trait]!.maxCast 
     && sourceChara.trait[trait]!.maxCast > 0) {
-      traitAble = false;
+      //traitAble = false;
     }
     // 永久可用特质
     if ({TraitId.resolution.id}.contains(trait)) {
@@ -3927,17 +3946,17 @@ class Game extends ChangeNotifier{
         int type = traitData['type'];
         if (type == 0) { 
           List<double> baseDamageRef = traitData['baseDamageRef'];
-        int attack = traitData['attack'];
-        double attackMulti = traitData['attackMulti'];
-        int point = traitData['point'];
-        List<DamageType> damageTypeRef = traitData['damageTypeRef'];
-        damageTypeRef[0] = DamageType.lost;
-        baseDamageRef[0] = (point) * (attack - 30) * attackMulti;
+          int attack = traitData['attack'];
+          double attackMulti = traitData['attackMulti'];
+          int point = traitData['point'];
+          List<DamageType> damageTypeRef = traitData['damageTypeRef'];
+          damageTypeRef[0] = DamageType.lost;
+          baseDamageRef[0] = (point) * (attack - 30) * attackMulti;
         }
         else {
           List<int> maxPointRef = traitData['maxPointRef'];
-          maxPointRef[0] -= 1;
-        }        
+          maxPointRef[0] += 1;
+        }
       }
       // 星尘【幸运壁垒】
       else if (trait == TraitId.luckyShield.id) {
@@ -4036,12 +4055,12 @@ class Game extends ChangeNotifier{
       else if (trait == TraitId.binary.id) {
         int type = traitData['type'];
         if (type == 0) {
-          addAttribute(source, AttributeType.health, -1);
-          addAttribute(source, AttributeType.armor, 1);
-        }
-        else if (type == 1) {
-          addAttribute(source, AttributeType.health, sourceChara.armor);
-          addAttribute(source, AttributeType.armor, -sourceChara.armor);
+          if (sourceChara.armor == 0) {
+            addAttribute(source, AttributeType.armor, 1);
+          } else {
+            healPlayer(source, source, sourceChara.armor, DamageType.heal);
+            addAttribute(source, AttributeType.armor, -sourceChara.armor);
+          }          
         }
         else if (type == 2) {
           addHiddenStatus(source, 'binary', 0, 0);
@@ -4193,7 +4212,7 @@ class Game extends ChangeNotifier{
         int type = traitData['type'];
         if (type == 0) {
           List<int> costRef = traitData['costRef'];
-          costRef[0] -= 1;
+          costRef[0] -= 1;          
         }
         else {          
           modifyCardCount(source, target, 2, CardEventType.draw);
@@ -4708,13 +4727,13 @@ class Game extends ChangeNotifier{
         }
         else {
           addHiddenStatus(source, 'collective', 1, -1);
-        }        
+        }
       }
       // 唐亚德【清心的乌托邦】
       else if (trait == TraitId.utopiaOfClarity.id) { 
         int type = traitData['type'];
-        if (type == 0) { 
-          addHiddenStatus(source, 'clarity', 1, -1);
+        if (type == 0) {           
+          modifyHiddenStatusIntensity(source, 'clarity', 1);
         }
         else if (type == 1) { 
           modifyHiddenStatusIntensity(source, 'clarity', -1);
@@ -5154,7 +5173,8 @@ class Game extends ChangeNotifier{
           removeHiddenStatus(source, 'tit_for_tat');
         }
         else {
-          addHiddenStatus(source, 'tit_for_tat', 1, -1);
+          //addHiddenStatus(source, 'tit_for_tat', 1, -1);
+          modifyHiddenStatusIntensity(source, 'tit_for_tat', 1);
         }
       }
       // 祝烨诚【凛息】
@@ -5187,6 +5207,7 @@ class Game extends ChangeNotifier{
       // 蓝文策【探囊取物】
       else if (trait == TraitId.pluckingPouch.id) {
         int type = traitData['type'];
+        addHiddenStatus(source, 'pluck', 0, 0);
         addHiddenStatus(target, 'pluck_tar', 0, 0);
         if (type == 0) { 
           addHiddenStatus(source, 'costminus', 1, 0);
@@ -5397,11 +5418,12 @@ class Game extends ChangeNotifier{
             }
           }
           for (var tar in targets) {
-            damagePlayer(source, tar, 5 * pieceCount, DamageType.magical, isAOE: true);
+            damagePlayer(source, tar, 5 * pieceCount, DamageType.lost, isAOE: true);
+            healPlayer(source, source, 5 * pieceCount, DamageType.heal);
           }
         }
         else {
-          addHiddenStatus(source, 'black_piece', 4, -1);
+          addHiddenStatus(source, 'black_piece', 2, -1);
         }
       }
       // 石蹄【蹦蹦咒语】
@@ -5454,7 +5476,7 @@ class Game extends ChangeNotifier{
       else if (trait == TraitId.danshari.id) { 
         int type = traitData['type'];
         if (type == 0) { 
-          addAttribute(source, AttributeType.armor, 35 * (sourceChara.cardCount + sourceChara.movePoint));
+          addAttribute(source, AttributeType.armor, 30 * (sourceChara.cardCount + sourceChara.movePoint));
           addHiddenStatus(source, 'danshari', sourceChara.movePoint, 2);
           addAttribute(source, AttributeType.movepoint, -sourceChara.movePoint);
           modifyCardCount(source, source, sourceChara.cardCount, CardEventType.discard);
@@ -5565,13 +5587,6 @@ class Game extends ChangeNotifier{
         damageMulti *= 1.5;
       }
       removeHiddenStatus(target, 'end');
-      }
-    // 道具【猎魔灵刃】
-    if (targetChara.hasHiddenStatus('track') && type == DamageType.action) {
-      for (int i = 0; i < targetChara.getHiddenStatusIntData('track', StatusData.intensity); i++) {
-        damageMulti *= 1.5;
-      }
-      removeHiddenStatus(target, 'track');
     }
     // 道具【融甲宝珠】
     if (targetChara.hasHiddenStatus('penetrate') && type == DamageType.action) {
@@ -5600,9 +5615,9 @@ class Game extends ChangeNotifier{
       removeStatus(target, target, StatusId.soulFlare.id);
     }
     // 状态【骑虎难下】
-    if(targetChara.hasStatus(StatusId.tigrisDilemma.id) && {DamageType.action}.contains(type)){
+    /*if(targetChara.hasStatus(StatusId.tigrisDilemma.id) && {DamageType.action}.contains(type)){
       damageMulti *= 1.2;
-    }
+    }*/
     // 状态【润化】
     if (targetChara.hasStatus(StatusId.moisturize.id) && type == DamageType.action) {
       damagePlus -= 50;
@@ -5633,7 +5648,7 @@ class Game extends ChangeNotifier{
 
     // 技能【恐吓】
     if (targetChara.hasHiddenStatus('intimidation') && type == DamageType.action) {
-      damageMulti *= 0.5;
+      damageMulti *= 0.65;      
     }
     // 技能【分裂】
     if (sourceChara.hasHiddenStatus('fission') && type == DamageType.action) {
@@ -5745,7 +5760,8 @@ class Game extends ChangeNotifier{
     if (source == CharacterId.anShanding.id && type == DamageType.action && sourceChara.hasStatus(StatusId.poised.id)) {
       damageMulti *= 2;
     }
-    if (target == CharacterId.anShanding.id && targetChara.hasHiddenStatus('upspring')) {
+    if (target == CharacterId.anShanding.id && targetChara.hasHiddenStatus('upspring') 
+    && {DamageType.action, DamageType.physical, DamageType.magical}.contains(type)) {
       List<double> damageMultiRef = [damageMulti];
       castTrait(target, [target], TraitId.utopiaOfUpspring.id, {'type': 1, 'damageMultiRef': damageMultiRef});
       damageMulti = damageMultiRef[0];
@@ -5894,6 +5910,11 @@ class Game extends ChangeNotifier{
       addAttribute(target, AttributeType.health, -damage);
     }
     
+    // 道具【猎魔灵刃】
+    if (targetChara.hasHiddenStatus('track') && type == DamageType.action) {
+      damagePlayer(source, target, damage ~/ 2 * targetChara.getHiddenStatusIntData('track', StatusData.intensity), DamageType.magical);
+      removeHiddenStatus(target, 'track');
+    }
     // 技能【镜像】
     if (targetChara.hasHiddenStatus('mirror')) {
       if (targetChara.damageReceivedTotal - targetChara.getHiddenStatusIntData('mirror', StatusData.intensity) > 300) {
@@ -6013,7 +6034,7 @@ class Game extends ChangeNotifier{
         Character maxHpChara = players[currentCharaId]!;
         int maxHp = maxHpChara.health;
         for(Character target in players.values){ 
-          if(target.health > maxHp){
+          if(target.health > maxHp && target.id != 'empty' && !target.isDead) {
             maxHp = target.health;
             maxHpChara = target;
           }
@@ -6024,7 +6045,7 @@ class Game extends ChangeNotifier{
         Character maxHpChara = players[currentCharaId]!;
         int maxHp = maxHpChara.health;
         for(Character target in players.values){
-          if(target.health > maxHp){
+          if(target.health > maxHp && target.id != 'empty' && !target.isDead){
             maxHp = target.health;
             maxHpChara = target;
           }
@@ -6073,9 +6094,7 @@ class Game extends ChangeNotifier{
       // 茵竹【自勉】
       if (chara.hasTrait(TraitId.selfEncouragement.id)) {
         castTrait(chara.id, [chara.id], TraitId.selfEncouragement.id, {'type': 0});
-      }
-
-      
+      }      
     }
     // 龙宇澈【光耀】
     if (isCharacterInGame(CharacterId.longYuche.id)) {      
@@ -6432,7 +6451,7 @@ class Game extends ChangeNotifier{
     }
     // K97【二进制噪声】
     if (currentChara.hasTrait(TraitId.binary.id)) {
-      castTrait(currentCharaId, [currentCharaId], TraitId.binary.id, {'type': (round + 1) % 2});
+      castTrait(currentCharaId, [currentCharaId], TraitId.binary.id, {'type': 0});
     }
     // 奈普斯特【幽魂化】
     else if (currentCharaId == CharacterId.nepst.id) {
@@ -6485,6 +6504,7 @@ class Game extends ChangeNotifier{
     // 行动点回复
     bool recoverAble = true;
     if (currentChara.hasStatus(StatusId.stellarCage.id) || currentChara.hasStatus(StatusId.dreaming.id)) {
+      currentChara.jumpedTurn++;
       recoverAble = false;
     }
     if (currentChara.isDead) {
@@ -6523,7 +6543,7 @@ class Game extends ChangeNotifier{
       if (currentChara.maxMove - currentChara.movePoint < moveRegen) {
         moveRegen = currentChara.maxMove - currentChara.movePoint;
       }
-      if (([0, 3, 4].contains(currentChara.regenType)) && (round - 1) % currentChara.regenTurn == 0) {
+      if (([0, 3, 4].contains(currentChara.regenType)) && (round - 1 - currentChara.jumpedTurn) % currentChara.regenTurn == 0) {
         addAttribute(currentCharaId, AttributeType.movepoint, moveRegen);
       }
       if (currentChara.movePoint == 0 && currentChara.regenType == 2) {
