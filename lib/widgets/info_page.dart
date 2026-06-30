@@ -707,7 +707,7 @@ void _restoreGameState(String stateJson) {
         ],
       ),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(12.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -733,7 +733,7 @@ void _restoreGameState(String stateJson) {
                   {'label': '添加角色', 'on': game.gameState == GameState.waiting ? () => _showAddCharacterDialog() : null},
                   {'label': '删除角色', 'on': (selectedIndex != null && game.gameState == GameState.waiting) ? _deleteSelectedRow : null},
                   {'label': '编辑属性', 'on': (selectedIndex != null) ? _showAttributeSettingsDialog : null},
-                  {'label': '切换模式\n${game.gameType.name}', 'on': game.gameState == GameState.waiting ? () => game.toggleGameType() : null},
+                  {'label': '模式：${game.gameType.name}', 'on': game.gameState == GameState.waiting ? () => game.toggleGameType() : null},
                   {'label': '队伍管理', 'on': (game.gameState == GameState.waiting && game.gameType == GameType.team) ? () => _showTeamManagerDialog() : null},
                   {'label': '新建', 'on': () => _createNewSave()},
                   {'label': '加载', 'on': () => _showLoadDialog()},
@@ -742,7 +742,7 @@ void _restoreGameState(String stateJson) {
                 ];
 
                 // 固定按钮高度并让按钮填充单元格
-                const double buttonHeight = 36;
+                const double buttonHeight = 32;
 
                 // 统一按钮样式构造器：按钮会扩展填充格子
                 Widget buildActionButton(Map<String, dynamic> spec) {
@@ -765,7 +765,7 @@ void _restoreGameState(String stateJson) {
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: columns,
                     crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
+                    mainAxisSpacing: 6,
                     mainAxisExtent: buttonHeight,
                   ),
                   shrinkWrap: true,
@@ -775,7 +775,7 @@ void _restoreGameState(String stateJson) {
               },
             ),
             
-            const SizedBox(height: 16.0),
+            const SizedBox(height: 8),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.start,
@@ -785,13 +785,13 @@ void _restoreGameState(String stateJson) {
                   children: [
                     Card(
                       child: Padding(
-                        padding: const EdgeInsets.all(8.0),
+                        padding: const EdgeInsets.all(6.0),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('当前回合     ${game.round}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              Text('当前轮次     ${game.turn}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                              Text('额外回合     ${game.extra}', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                              Text('当前回合     ${game.round}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              Text('当前轮次     ${game.turn}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                              Text('额外回合     ${game.extra}', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
@@ -867,12 +867,12 @@ void _restoreGameState(String stateJson) {
               child: LayoutBuilder(builder: (context, constraints) {
                 final double width = constraints.maxWidth;
                 final int columns = width > 1100 ? 2 : 1;
-                final double spacing = 12;
+                final double spacing = 8;
                 final double itemWidth = (width - (columns - 1) * spacing) / columns;
                 final roles = tableData.map((e) => e['column1'] as String).where((r) => game.players.containsKey(r)).toList();
 
                 return SingleChildScrollView(
-                  padding: const EdgeInsets.only(top: 8.0),
+                  padding: const EdgeInsets.only(top: 6.0),
                   child: Wrap(
                     spacing: spacing,
                     runSpacing: spacing,
@@ -902,12 +902,12 @@ void _restoreGameState(String stateJson) {
                         child: SizedBox(
                           width: itemWidth,
                           child: Container(
-                            padding: const EdgeInsets.all(12.0),
+                            padding: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
                               color: character.isDead ? Colors.grey.withAlpha(35) : Colors.grey.shade50,
                               borderRadius: BorderRadius.circular(8.0),
                               border: isSelected
-                                  ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2)
+                                  ? Border.all(color: Colors.blueAccent, width: 2)
                                   : Border.all(color: Colors.grey.shade300, width: 1),
                             ),
                             child: Column(
@@ -926,7 +926,7 @@ void _restoreGameState(String stateJson) {
                                               width: 6,
                                               height: 16,
                                               decoration: BoxDecoration(
-                                                color: teamColor,
+                                                color: teamColor
                                               ),
                                             ),
                                             const SizedBox(width: 6),
@@ -942,38 +942,105 @@ void _restoreGameState(String stateJson) {
                                         ],
                                       ),
                                     ),
-                                    // 简短的生命数值和护盾图标
-                                    Row(
-                                      children: [
-                                        if (armor > 0) ...[
-                                          _buildAttribulePill(icon: Icons.health_and_safety, iconColor: Colors.blueGrey, value: '$armor'),
-                                          const SizedBox(width: 8),
-                                        ],
-                                        _buildAttribulePill(icon: Icons.favorite, iconColor: Colors.red, value: '$health / $maxHealth'),
-                                      ],
-                                    ),
+                                    // 技能图标
+                                    SizedBox(
+                                      width: 88,
+                                      child: Row(
+                                        children: [
+                                          SizedBox(width: 8,),
+                                          _buildAttribulePill(icon: Icons.auto_fix_high, iconColor: Colors.black, value: '技能'),
+                                      ],),
+                                    )
                                   ],
                                 ),
-
-                                // 生命值
-                                if (!character.isDead)...[_buildHeathBar(
-                                  health: character.health.toDouble(),
-                                  maxHealth: character.maxHealth.toDouble(),
-                                  armor: character.armor.toDouble(),
-                                )],
-                                const SizedBox(height: 4),
-
-                                // 属性行
+                                // 属性&技能
                                 Row(
                                   children: [
-                                    _buildAttribulePill(icon: MdiIcons.sword, iconColor: teamColor, value: '$attack'),
-                                    const Spacer(),
-                                    _buildAttribulePill(icon: Icons.shield, iconColor: teamColor, value: '$defence'),
-                                    const Spacer(),
-                                    _buildAttribulePill(icon: MdiIcons.lightningBolt, iconColor: teamColor, value: '$movePoint / $maxMovePoint'),
-                                    const Spacer(),
-                                    _buildAttribulePill(icon: MdiIcons.cards, iconColor: teamColor, value: '$cardCount'),
-                                    const Spacer(),
+                                    SizedBox(
+                                      width: 60,
+                                      child: Container(
+                                        padding: EdgeInsets.all(2),
+                                        child: Column(
+                                          children: [
+                                            _buildAttribulePill(icon: MdiIcons.sword, iconColor: teamColor, value: '$attack'),
+                                            SizedBox(height: 4,),
+                                            _buildAttribulePill(icon: Icons.shield, iconColor: teamColor, value: '$defence'),
+                                          ],
+                                        ),
+                                      )
+                                    ),
+                                    const SizedBox(width: 2,),
+                                    Container(width: 1, height: 50, color: Colors.blueGrey,),
+                                    const SizedBox(width: 6,),
+                                    Expanded(
+                                      child: Column(
+                                        children: [
+                                          Row(
+                                            children: [
+                                              (character.isDead || roleName == "defen_5")
+                                              ? _buildAttribulePill(icon: Icons.favorite, iconColor: Colors.red, value: '-')
+                                              : _buildAttribulePill(icon: Icons.favorite, iconColor: Colors.red, value: '$health/$maxHealth'),
+                                              const Spacer(),
+                                              if (armor > 0) ...[
+                                                _buildAttribulePill(icon: Icons.shield, iconColor: Colors.blueGrey, value: '$armor'),
+                                              ],
+                                            ],
+                                          ),
+                                          if (!character.isDead && roleName != "defen_5") _buildPercentageBar(
+                                              current: character.health.toDouble(),
+                                              max: character.maxHealth.toDouble(),
+                                              overlay: character.armor.toDouble(),
+                                            ) else _buildPercentageBar(
+                                              current: character.armor.toDouble(),
+                                              max: 1350,
+                                              overlay: character.armor.toDouble()
+                                          ),
+                                          SizedBox(height: 3,),
+                                          if (!character.isDead && roleName != "engine_4") _buildSegmentedBar(
+                                            current: character.movePoint.toDouble(),
+                                            max: character.maxMove.toDouble(),
+                                            overlay: 0,
+                                            color: Colors.lightBlue
+                                          ) else _buildSegmentedBar(
+                                            current: 0,
+                                            max: (roleName == "engine_4") ? 1 : character.maxMove.toDouble(),
+                                            overlay: 0,
+                                            color: Colors.lightBlue
+                                          ),
+                                          Row(
+                                            children: [(character.isDead || roleName == "engine_4")
+                                              ? _buildAttribulePill(icon: MdiIcons.lightningBolt, iconColor: Colors.lightBlue, value: '-')
+                                              : _buildAttribulePill(icon: MdiIcons.lightningBolt, iconColor: Colors.lightBlue, value: '$movePoint / $maxMovePoint'),
+                                              const Spacer(),
+                                              _buildAttribulePill(icon: MdiIcons.cards, iconColor: Colors.lightBlue, value: '$cardCount'),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6,),
+                                    Container(width: 1, height: 50, color: Colors.blueGrey,),
+                                    const SizedBox(width: 2,),
+                                    SizedBox(
+                                      width: 88,
+                                      child: Container(
+                                        padding: EdgeInsets.all(2),
+                                        child: LayoutBuilder(
+                                          builder: (context, box) {
+                                            final double columnWidth = box.maxWidth;
+                                            List<Widget> pills = [];
+                                            skill.forEach((k, v) {
+                                              pills.add(_buildSkillPill(k, v.cooldown.toString(), columnWidth));
+                                            });
+                                            return Column(
+                                              mainAxisAlignment: MainAxisAlignment.start,
+                                              spacing: 2,
+                                              children: pills,
+                                            );
+                                          }
+                                        )
+                                      )
+                                    )
                                   ],
                                 ),
                                 // 状态组
@@ -1007,30 +1074,6 @@ void _restoreGameState(String stateJson) {
                                       }
                                     ),
                                     typeIcon: MdiIcons.flask,
-                                  ),
-                                ],
-                                // 技能组
-                                if (skill.isNotEmpty) ...[
-                                  const SizedBox(height: 6),
-                                  _buildPillContainers(
-                                    context: context,
-                                    child: LayoutBuilder(
-                                      builder: (context, box) {
-                                        final double innerW = box.maxWidth;
-                                        final double smallSpacing = 6;
-                                        final double smallItemW = (innerW - smallSpacing * 3) / 4;
-                                        List<Widget> pills = [];
-                                        skill.forEach((k, v) {
-                                          pills.add(_buildSkillPill(k, v.cooldown.toString(), smallItemW));
-                                        });
-                                        return Wrap(
-                                          spacing: smallSpacing,
-                                          runSpacing: smallSpacing,
-                                          children: pills
-                                        );
-                                      },
-                                    ),
-                                    typeIcon: Icons.auto_fix_high,
                                   ),
                                 ],
                               ],
@@ -1416,14 +1459,14 @@ void _restoreGameState(String stateJson) {
     _saveCurrentStateToHistory(); // 此处仍然存在问题：清空后添加角色，删除角色再回退会导致报错 // 疑似已修复
   }
 
-  Widget _buildHeathBar({required double health, required double maxHealth, required double armor}) {
+  Widget _buildPercentageBar({required double current, required double max, required double overlay, Color color = Colors.teal}) {
     return LayoutBuilder(builder: (context, box) {
       final double fullW = box.maxWidth;
-      final double pct = (maxHealth > 0) ? (health / maxHealth).clamp(0.0, 1.0) : 0.0;
+      final double pct = (max > 0) ? (current / max).clamp(0.0, 1.0) : 0.0;
       final double greenW = fullW * pct;
-      final double armorPct = (maxHealth > 0) ? (armor / maxHealth).clamp(0.0, 1.0) : 0.0;
+      final double armorPct = (max > 0) ? (overlay / max).clamp(0.0, 1.0) : 0.0;
       double armorW = fullW * armorPct;
-      if (armor > health) armorW = greenW;
+      if (overlay > current) armorW = greenW;
 
       return SizedBox(
       height: 6,
@@ -1432,8 +1475,8 @@ void _restoreGameState(String stateJson) {
           Container(
             height: 6,
             decoration: BoxDecoration(
-              color: Colors.black.withAlpha(12),
-              // borderRadius: BorderRadius.circular(6),
+              color: Colors.black.withAlpha(35),
+              borderRadius: BorderRadius.circular(2)
             ),
           ),
           // 生命值
@@ -1444,11 +1487,11 @@ void _restoreGameState(String stateJson) {
             child: Container(
               width: greenW,
               height: 6,
-              decoration: BoxDecoration(color: Colors.lightBlue,),
+              decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
             ),
           ),
-          // 护盾叠加在血量上，右侧与血量右边界对齐
-          if (armor > 0)
+          // overlay叠加在current上，右侧与current右边界对齐
+          if (overlay > 0)
             Positioned(
               left: (greenW - armorW).clamp(0.0, fullW),
               top: 0,
@@ -1456,7 +1499,7 @@ void _restoreGameState(String stateJson) {
               child: Container(
                 width: armorW,
                 height: 6,
-                decoration: BoxDecoration(color: Colors.white54,),
+                decoration: BoxDecoration(color: Colors.white54, borderRadius: BorderRadius.circular(2)),
               ),
             ),
         ],
@@ -1465,12 +1508,80 @@ void _restoreGameState(String stateJson) {
     });
   }
 
+  Widget _buildSegmentedBar({
+    required double current,
+    required double max,
+    required double overlay,
+    Color color = Colors.teal,
+    double height = 6.0,
+    double gap = 2.0,
+    Color emptyColor = Colors.grey,
+    double emptyAlpha = 0.4,
+    Color overlayColor = Colors.white54,
+  }) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final double fullWidth = constraints.maxWidth;
+        final int totalSegments = max.toInt();
+        if (totalSegments <= 0) return const SizedBox.shrink();
+
+        // 计算每段宽度
+        final double totalGap = (totalSegments - 1) * gap;
+        double segmentWidth = (fullWidth - totalGap) / totalSegments;
+        // 如果宽度不够，至少保证每段为1像素，否则可能为负
+        if (segmentWidth < 1) segmentWidth = 1;
+
+        final int filled = current.toInt().clamp(0, totalSegments);
+        final int overlayInt = overlay.toInt().clamp(0, filled); // 不能超过已填充段
+
+        final int lifeSegments = filled - overlayInt;
+        final int shieldSegments = overlayInt;
+
+        List<Widget> children = [];
+        for (int i = 0; i < totalSegments; i++) {
+          Color segmentColor;
+          if (i < lifeSegments) {
+            segmentColor = color;
+          } else if (i < lifeSegments + shieldSegments) {
+            segmentColor = overlayColor; // 覆盖
+          } else {
+            segmentColor = emptyColor.withAlpha((emptyAlpha * 255).toInt());
+          }
+
+          children.add(
+            Container(
+              width: segmentWidth,
+              height: height,
+              decoration: BoxDecoration(
+                color: segmentColor,
+                borderRadius: BorderRadius.circular(2), // 可调圆角
+              ),
+            ),
+          );
+
+          // 最后一段不加间隔
+          if (i < totalSegments - 1) {
+            children.add(SizedBox(width: gap));
+          }
+        }
+
+        return SizedBox(
+          height: height,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: children,
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildAttribulePill({required IconData icon, required Color iconColor, required String value}) {
     return Row(
       children: [
-        Icon(icon, color: iconColor, size: 16,),
+        Icon(icon, color: iconColor, size: 15,),
         const SizedBox(width: 4,),
-        Text(value, style: const TextStyle(fontSize: 15,)),
+        Text(value, style: const TextStyle(fontSize: 14,)),
       ],
     );
   }
@@ -1520,7 +1631,7 @@ void _restoreGameState(String stateJson) {
                 ),
                 const SizedBox(width: 6),
                 Text(intensity, style: TextStyle(fontSize: 12, color: hidden ? Colors.grey : Colors.black87, fontWeight: FontWeight.bold)),
-                const SizedBox(width: 6),              
+                if (layers > 0) const SizedBox(width: 6),              
               ],
             ),
           ),
@@ -1544,12 +1655,13 @@ void _restoreGameState(String stateJson) {
   Widget _buildSkillPill(String name, String value, double width) {
     final localeProvider = Provider.of<LocaleProvider>(context, listen: false);
     final String localeStr = localeProvider.getLocaleNameWithCountry().toLowerCase();
+    final bool hidden = (value == "0") ? false : true;
     return SizedBox(
       width: width,
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 8),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: hidden ? Colors.grey.shade100 : Colors.white,
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: Colors.grey.shade300, width: 0.8),
         ),
@@ -1559,13 +1671,12 @@ void _restoreGameState(String stateJson) {
             Expanded(
               child: Text(
                 LocalizedIDs.labelFor(name, localeStr),
-                style: const TextStyle(fontSize: 12), 
+                style: TextStyle(fontSize: 12, color: hidden ? Colors.grey : Colors.black87), 
                 overflow: TextOverflow.ellipsis
               )
             ),
             const SizedBox(width: 6),
-            Text(value, style: const TextStyle(fontSize: 12, color: Colors.black87, fontWeight: FontWeight.bold)),
-            const SizedBox(width: 6),
+            Text(value, style: TextStyle(fontSize: 12, color: hidden ? Colors.grey : Colors.black87, fontWeight: FontWeight.bold)),
           ],
         ),
       ),
