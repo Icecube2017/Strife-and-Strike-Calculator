@@ -180,6 +180,7 @@ class DamageRecord extends GameRecord {
   final String target;  
   final int damage;
   final DamageType damageType;
+  final DamageSource damageSource;
   final String tag;
 
   DamageRecord({
@@ -187,6 +188,7 @@ class DamageRecord extends GameRecord {
     required this.target,    
     required this.damage,
     required this.damageType,
+    required this.damageSource,
     required this.tag,
     required super.turn,
   }) : super(type: RecordType.damage);
@@ -199,6 +201,7 @@ class DamageRecord extends GameRecord {
       'target': target,
       'damage': damage,
       'damageType': damageType.name,
+      'damageSource': damageSource.name,
       'tag': tag,
       'round': turn.round,
       'turn': turn.turn,
@@ -212,6 +215,7 @@ class DamageRecord extends GameRecord {
       target: json['target'],
       damage: json['damage'],
       damageType: DamageType.values.firstWhere((e) => e.name == json['damageType']),
+      damageSource: DamageSource.values.firstWhere((e) => e.name == json['damageSource']),
       tag: json['tag'],
       turn: GameTurn(
         round: json['round'],
@@ -403,8 +407,8 @@ class RecordProvider with ChangeNotifier {
     addRecord(TraitRecord(source: source, targets: targets, name: name, params: params, turn: turn));
   }
 
-  void addDamageRecord(GameTurn turn, String source, String target, int damage, DamageType damageType, String tag) {
-    addRecord(DamageRecord(source: source, target: target, damage: damage, damageType: damageType, tag: tag, turn: turn));
+  void addDamageRecord(GameTurn turn, String source, String target, int damage, DamageType damageType, DamageSource damageSource, String tag) {
+    addRecord(DamageRecord(source: source, target: target, damage: damage, damageType: damageType, damageSource: damageSource, tag: tag, turn: turn));
   }
 
   void addHealRecord(GameTurn turn, String source, String target, int heal, DamageType healType, String tag) {

@@ -140,7 +140,7 @@ void main() {
   test ('Trait test: StarDuster - Lucky Shield - Success', () { 
     game.playCards(CharacterId.chinro.id, [CharacterId.starduster.id], 1, [], []);
     game.castTrait(CharacterId.starduster.id, [CharacterId.starduster.id], TraitId.luckyShield.id, 
-    {'dmgSource': CharacterId.chinro.id, 'dmgType': DamageType.action, 'damage': 25, 'point': 3});
+    {'dmgSource': CharacterId.chinro.id, 'dmgType': DamageType.physical, 'damage': 25, 'point': 3});
 
     expect(game.players[CharacterId.starduster.id]!.damageReceivedTurn, 0);
   });
@@ -148,18 +148,18 @@ void main() {
   test ('Trait test: StarDuster - Lucky Shield - Dice Point Failed', () { 
     game.playCards(CharacterId.chinro.id, [CharacterId.starduster.id], 1, [], []);
     game.castTrait(CharacterId.starduster.id, [CharacterId.starduster.id], TraitId.luckyShield.id, 
-    {'dmgSource': CharacterId.chinro.id, 'dmgType': DamageType.action, 'damage': 25, 'point': 1});
+    {'dmgSource': CharacterId.chinro.id, 'dmgType': DamageType.physical, 'damage': 25, 'point': 1});
 
     expect(game.players[CharacterId.starduster.id]!.damageReceivedTurn, 25);
   });
 
   test ('Trait test: StarDuster - Lucky Shield - Damage Type Failed', () { 
-    game.playCards(CharacterId.chinro.id, [CharacterId.starduster.id], 1, [CardId.bow.id], 
+    game.playCards(CharacterId.chinro.id, [CharacterId.starduster.id], 1, [CardId.passingGaze.id], 
     [BowSetting()]);
     game.castTrait(CharacterId.starduster.id, [CharacterId.starduster.id], TraitId.luckyShield.id, 
-    {'dmgSource': CharacterId.chinro.id, 'dmgType': DamageType.magical, 'damage': 75, 'point': 3});
+    {'dmgSource': CharacterId.chinro.id, 'dmgType': DamageType.magical, 'damage': 70, 'point': 3});
 
-    expect(game.players[CharacterId.starduster.id]!.damageReceivedTurn, 100);
+    expect(game.players[CharacterId.starduster.id]!.damageReceivedTurn, 95);
   });
 
   test ('Trait test: DarkStar - Resolution - Success', () { 

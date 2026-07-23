@@ -48,6 +48,7 @@ class SpyRecordProvider extends RecordProvider {
     String target,
     int damage,
     DamageType damageType,
+    DamageSource damageSource,
     String tag,
   ) {
     addDamageRecordCallCount++;
@@ -57,7 +58,7 @@ class SpyRecordProvider extends RecordProvider {
     lastDamageAmount = damage;
     lastDamageType = damageType;
     lastDamageTag = tag;
-    super.addDamageRecord(turn, source, target, damage, damageType, tag);
+    super.addDamageRecord(turn, source, target, damage, damageType, damageSource, tag);
   }
 }
 

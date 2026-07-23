@@ -32,7 +32,6 @@ enum AttributeType{
 
 // 伤害类型
 enum DamageType{
-  action,
   physical,
   magical,
   lost,
@@ -45,9 +44,12 @@ enum DamageType{
 // 伤害来源
 enum DamageSource{
   action,
+  effect,
+  card,
   skill,
   trait,
   status,
+  lost,
   scene
 }
 
@@ -377,8 +379,12 @@ enum CharacterId {
   ennoia("ennoia"),
   moonseek("moonseek"),
   siKu("si_ku"),
-  pi123("pi_123"),
-  lanWenxi("lan_wenxi");  
+  pi123("pi_123"),  
+  lanWenxi("lan_wenxi"),
+  normal12("normal_12"),
+  trifolawn("trifolawn"),
+  zhuYanHuang("zhu_yanhuang"),
+  vivace("vivace");
 
   final String id;
 
@@ -492,6 +498,7 @@ enum SkillId {
   velocity("velocity"),
   lastStand("last_stand"),
   airstrike("airstrike"),
+  blender("blender"),
   massacre("massacre"),
   nebulaField("nebula_field"),
   deconstruction("deconstruction"),
@@ -514,6 +521,7 @@ enum SkillId {
   replenishment("replenishment"),
   icyOblivion135Bars("icy_oblivion_135_bars"),
   sacrificialLove("sacrificial_love"),
+  earthBreak("earth_break"),
   orderAegis("order_aegis"),
   chaosIncursion("chaos_incursion"),
   frostShatter("frost_shatter"),
@@ -525,7 +533,9 @@ enum SkillId {
   unwaveringGuard("unwavering_guard"),
   spareMove("spare_move"),
   anabasis("anabasis"),
-  veritasNonFalsitas("veritas_non_falsitas");
+  veritasNonFalsitas("veritas_non_falsitas"),
+  massEnergyConversionGamma("mass_energy_conversion_gamma"),
+  wildfireMomentum("wildfire_momentum");
 
   final String id;
 
@@ -575,6 +585,7 @@ enum TraitId {
   ranger("ranger"),
   precision("precision"),
   craftingOfDreams("crafting_of_dreams"),
+  resonanceOfDreams("resonance_of_dreams"),
   conflagrationAvatar("conflagration_avatar"),
   guardianOfDreams("guardian_of_dreams"),
   introductoryGift("introductory_gift"),
@@ -604,7 +615,6 @@ enum TraitId {
   glacialCircle("glacial_circle"),
   innocentLove("innocent_love"),
   lifeBreath("life_breath"),
-  earthBreak("earth_break"),
   holdBreath("hold_breath"),
   gunShy("gun_shy"),
   defensiveProtocol("defensive_protocol"),
@@ -635,7 +645,11 @@ enum TraitId {
   danshari("danshari"),
   essenceOverIllusion("essence_over_illusion"),
   binaryDyad("binary_dyad"),
-  lossGainEquilibrium("loss_gain_equilibrium");
+  lossGainEquilibrium("loss_gain_equilibrium"),
+  normalization("normalization"),
+  anachronicPrologue("anachronic_prologue"),
+  coreMeltdown("core_meltdown"),
+  vulcansProtection("vulcans_protection");
 
   final String id;
 
@@ -757,7 +771,8 @@ enum RegenType {
   halfDragon(5, 5, 0, 2),
   columba(4, 2, 0, 1),
   muridae(3, 3, 0, 1),
-  caprinae(3, 2, 0, 1),
+  caprinae(3, 1, 0, 1),
+  pseudois(3, 2, 0, 1),
   machina(10, 10, 0, 5),
   currus(5, 1, 1, 1),
   experiment(4, 2, 0, 2),
@@ -771,8 +786,9 @@ enum RegenType {
   nyxumbra(8, 6, 0, 2),
   tinXingyu(5, 0, 2, 1),
   valedictus(8, 2, 0, 1),
-  engine4(100, 0, 5, 1),
-  ennoia(9, 1, 0, 1);
+  engine4(0, 0, 5, 1),
+  ennoia(9, 1, 0, 1),
+  zhuYanHuang(8, 1, 0, 1),;
 
   final int maxMove;
   final int moveRegen;
@@ -865,12 +881,16 @@ Map<String, CharacterType> characterToPanel = {
   CharacterId.emberBlade.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
   CharacterId.daybreak.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.human),
   CharacterId.othello.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
-  CharacterId.stonehoof.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.caprinae),
+  CharacterId.stonehoof.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.pseudois),
   CharacterId.ennoia.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.ennoia),
   CharacterId.moonseek.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
   CharacterId.siKu.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.human),
   CharacterId.pi123.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.machina),
   CharacterId.lanWenxi.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
+  CharacterId.normal12.id: CharacterType(panelType: PanelType.brutal, regenType: RegenType.machina),
+  CharacterId.trifolawn.id: CharacterType(panelType: PanelType.supportive, regenType: RegenType.human),
+  CharacterId.zhuYanHuang.id: CharacterType(panelType: PanelType.challenging, regenType: RegenType.zhuYanHuang),
+  CharacterId.vivace.id: CharacterType(panelType: PanelType.balanced, regenType: RegenType.human),
 };
 
 class SkillType {  
@@ -894,7 +914,7 @@ Map<String, SkillType> skillToType = {
   SkillId.threshold.id: SkillType(cooldown: 4, isExclusive: false),
   SkillId.reinforcement.id: SkillType(cooldown: 3, isExclusive: false),
   SkillId.chase.id: SkillType(cooldown: 3, isExclusive: false),
-  SkillId.reticence.id: SkillType(cooldown: 3, isExclusive: false),
+  SkillId.reticence.id: SkillType(cooldown: 5, isExclusive: false),
   SkillId.finaleHope.id: SkillType(cooldown: 10, isExclusive: false),
   SkillId.devotion.id: SkillType(cooldown: 4, isExclusive: false),
   SkillId.barrier.id: SkillType(cooldown: 4, isExclusive: false),
@@ -925,11 +945,11 @@ Map<String, SkillType> skillToType = {
   SkillId.iceSplinter.id: SkillType(cooldown: 2, isExclusive: true),
   SkillId.dataTransmit.id: SkillType(cooldown: -1, isExclusive: true),
   SkillId.crimsonInferno.id: SkillType(cooldown: 2, isExclusive: true),
-  SkillId.dreamWeaver.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.dreamWeaver.id: SkillType(cooldown: 2, isExclusive: true),
   SkillId.sealedFlame135Seconds.id: SkillType(cooldown: 3, isExclusive: true),
   SkillId.dreamKeeper.id: SkillType(cooldown: 3, isExclusive: true),
   SkillId.giveAndTake.id: SkillType(cooldown: 4, isExclusive: true),
-  SkillId.eternity.id: SkillType(cooldown: 1, isExclusive: true),
+  SkillId.eternity.id: SkillType(cooldown: -1, isExclusive: true),
   SkillId.abyssalWhirl.id: SkillType(cooldown: 3, isExclusive: true),
   SkillId.apocalypticCourt.id: SkillType(cooldown: 3, isExclusive: true),
   SkillId.seventhFrost.id: SkillType(cooldown: 2, isExclusive: true),
@@ -940,17 +960,20 @@ Map<String, SkillType> skillToType = {
   SkillId.icyOblivion135Bars.id: SkillType(cooldown: 3, isExclusive: true),
   SkillId.replenishment.id: SkillType(cooldown: 2, isExclusive: true),
   SkillId.sacrificialLove.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.earthBreak.id: SkillType(cooldown: 2, isExclusive: true),
   SkillId.orderAegis.id: SkillType(cooldown: 3, isExclusive: true),
   SkillId.chaosIncursion.id: SkillType(cooldown: 3, isExclusive: true),
   SkillId.frostShatter.id: SkillType(cooldown: 2, isExclusive: true),
   SkillId.threeImmortalsReturn.id: SkillType(cooldown: 2, isExclusive: true),
   SkillId.kindleEye.id: SkillType(cooldown: 3, isExclusive: true),
   SkillId.timberSheep.id: SkillType(cooldown: -1, isExclusive: true),
-  SkillId.ragePilot.id: SkillType(cooldown: 3, isExclusive: true),
+  SkillId.ragePilot.id: SkillType(cooldown: 2, isExclusive: true),
   SkillId.unwaveringGuard.id: SkillType(cooldown: 3, isExclusive: true),
   SkillId.spareMove.id: SkillType(cooldown: 3, isExclusive: true),
   SkillId.anabasis.id: SkillType(cooldown: 1, isExclusive: true),
   SkillId.veritasNonFalsitas.id: SkillType(cooldown: 1, isExclusive: true),
+  SkillId.massEnergyConversionGamma.id: SkillType(cooldown: 5, isExclusive: true),
+  SkillId.wildfireMomentum.id: SkillType(cooldown: 1, isExclusive: true),
 };
 
 List<String> skillDeck = skillToType.keys.where((e) => skillToType[e]!.isExclusive == false).toList();
@@ -973,11 +996,12 @@ Map<String, List<String>> possessingSkills = {
   CharacterId.zhuYeming.id: [SkillId.seventhFrost.id],
   CharacterId.phantos.id: [SkillId.dreamGrasp.id],
   CharacterId.longYuche.id: [SkillId.sacrifice.id],
-  CharacterId.erisMake.id: [SkillId.soulRancor.id],
+  CharacterId.erisMake.id: [SkillId.soulTremor.id],
   CharacterId.leiGang.id: [SkillId.deicide.id],
   CharacterId.yanRuoqing.id: [SkillId.replenishment.id],
   CharacterId.baiXie.id: [SkillId.icyOblivion135Bars.id],
   CharacterId.shenShuhua.id: [SkillId.sacrificialLove.id],
+  CharacterId.turbach.id: [SkillId.earthBreak.id],
   CharacterId.fuYing.id: [SkillId.orderAegis.id, SkillId.chaosIncursion.id],
   CharacterId.zhuYecheng.id: [SkillId.frostShatter.id],
   CharacterId.lanWence.id: [SkillId.threeImmortalsReturn.id],
@@ -988,6 +1012,8 @@ Map<String, List<String>> possessingSkills = {
   CharacterId.othello.id: [SkillId.spareMove.id],
   CharacterId.ennoia.id: [SkillId.anabasis.id],
   CharacterId.lanWenxi.id: [SkillId.veritasNonFalsitas.id],
+  CharacterId.normal12.id: [SkillId.massEnergyConversionGamma.id],
+  CharacterId.zhuYanHuang.id: [SkillId.wildfireMomentum.id],
 };
 
 class TraitType {  
@@ -1040,7 +1066,8 @@ Map<String, TraitType> traitToType = {
   TraitId.cardioBlaze.id: TraitType(useCount: 1, isInitiative: true),
   TraitId.ranger.id: TraitType(useCount: -1, isInitiative: false),
   TraitId.precision.id: TraitType(useCount: -1, isInitiative: false),
-  TraitId.craftingOfDreams.id: TraitType(useCount: 2, isInitiative: true),
+  TraitId.craftingOfDreams.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.resonanceOfDreams.id: TraitType(useCount: 2, isInitiative: false),
   TraitId.conflagrationAvatar.id: TraitType(useCount: -1, isInitiative: true),
   TraitId.guardianOfDreams.id: TraitType(useCount: -1, isInitiative: false),
   TraitId.introductoryGift.id: TraitType(useCount: -1, isInitiative: false),
@@ -1070,7 +1097,6 @@ Map<String, TraitType> traitToType = {
   TraitId.glacialCircle.id: TraitType(useCount: -1, isInitiative: true),
   TraitId.innocentLove.id: TraitType(useCount: -1, isInitiative: false),
   TraitId.lifeBreath.id: TraitType(useCount: -1, isInitiative: false),
-  TraitId.earthBreak.id: TraitType(useCount: -1, isInitiative: false),
   TraitId.holdBreath.id: TraitType(useCount: -1, isInitiative: false),
   TraitId.gunShy.id: TraitType(useCount: -1, isInitiative: false),
   TraitId.defensiveProtocol.id: TraitType(useCount: -1, isInitiative: false),
@@ -1102,6 +1128,10 @@ Map<String, TraitType> traitToType = {
   TraitId.essenceOverIllusion.id: TraitType(useCount: -1, isInitiative: false),
   TraitId.binaryDyad.id: TraitType(useCount: -1, isInitiative: true),
   TraitId.lossGainEquilibrium.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.normalization.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.anachronicPrologue.id: TraitType(useCount: -1, isInitiative: true),
+  TraitId.coreMeltdown.id: TraitType(useCount: -1, isInitiative: false),
+  TraitId.vulcansProtection.id: TraitType(useCount: -1, isInitiative: false),
 };
 
 List<String> traitDeck = traitToType.keys.where((e) => traitToType[e]!.isInitiative == true).toList();
@@ -1135,7 +1165,7 @@ Map<String, List<String>> possessingTraits = {
   CharacterId.tangJingyan.id: [TraitId.lingeringLight.id, TraitId.radiantFullness.id],
   CharacterId.enkan.id: [TraitId.cardioBlaze.id],
   CharacterId.fanQiu.id: [TraitId.ranger.id, TraitId.precision.id],
-  CharacterId.sweven.id: [TraitId.craftingOfDreams.id],
+  CharacterId.sweven.id: [TraitId.craftingOfDreams.id, TraitId.resonanceOfDreams.id],
   CharacterId.ember.id: [TraitId.conflagrationAvatar.id],
   CharacterId.yuMengde.id: [TraitId.guardianOfDreams.id],  
   CharacterId.mrNice.id: [TraitId.introductoryGift.id, TraitId.imposingFavor.id],
@@ -1158,7 +1188,7 @@ Map<String, List<String>> possessingTraits = {
   CharacterId.tingXinyu.id: [TraitId.aurelysium.id],
   CharacterId.baiXie.id: [TraitId.glacialCircle.id],
   CharacterId.shenShuhua.id: [TraitId.innocentLove.id],
-  CharacterId.turbach.id: [TraitId.lifeBreath.id, TraitId.earthBreak.id],
+  CharacterId.turbach.id: [TraitId.lifeBreath.id],
   CharacterId.zephyr.id: [TraitId.holdBreath.id, TraitId.gunShy.id],
   CharacterId.refre3.id: [TraitId.defensiveProtocol.id, TraitId.thermalRecovery.id],
   CharacterId.lor.id: [TraitId.smolderingRage.id, TraitId.chaoticStrikes.id],
@@ -1183,15 +1213,25 @@ Map<String, List<String>> possessingTraits = {
   CharacterId.siKu.id: [TraitId.danshari.id, TraitId.essenceOverIllusion.id],
   CharacterId.pi123.id: [TraitId.binaryDyad.id],
   CharacterId.lanWenxi.id: [TraitId.lossGainEquilibrium.id],
+  CharacterId.normal12.id: [TraitId.normalization.id],
+  CharacterId.trifolawn.id: [TraitId.anachronicPrologue.id],
+  CharacterId.zhuYanHuang.id: [TraitId.coreMeltdown.id],
+  CharacterId.vivace.id: [TraitId.vulcansProtection.id],
 };
 
-enum BuffType {
+enum BuffTag {
   positive,
   negative,
   neutral
 }
 
+enum BuffType {
+  status,
+  effect
+}
+
 class StatusType {
+  final BuffTag buffTag;
   final BuffType buffType;
   final bool hasIntensity;
   final bool hasLayer;
@@ -1199,6 +1239,7 @@ class StatusType {
   final bool canOverlay;
 
   StatusType({
+    required this.buffTag,
     required this.buffType,
     required this.hasIntensity,
     required this.hasLayer,
@@ -1208,62 +1249,62 @@ class StatusType {
 }
 
 Map<String, StatusType> statusToType = {
-  StatusId.strength.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.regeneration.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.exhausted.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.flaming.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.frost.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.dissociated.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.confusion.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.stellarCage.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.fragility.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.nebula.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.mirror.id: StatusType(buffType: BuffType.neutral, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.burnOut.id: StatusType(buffType: BuffType.neutral, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.dreaming.id: StatusType(buffType: BuffType.neutral, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.gugu.id: StatusType(buffType: BuffType.neutral, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.frozen.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.dodge.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
-  StatusId.soulFlare.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: true),
-  StatusId.slowness.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.swift.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.fractured.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.nausea.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.weakness.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.infernoFire.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.tigrisDilemma.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.lumenFlare.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
-  StatusId.erodeGelid.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
-  StatusId.teroxis.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: false, decayOverTurn: false, canOverlay: false),
-  StatusId.grind.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.oculusVeil.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.distant.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.moisturize.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.corroded.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.tear.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
-  StatusId.wounded.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
-  StatusId.unbalanced.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
-  StatusId.uneasiness.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
-  StatusId.impassioned.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
-  StatusId.charge.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
-  StatusId.silence.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.drowsy.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.dreamCrafting.id: StatusType(buffType: BuffType.neutral, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
-  StatusId.dreamGuarding.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.gift.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
-  StatusId.constraint.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.sanctify.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: true, decayOverTurn: false, canOverlay: false),
-  StatusId.eden.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.nightmare.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.prey.id: StatusType(buffType: BuffType.negative, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
-  StatusId.poised.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.dehydration.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.submerged.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.asphyxia.id: StatusType(buffType: BuffType.negative, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.luminance.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.tenebrae.id: StatusType(buffType: BuffType.positive, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.swordHeart.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
-  StatusId.shelter.id: StatusType(buffType: BuffType.positive, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: true),
+  StatusId.strength.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.regeneration.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.exhausted.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.flaming.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.frost.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.dissociated.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.confusion.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.stellarCage.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.fragility.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.nebula.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.mirror.id: StatusType(buffTag: BuffTag.neutral, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.burnOut.id: StatusType(buffTag: BuffTag.neutral, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.dreaming.id: StatusType(buffTag: BuffTag.neutral, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.gugu.id: StatusType(buffTag: BuffTag.neutral, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.frozen.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.dodge.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.soulFlare.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: true),
+  StatusId.slowness.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.swift.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.fractured.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.nausea.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.weakness.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.infernoFire.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.tigrisDilemma.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.lumenFlare.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.erodeGelid.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.teroxis.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: true, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.grind.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.oculusVeil.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.distant.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.moisturize.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.corroded.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.tear.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.wounded.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.unbalanced.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.uneasiness.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.impassioned.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.charge.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.silence.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.drowsy.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.dreamCrafting.id: StatusType(buffTag: BuffTag.neutral, buffType: BuffType.status, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.dreamGuarding.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.gift.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.constraint.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.sanctify.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: false, canOverlay: false),
+  StatusId.eden.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.nightmare.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.prey.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: false, hasLayer: false, decayOverTurn: false, canOverlay: false),
+  StatusId.poised.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.dehydration.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.submerged.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.asphyxia.id: StatusType(buffTag: BuffTag.negative, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.luminance.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.tenebrae.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: false, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.swordHeart.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: true, canOverlay: false),
+  StatusId.shelter.id: StatusType(buffTag: BuffTag.positive, buffType: BuffType.status, hasIntensity: true, hasLayer: true, decayOverTurn: false, canOverlay: true),
 };
 
 Map<String, List<String>> cardTags = {
@@ -1349,3 +1390,45 @@ List<List<String>> mirrorCards = [
     CardId.frostShield.id
   ]
 ];
+
+class TraitCharaMap {
+  Map<String, List<String>> traitCharaMap = {};
+
+  TraitCharaMap();
+
+  int add(String traitId, String charaId) {
+    if (!traitCharaMap.containsKey(traitId)) {
+      traitCharaMap[traitId] = [charaId];
+      return 1;
+    }
+    traitCharaMap[traitId]!.add(charaId);
+    return traitCharaMap[traitId]!.length;
+  }
+
+  int remove(String traitId, String charaId) {
+    if (!traitCharaMap.containsKey(traitId)) {
+      return 0;
+    }
+    traitCharaMap[traitId]!.remove(charaId);
+    return traitCharaMap[traitId]!.length;
+  }
+
+  List<String> get(String traitId) {
+    if (!traitCharaMap.containsKey(traitId)) {
+      return [];
+    }
+    return traitCharaMap[traitId]!;
+  }
+
+  factory TraitCharaMap.fromJson(Map<String, dynamic> json) {
+    TraitCharaMap map = TraitCharaMap();
+    json.forEach((key, value) {
+      map.traitCharaMap[key] = List<String>.from(value);
+    });
+    return map;
+  }
+
+  Map<String, dynamic> toJson() {
+    return traitCharaMap.map((key, value) => MapEntry(key, value));
+  }
+}

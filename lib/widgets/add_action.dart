@@ -74,6 +74,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
   // 祝烨明【八寒之七】
   int _seventhFrostPoint = 1;
   String? _seventhFrostStatus;
+  // 祝言夙【灵魂震荡】
+  int _soulTremorPoint = 1;
   // 蓝文策【三仙归洞】
   int _threeImmortalsChoice = 0;
   // 卡拉卡【木头羊】
@@ -86,6 +88,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
   // 蓝文曦【去伪存真】
   int _veritasNonFalsitasPoint = 1;
   int _veritasNonFalsitasChoice = 0;
+  // 祝炎凰【燎原之势】
+  String?  _wildfireMomentumStatus;
 
   // 特质设置
   // 星尘【幸运壁垒】
@@ -1383,6 +1387,23 @@ class _AddActionDialogState extends State<AddActionDialog> {
                         });
                       }
                     )
+                  ] else if (_selectedSkill == SkillId.soulTremor.id) ...[
+                    Text('灵魂震荡', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField(
+                      initialValue: _soulTremorPoint,
+                      hint: Text('请选择灵魂震荡点数'),
+                      items: List.generate(2, (index) => DropdownMenuItem(
+                        value: index + 1,
+                        child: Text('${index + 1}'),
+                        )).toList(),
+                      onChanged: (int? newValue) {
+                        setState(() {
+                          _soulTremorPoint = newValue ?? 1;
+                        });
+                      },
+                      isExpanded: true,
+                    ),
+                    SizedBox(height: 16)
                   ] else if (_selectedSkill == SkillId.threeImmortalsReturn.id) ... [
                     Text('三仙归洞', style: TextStyle(fontWeight: FontWeight.bold)),
                     DropdownButtonFormField(
@@ -1503,7 +1524,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       isExpanded: true,
                     ),
                     SizedBox(height: 16),
-                    Text('弃牌张数', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('卡牌张数', style: TextStyle(fontWeight: FontWeight.bold)),
                     DropdownButtonFormField(
                       initialValue: _veritasNonFalsitasPoint,
                       hint: Text('请选择存真点数'),
@@ -1519,7 +1540,27 @@ class _AddActionDialogState extends State<AddActionDialog> {
                       isExpanded: true,
                     ),
                     SizedBox(height: 16)
-                  ]
+                  ] else if (_selectedSkill == SkillId.wildfireMomentum.id) ...[
+                    Text('燎原之势', style: TextStyle(fontWeight: FontWeight.bold)),
+                    DropdownButtonFormField<String>(
+                      initialValue:_wildfireMomentumStatus,
+                      hint: Text('请选择燎原状态'),
+                      items: _target != null && game.players[_target] != null 
+                        ? game.players[_target]!.status.keys.map((String statusKey) {
+                          return DropdownMenuItem(
+                            value: statusKey,
+                            child: Text(LocalizedIDs.labelFor(statusKey, localeStr)),
+                          );
+                        }).toList()
+                        : [],
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          _wildfireMomentumStatus = newValue ?? '';
+                        });
+                      }
+                    ),
+                    SizedBox(height: 16)
+                  ] 
                 ]
               ]
 
@@ -1600,7 +1641,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                         if (_luckyShieldDamages.length != damageRecords.length) {
                           _luckyShieldDamages.clear();
                           for (var damageRecord in damageRecords) {
-                            if ({DamageType.action, DamageType.physical}.contains(damageRecord.damageType)) {
+                            if ({DamageType.physical}.contains(damageRecord.damageType)) {
                               _luckyShieldDamages[damageRecord] = 1;
                             }
                           }
@@ -2413,7 +2454,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                         startTurn: game.getGameTurn(), endTurn: game.getGameTurn()).cast<ActionRecord>();
                       final List<DamageRecord> damageRecords = recordProvider.getFilteredRecords(type: RecordType.damage,
                         startTurn: game.getGameTurn(), endTurn: game.getGameTurn()).cast<DamageRecord>()
-                        .where((e) => e.damageType == DamageType.action).toList();
+                        .where((e) => e.damageSource == DamageSource.action).toList();
                       final int length = actionRecords.length == damageRecords.length ? actionRecords.length : -1;
                       _primordialHorologeDamage = damageRecords.isNotEmpty ? damageRecords.first.damage : 0;
                       _primordialHorologeCard = actionRecords.isNotEmpty && actionRecords.first.cards.isNotEmpty ? actionRecords.first.cards.first : '';
@@ -2551,14 +2592,14 @@ class _AddActionDialogState extends State<AddActionDialog> {
               bool skillAble = true;
               if (skillAble) {                
                 // 相转移 天国邮递员 净化 外星人 追击 沉默 镭射 止杀 镜像 分裂 交易 太阴 奇点 侵蚀 逆转乾坤 空袭 背水一战
-                // 氤氲 安魂乐章 冰芒 护梦者 谜渊漩涡 灵魂震荡 补给 邪能侵袭 礼尚往来 怒海引路 余裕手
+                // 氤氲 安魂乐章 冰芒 护梦者 谜渊漩涡 补给 邪能侵袭 礼尚往来 怒海引路 余裕手
                 if ({SkillId.phaseTransition.id, SkillId.heavenDelivery.id, SkillId.purification.id, 
                   SkillId.stellar.id, SkillId.chase.id, SkillId.reticence.id, SkillId.laser.id, 
                   SkillId.killCeasing.id, SkillId.inversion.id, SkillId.fission.id, SkillId.trading.id, SkillId.lunar.id, 
                   SkillId.singularity.id, SkillId.corrosion.id, SkillId.karmaReversal.id, SkillId.airstrike.id, SkillId.lastStand.id,
                   SkillId.nebulaField.id, SkillId.requiem.id, SkillId.iceSplinter.id, SkillId.dreamKeeper.id, 
-                  SkillId.abyssalWhirl.id, SkillId.soulTremor.id, SkillId.replenishment.id, SkillId.chaosIncursion.id, 
-                  SkillId.giveAndTake.id, SkillId.ragePilot.id, SkillId.spareMove.id
+                  SkillId.abyssalWhirl.id, SkillId.replenishment.id, SkillId.chaosIncursion.id, SkillId.giveAndTake.id, 
+                  SkillId.ragePilot.id, SkillId.spareMove.id
                   }.contains(_selectedSkill)) {
                   game.castSkill(_source!, [_target!], _selectedSkill!, {});
                 }
@@ -2640,6 +2681,10 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     .map((e) => e.id).toList();
                   game.castSkill(_source!, targets, _selectedSkill!);
                 }
+                // 祝言夙【灵魂震荡】
+                else if (_selectedSkill == SkillId.soulTremor.id) {
+                  game.castSkill(_source!, [_target!], _selectedSkill!, {'point': _soulTremorPoint});
+                }
                 // 沈姝华【奉献之爱】
                 else if (_selectedSkill == SkillId.sacrificialLove.id) {
                   //final targets = [...game.players.keys.where((chara) => chara != 'empty' && !game.players[chara]!.isDead)];
@@ -2665,6 +2710,15 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 // 蓝文曦【去伪存真】
                 else if (_selectedSkill == SkillId.veritasNonFalsitas.id) {
                   game.castSkill(_source!, [_source!], _selectedSkill!, {'type': _veritasNonFalsitasChoice, 'point': _veritasNonFalsitasPoint});
+                }
+                // NorMal-12【<04>质能转换-γ】
+                else if (_selectedSkill == SkillId.massEnergyConversionGamma.id) {
+                  final targets = game.players.values.where((e) => e.id != 'empty' && !e.isDead).map((e) => e.id).toList();
+                  game.castSkill(_source!, targets, _selectedSkill!);
+                }
+                // 祝炎凰【燎原之势】
+                else if (_selectedSkill == SkillId.wildfireMomentum.id) {
+                  game.castSkill(_source!, [_target!], _selectedSkill!, {'status': _wildfireMomentumStatus});
                 }
               }
             }
@@ -2742,7 +2796,8 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 }
                 // 炎焕【心炎】
                 else if (_selectedTrait == TraitId.cardioBlaze.id) {
-                  game.castTrait(_source!, [_target!], TraitId.cardioBlaze.id, {'point': _cardioBlazePoint});
+                  final targets = game.players.values.where((e) => game.isEnemy(_source!, e.id) && !e.isDead).map((e) => e.id).toList();
+                  game.castTrait(_source!, targets, TraitId.cardioBlaze.id, {'type': 2, 'point': _cardioBlazePoint});
                 }
                 // 斯威芬【梦的塑造】
                 else if (_selectedTrait == TraitId.craftingOfDreams.id) {
@@ -2792,7 +2847,7 @@ class _AddActionDialogState extends State<AddActionDialog> {
                 }
                 // 祝言夙【精神干扰】
                 else if (_selectedTrait == TraitId.mentalDisruption.id) {
-                  game.castTrait(_source!, [_target!], TraitId.mentalDisruption.id, {'point': _mentalDisruptionPoint});
+                  game.castTrait(_source!, [_target!], TraitId.mentalDisruption.id, {'type': 0, 'point': _mentalDisruptionPoint});
                 }
                 // 唐亚德【清心的乌托邦】
                 else if (_selectedTrait == TraitId.utopiaOfClarity.id) {
@@ -2906,6 +2961,10 @@ class _AddActionDialogState extends State<AddActionDialog> {
                     dyadList.add(_binaryDyadPoints[i]);
                   }
                   game.castTrait(_source!, [_target!], TraitId.binaryDyad.id, {'points': dyadList});
+                }
+                // 枳芒【错时引序】
+                else if (_selectedTrait == TraitId.anachronicPrologue.id) {
+                  game.castTrait(_source!, [_target!], TraitId.anachronicPrologue.id, {'type': 2});
                 }
               }
             }

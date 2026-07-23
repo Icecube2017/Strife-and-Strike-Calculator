@@ -35,10 +35,12 @@ class _HistoryPageState extends State<HistoryPage> {
       final savesDir = Directory('${documentsDir.path}/saves');
 
       if (!await savesDir.exists()) {
-        setState(() {
-          saveFiles = [];
-          isLoading = false;
-        });
+        if (mounted) {
+          setState(() {
+            saveFiles = [];
+            isLoading = false;
+          });
+        }
         return;
       }
 
@@ -68,18 +70,24 @@ class _HistoryPageState extends State<HistoryPage> {
         }
       }
 
-      setState(() {
-        saveFiles = loadedSaves;
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          saveFiles = loadedSaves;
+          isLoading = false;
+        });
+      }
     } catch (e) {
       _logger.e('Failed to load save files: $e');
-      setState(() {
-        isLoading = false;
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('加载存档列表失败: $e')),
-      );
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+        try {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('加载存档列表失败: $e')),
+          );
+        } catch (_) {}
+      }
     }
   }
 
@@ -87,18 +95,18 @@ class _HistoryPageState extends State<HistoryPage> {
   Future<void> _deleteSaveFile(SaveFile saveFile) async {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('删除存档'),
           content: Text('确定要删除存档 "${saveFile.filename}" 吗？此操作不可撤销。'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('取消'),
             ),
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
                 try {
                   final file = File(saveFile.filePath);
                   if (await file.exists()) {
@@ -106,15 +114,17 @@ class _HistoryPageState extends State<HistoryPage> {
                     await _loadSaveFiles(); // 重新加载列表
                     if (mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('已删除存档: ${saveFile.filename}')),
-                    );
-                    }                    
+                        SnackBar(content: Text('已删除存档: ${saveFile.filename}')),
+                      );
+                    }
                   }
                 } catch (e) {
                   _logger.e('Failed to delete save file: $e');
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('删除失败: $e')),
-                  );
+                  if (mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('删除失败: $e')),
+                    );
+                  }
                 }
               },
               child: const Text('删除', style: TextStyle(color: Colors.red)),

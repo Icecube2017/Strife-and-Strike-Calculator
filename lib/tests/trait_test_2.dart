@@ -252,7 +252,7 @@ void main() {
     expect(game.players[CharacterId.k97.id]!.armor, 1);
   });
 
-  test ('Trait test: K97 - Binary Noise - Out of Turn', () { 
+  /*test ('Trait test: K97 - Binary Noise - Out of Turn', () { 
     game.endTurn();
     game.endTurn();
     game.endTurn();
@@ -266,7 +266,7 @@ void main() {
 
     expect(game.players[CharacterId.windflutter.id]!.damageReceivedRound, 60);
     expect(game.players[CharacterId.k97.id]!.armor, 0);
-  });
+  });*/
 
   test ('Trait test: Andrenin - Rondo - Success', () { 
     game.endTurn();

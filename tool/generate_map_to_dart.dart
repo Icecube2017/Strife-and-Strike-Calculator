@@ -71,7 +71,7 @@ void _processIdsDirectory(Directory inputDir, Directory outDir) {
       stderr.writeln('Skipping ${f.path}: not an object');
       continue;
     }
-    final entries = decoded as Map<String, dynamic>;
+    final entries = decoded;
     _writeLocaleFile(outFile, locale, entries);
     generatedLocales[locale] = outFile.path;
     stdout.writeln('Generated ${outFile.path} (${entries.length} entries)');
@@ -84,8 +84,8 @@ String _sanitizeLocale(String raw) {
   return raw.replaceAll(RegExp(r'[^A-Za-z0-9]'), '_').toLowerCase();
 }
 
-void _processDirectory(Directory inputDir, Directory outDir) {
-  final generatedLocales = <String, String>{};
+/*void _processDirectory(Directory inputDir, Directory outDir) {
+  //final generatedLocales = <String, String>{};
   if (!inputDir.existsSync()) {
     stderr.writeln('Input directory not found: ${inputDir.path}');
     exit(2);
@@ -93,7 +93,7 @@ void _processDirectory(Directory inputDir, Directory outDir) {
 
   // Deprecated: directory processing not used when generating only map.json
   stderr.writeln('Directory processing is deprecated; call with specific map.json file instead');
-}
+}*/
 
 void _processSingleFile(File inputFile, Directory outDir) {
   if (!inputFile.existsSync()) {

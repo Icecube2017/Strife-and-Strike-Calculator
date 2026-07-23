@@ -246,8 +246,8 @@ class GameLogger extends ChangeNotifier {
   }
 
   // 添加伤害相关日志
-  void addDamageLog(GameTurn gameTurn, String source, String target, int damage, DamageType damageType, String detail) {
-    addLog('回合${gameTurn.round} 轮次${gameTurn.turn} 额外${gameTurn.extra}，$source 对 $target 造成 $damage ($damageType) 点伤害，参数为 $detail', category: '伤害');
+  void addDamageLog(GameTurn gameTurn, String source, String target, int damage, DamageType damageType, DamageSource damageSource, String detail) {
+    addLog('回合${gameTurn.round} 轮次${gameTurn.turn} 额外${gameTurn.extra}，$source 对 $target 造成 $damage (${damageType.name}) 点伤害，来源为${damageSource.name}, 参数为 $detail', category: '伤害');
   }
 
   /// 添加治疗相关日志

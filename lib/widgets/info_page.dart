@@ -40,15 +40,6 @@ class _InfoPageState extends State<InfoPage> {
   String gameId = 'game1';
   // 游戏数据
   late Game game;
-  // 语言数据
-  //String locale = 'zh_cn';
-  //Map<String, dynamic>? langMap;
-  // 角色数据
-  /*Map<String, dynamic>? characterData;
-  Map<String, dynamic>? characterTypeData;
-  Map<String, dynamic>? regenerateTypeData;*/
-  // 下拉框选项
-  //List<String> dropdownItems = [];
   // 固定列数
   final int columnCount = 7;
   // 自动加载标志
@@ -61,14 +52,6 @@ class _InfoPageState extends State<InfoPage> {
   @override
   void initState() {
     super.initState();
-    // 使用全局注入的 AssetsManager
-    /*final assets = Provider.of<AssetsManager>(context, listen: false);
-    langMap = assets.langMap;
-    characterData = assets.characterData;
-    characterTypeData = assets.characterTypeData;
-    regenerateTypeData = assets.regenerateTypeData;
-    dropdownItems = characterData?.keys.toList() ?? [];
-    dropdownItems.remove('角色');*/
     game = GameManager().game;
     final recordProvider = Provider.of<RecordProvider>(context, listen: false);
     final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
@@ -118,6 +101,7 @@ String _serializeGameState() {
     'teamCount': game.teamCount,
     'extra': game.extra,
     'gameTurnList': game.gameTurnList.map((turn) => turn.toJson()).toList(),
+    'traitToChara': game.traitToChara.toJson(),
     'records': recordProvider.serializeRecords(),
     'countdown': {
       'damocles': game.countdown.damocles,
@@ -183,21 +167,21 @@ void _restoreGameState(String stateJson) {
     game.id = gameState['gameId'];
     game.gameSequence = List<String>.from(gameState['gameSequence']);
     game.playerDied = gameState['playerDied'];
-  // 恢复队伍（确保类型为 Map<int, Set<String>>）
-  game.teams.clear();
-  if (gameState['teams'] is Map) {
-    (gameState['teams'] as Map).forEach((k, v){
-      try{
-        int teamId = int.parse(k.toString());
-        Set<String> members = {};
-        if (v is List) {members = v.map((e) => e.toString()).toSet();}
-        else if (v is Set) {members = v.map((e) => e.toString()).toSet();}
-        game.teams[teamId] = members;
-      } catch (e) {
-        // 忽略解析错误
-      }
-    });
-  }
+    // 恢复队伍（确保类型为 Map<int, Set<String>>）
+    game.teams.clear();
+    if (gameState['teams'] is Map) {
+      (gameState['teams'] as Map).forEach((k, v){
+        try{
+          int teamId = int.parse(k.toString());
+          Set<String> members = {};
+          if (v is List) {members = v.map((e) => e.toString()).toSet();}
+          else if (v is Set) {members = v.map((e) => e.toString()).toSet();}
+          game.teams[teamId] = members;
+        } catch (e) {
+          // 忽略解析错误
+        }
+      });
+    }
   game.gameType = GameType.values.firstWhere((e) => e.name == gameState['gameType'], orElse: () => GameType.single);
   game.gameState = GameState.values.firstWhere((e) => e.name == gameState['gameState'], orElse: () => GameState.waiting);
   game.playerCount = gameState['playerCount'];
@@ -206,6 +190,7 @@ void _restoreGameState(String stateJson) {
   game.round = gameState['round'];
   game.teamCount = gameState['teamCount'];
   game.extra = gameState['extra'];
+  game.traitToChara = TraitCharaMap.fromJson(gameState['traitToChara']);
   game.countdown.damocles = gameState['countdown']['damocles'];
   game.countdown.reinforcedDamocles = gameState['countdown']['reinforcedDamocles'];
   game.countdown.eden = gameState['countdown']['eden'];
@@ -291,7 +276,6 @@ void _restoreGameState(String stateJson) {
         }
       });
     }
-    //character.skillStatus = Map<String, int>.from(playerData['skillStatus']);
 
     character.trait = {};
     if (playerData['trait'] is Map) {
@@ -512,69 +496,75 @@ void _restoreGameState(String stateJson) {
 
   // 新建存档
   void _createNewSave() {
+    final pageContext = context;
     showDialog(
-      context: context,
-      builder: (BuildContext context) {
+      context: pageContext,
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('新建存档'),
           content: const Text('确定要创建一个新存档吗？这将清空当前游戏状态。'),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogContext).pop(),
               child: const Text('取消'),
             ),
             TextButton(
               onPressed: () async {
-                Navigator.of(context).pop();
-                try {                  
-                  final recordProvider = Provider.of<RecordProvider>(context, listen: false);
-                  final historyProvider = Provider.of<HistoryProvider>(context, listen: false);
-                  final gameLogger = Provider.of<GameLogger>(context, listen: false);
-                  
+                Navigator.of(dialogContext).pop();
+                try {
+                  if (!mounted) return;
+
+                  final recordProvider = Provider.of<RecordProvider>(pageContext, listen: false);
+                  final historyProvider = Provider.of<HistoryProvider>(pageContext, listen: false);
+                  final gameLogger = Provider.of<GameLogger>(pageContext, listen: false);
+
                   // 清空游戏状态
                   game.clearGame();
                   tableData.clear();
                   selectedIndex = null;
                   recordProvider.clearRecords();
                   gameLogger.clearLogs();
-                  
+
                   // 生成新的游戏ID
                   game.id = _generateNewGameId();
-                  
+
                   // 初始化历史记录
                   String initialState = _serializeGameState();
                   historyProvider.resetHistory();
                   historyProvider.saveCurrentStateToHistory(initialState);
-                  
+
                   // 创建新存档文件
                   Map<String, dynamic> saveData = {
                     'currentHistoryIndex': historyProvider.currentHistoryIndex,
                     'history': historyProvider.history,
                     'timestamp': DateTime.now().toIso8601String(),
                   };
-                  
+
                   String jsonString = jsonEncode(saveData);
                   final documentsDir = await getApplicationDocumentsDirectory();
                   final savesDir = Directory('${documentsDir.path}/saves');
                   if (!await savesDir.exists()) {
                     await savesDir.create(recursive: true);
                   }
-                  
+
                   final file = File('${savesDir.path}/${game.id}.json');
                   await file.writeAsString(jsonString, flush: true);
-                  
+
                   // 保存新存档ID到本地存储
                   await _saveLastSaveId(game.id);
-                  
+
+                  if (!mounted) return;
+
                   // 更新UI
                   setState(() {});
-                  
-                  ScaffoldMessenger.of(context).showSnackBar(
+
+                  ScaffoldMessenger.of(pageContext).showSnackBar(
                     SnackBar(content: Text('新存档已创建: ${game.id}')),
                   );
                 } catch (e) {
                   _logger.e('Failed to create new save: $e');
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(pageContext).showSnackBar(
                     SnackBar(content: Text('创建新存档失败: $e')),
                   );
                 }
