@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:convert';
 import 'package:path_provider/path_provider.dart';
 import 'package:logger/logger.dart';
+import 'dart:async';
 
 /// 游戏日志条目
 class GameLogEntry {
@@ -33,11 +34,16 @@ class GameLogger extends ChangeNotifier {
 
   GameLogger._internal();
 
-  final List<GameLogEntry> _logs = [];
+  final List<GameLogEntry> _logs = []; // 当前游戏日志
+  final List<GameLogEntry> _dateLogs = []; // 当前日期日志
   static const int maxLogs = 1000; // 最多保存1000条日志
   static const String _logsFolder = 'log';
   late File _logsFile;
+  late File _currentLogsFile;
   bool _isInitialized = false;
+  
+  // 用于序列化日志保存操作，防止并发写入
+  final _saveLock = _AsyncLock();
 
   /// 生成日志文件名（格式：log-20260126.json）
   String _generateLogsFileName() {
@@ -65,22 +71,64 @@ class GameLogger extends ChangeNotifier {
       // 获取当前日期的日志文件
       _logsFile = File('${logDir.path}/${_generateLogsFileName()}');
       
-      // 尝试从文件加载日志
-      if (await _logsFile.exists()) {
-        final content = await _logsFile.readAsString();
-        final jsonList = jsonDecode(content) as List<dynamic>;
-        
-        for (var item in jsonList) {
-          try {
-            final entry = GameLogEntry(
-              timestamp: DateTime.parse(item['timestamp'] as String),
-              message: item['message'] as String,
-              category: item['category'] as String,
-            );
-            _logs.add(entry);
-          } catch (e) {
-            // 忽略解析错误的日志条目
+      // 获取当前日志文件
+      _currentLogsFile = File('${logDir.path}/log-current.json');
+      
+      // 尝试从 log-current.json 加载日志，如果格式错误则恢复为空
+      if (await _currentLogsFile.exists()) {
+        try {
+          final content = await _currentLogsFile.readAsString();
+          final jsonList = jsonDecode(content) as List<dynamic>;
+          
+          for (var item in jsonList) {
+            try {
+              final entry = GameLogEntry(
+                timestamp: DateTime.parse(item['timestamp'] as String),
+                message: item['message'] as String,
+                category: item['category'] as String,
+              );
+              _logs.add(entry);
+            } catch (e) {
+              // 忽略解析错误的日志条目
+            }
           }
+        } catch (e) {
+          // 日志文件格式错误，重置为空列表
+          Logger().w('Log file format error, resetting: $e');
+          _logs.clear();
+          // 重新写入空文件
+          try {
+            await _currentLogsFile.writeAsString('[]', flush: true);
+          } catch (_) {}
+        }
+      }
+      
+      // 尝试从日期文件加载日志到_dateLogs
+      if (await _logsFile.exists()) {
+        try {
+          final content = await _logsFile.readAsString();
+          final jsonList = jsonDecode(content) as List<dynamic>;
+          
+          for (var item in jsonList) {
+            try {
+              final entry = GameLogEntry(
+                timestamp: DateTime.parse(item['timestamp'] as String),
+                message: item['message'] as String,
+                category: item['category'] as String,
+              );
+              _dateLogs.add(entry);
+            } catch (e) {
+              // 忽略解析错误的日志条目
+            }
+          }
+        } catch (e) {
+          // 日期文件格式错误，重置为空列表
+          Logger().w('Date log file format error, resetting: $e');
+          _dateLogs.clear();
+          // 重新写入空文件
+          try {
+            await _logsFile.writeAsString('[]', flush: true);
+          } catch (_) {}
         }
       }
       
@@ -96,20 +144,46 @@ class GameLogger extends ChangeNotifier {
   Future<void> _saveLogs() async {
     if (!_isInitialized) return;
     
+    // 使用锁确保同一时间只有一个保存操作
+    await _saveLock.lock(() async {
+      try {
+        final jsonList = _logs.map((log) => {
+          'timestamp': log.timestamp.toIso8601String(),
+          'message': log.message,
+          'category': log.category,
+        }).toList();
+        
+        final jsonContent = jsonEncode(jsonList);
+        
+        // 只保存到当前日志文件
+        await _currentLogsFile.writeAsString(jsonContent, flush: true);        
+      } catch (e) {
+        Logger().e('Failed to save game logs: $e');
+      }
+    });
+  }
+
+  /// 保存日志到日期文件
+  Future<void> _saveToDateFile() async {
+    if (!_isInitialized) return;
+    
     try {
-      final jsonList = _logs.map((log) => {
+      final jsonList = _dateLogs.map((log) => {
         'timestamp': log.timestamp.toIso8601String(),
         'message': log.message,
         'category': log.category,
       }).toList();
       
-      await _logsFile.writeAsString(
-        jsonEncode(jsonList),
-        flush: true,
-      );
+      final jsonContent = jsonEncode(jsonList);
+      
+      // 保存到日期日志文件
+      await _logsFile.writeAsString(jsonContent, flush: true);      
     } catch (e) {
-      Logger().e('Failed to save game logs: $e');
+      Logger().e('Failed to save to date file: $e');
     }
+
+    //final content = await _logsFile.readAsString();
+    //Logger().i('Saved logs to date file: $content');
   }
 
   /// 添加日志
@@ -121,16 +195,24 @@ class GameLogger extends ChangeNotifier {
     );
 
     _logs.add(entry);
+    _dateLogs.add(entry);
 
     // 当日志超过最大数量时，删除最旧的日志
     if (_logs.length > maxLogs) {
       _logs.removeAt(0);
     }
+    
+    // 异步保存日志到文件，不阻塞 UI
+    _saveLogs().catchError((e) {
+      Logger().e('Error saving logs: $e');
+    });
+    
+    // 同时保存到日期文件
+    _saveToDateFile().catchError((e) {
+      Logger().e('Error saving to date file: $e');
+    });
 
     notifyListeners();
-    
-    // 保存日志到文件
-    _saveLogs();
   }
 
   /// 添加玩家相关日志
@@ -164,8 +246,8 @@ class GameLogger extends ChangeNotifier {
   }
 
   // 添加伤害相关日志
-  void addDamageLog(GameTurn gameTurn, String source, String target, int damage, DamageType damageType, String detail) {
-    addLog('回合${gameTurn.round} 轮次${gameTurn.turn} 额外${gameTurn.extra}，$source 对 $target 造成 $damage ($damageType) 点伤害，参数为 $detail', category: '伤害');
+  void addDamageLog(GameTurn gameTurn, String source, String target, int damage, DamageType damageType, DamageSource damageSource, String detail) {
+    addLog('回合${gameTurn.round} 轮次${gameTurn.turn} 额外${gameTurn.extra}，$source 对 $target 造成 $damage (${damageType.name}) 点伤害，来源为${damageSource.name}, 参数为 $detail', category: '伤害');
   }
 
   /// 添加治疗相关日志
@@ -182,12 +264,35 @@ class GameLogger extends ChangeNotifier {
   void clearLogs() async {
     _logs.clear();
     notifyListeners();
-    await _saveLogs();
+    // 只清空当前日志文件
+    try {
+      if (await _currentLogsFile.exists()) {
+        await _currentLogsFile.writeAsString('[]', flush: true);
+      }
+    } catch (e) {
+      Logger().e('Failed to clear current logs: $e');
+    }
   }
 
   /// 获取最近N条日志
   List<GameLogEntry> getRecentLogs(int count) {
     final startIndex = _logs.length > count ? _logs.length - count : 0;
     return _logs.sublist(startIndex);
+  }
+}
+
+/// 简单的异步锁实现，用于序列化异步操作
+class _AsyncLock {
+  Future<void>? _pending;
+  
+  Future<void> lock(Future<void> Function() callback) async {
+    // 等待前一个操作完成
+    if (_pending != null) {
+      await _pending;
+    }
+    
+    // 执行当前操作
+    _pending = callback();
+    await _pending;
   }
 }

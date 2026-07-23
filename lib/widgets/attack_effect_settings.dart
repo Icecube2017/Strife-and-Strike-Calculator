@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+//import 'package:provider/provider.dart';
 import 'package:sns_calculator/game.dart';
-import 'package:sns_calculator/assets.dart';
+//import 'package:sns_calculator/assets.dart';
 import 'package:sns_calculator/core.dart';
 
 // 攻击特效设置对话框组件
@@ -29,7 +29,7 @@ class _AttackEffectSettingsDialogState extends State<AttackEffectSettingsDialog>
 
   Game game = GameManager().game;
 
-  Map<String, dynamic> ?langMap;
+  //Map<String, dynamic> ?langMap;
 
   // 烛焱
   final List<String> _lumenFlareOptions = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
@@ -49,8 +49,8 @@ class _AttackEffectSettingsDialogState extends State<AttackEffectSettingsDialog>
     _oculusVeilPoint = _settings['oculusVeilPoint'] ?? 1;
     _nauseaPoint = _settings['nauseaPoint'] ?? 1;
     // 从全局 Provider 获取已加载的语言/资源映射
-    final assets = Provider.of<AssetsManager>(context, listen: false);
-    langMap = assets.langMap;
+    //final assets = Provider.of<AssetsManager>(context, listen: false);
+    //langMap = assets.langMap;
   }
 
   void _saveSettings() {

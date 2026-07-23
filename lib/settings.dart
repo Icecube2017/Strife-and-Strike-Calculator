@@ -397,7 +397,7 @@ class CardSettingsManager extends ChangeNotifier {
     if (index >= 0 && index < _cardSettings.length) {
       return _cardSettings[index];
     }
-    return null;
+    return DefaultCardSetting();
   }
 
   // 获取指定索引的卡牌设置，并转换为指定类型
@@ -470,5 +470,5 @@ class CardSettingsManager extends ChangeNotifier {
   }
 
   int get length => _cardSettings.length;
-  List get settings => _cardSettings;
+  List<CardSetting?> get settings => _cardSettings;
 }

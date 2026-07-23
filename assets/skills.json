@@ -43,6 +43,7 @@
     "dream_weaver": 3,
     "sealed_flame_135_seconds": 3,
     "dream_keeper": 3,
+    "give_and_take": 4,
     "emphemeral": -1,
     "abyssal_whirl": 3,
     "apocalyptic_court": 3,
@@ -54,5 +55,12 @@
     "icy_oblivion_135_bars": 3,
     "replenishment": 2,
     "sacrificial_love": 3,
-    "frost_shatter": 2
+    "order_aegis": 3,
+    "chaos_incursion": 3,
+    "frost_shatter": 2,
+    "three_immortals_return": 3,
+    "kindle_eye": 3,
+    "timber_sheep": -1,
+    "rage_pilot": 3,
+    "unwavering_guard": 3
 }
